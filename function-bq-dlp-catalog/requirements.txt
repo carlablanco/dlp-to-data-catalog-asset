@@ -1,0 +1,5 @@
+# Function dependencies, for example:
+# package>=version
+google-cloud-bigquery >=3.6
+google-cloud-dlp >=3.12
+google-cloud-datacatalog >=3.11
