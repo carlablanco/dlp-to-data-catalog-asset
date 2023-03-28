@@ -15,5 +15,8 @@ jobs:
         uses: actions/checkout@v2
       - name: Install pylint
         run: pip install pylint
+      - name: Install PyYAML and PyLint-YAML
+        run: pip install PyYAML pylint-yaml
       - name: Run pylint
-        run: pylint **/*.{py, yml}
+        run: pylint --load-plugins pylint_yaml **/*.{py, yml}
+
