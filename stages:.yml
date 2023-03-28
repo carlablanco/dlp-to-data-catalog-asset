@@ -1,0 +1,11 @@
+inting:
+  stage: lint
+  image: python:3.9
+  rules:
+    - changes:
+        - '**/*.py'
+        - '**/*.yml'
+        - '**/*.yaml'
+  script:
+    - pip install pylint
+    - pylint --exit-zero --fail-under=9 --output-format=colorized $(git diff --name-only --diff-filter=ACMR origin/master..HEAD | grep '\.py$')
