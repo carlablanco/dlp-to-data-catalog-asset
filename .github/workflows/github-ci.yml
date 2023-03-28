@@ -20,4 +20,4 @@ jobs:
           pip install pylint pyyaml
           pip install git+https://github.com/PyCQA/pylint-plugin-utils.git
       - name: Run pylint on Python files
-        run: pylint --load-plugins pylint_plugin **/*.py
+        run: pylint --load-plugins pylint_plugin '**/*.py'
