@@ -18,7 +18,10 @@ jobs:
       - name: Install pylint 
         run: pip install pylint 
       - name: Install pyyaml
-        run: pip install pyyaml
-      - name: Run pylint
-        run: pylint --load-plugins pylint_yaml **/*.{py, yml}
+        run: pip install pylint-yaml
+      - name: Run pylint on Python files
+        run: pylint --load-plugins pylint_yaml **/*.py
+      - name: Run pylint on YAML files
+        run: pylint --load-plugins pylint_yaml **/*.yml
+
 
