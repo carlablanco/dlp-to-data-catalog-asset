@@ -15,9 +15,16 @@ jobs:
         uses: actions/checkout@v2
       - name: Upgrade pip
         run: python -m pip install --upgrade pip
-      - name: Install pylint and pyyaml
+      - name: Install pylint 
         run: |
-          pip install pylint pyyaml
-          pip install git+https://github.com/PyCQA/pylint-plugin-utils.git
+          pip install pylint 
+      - name: Upgrade pylint-plugin-utils
+        run: |
+          pip install --upgrade git+https://github.com/PyCQA/pylint-plugin-utils.git
+      - name: Install pylint_plugin
+        run: |
+          pip install pylint_plugin
       - name: Run pylint on Python files
-        run: pylint --load-plugins pylint_plugin $(find . -type f -name "*.py")
+        run: |
+          find . -type f -name "*.py" -print0 | xargs -0 pylint --load-plugins pylint_plugin
+
