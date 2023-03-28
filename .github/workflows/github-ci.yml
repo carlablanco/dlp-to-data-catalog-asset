@@ -13,10 +13,12 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-      - name: Install pylint
-        run: pip install pylint
-      - name: Install PyYAML and PyLint-YAML
-        run: pip install PyYAML pylint-yaml
+      - name: Upgrade pip
+        run: python -m pip install --upgrade pip
+      - name: Install pylint and PyYAML
+        run: pip install pylint PyYAML
+      - name: Install PyLint-YAML
+        run: pip install git+https://github.com/adrienverge/pylint-plugins.git@master#egg=pylint-yaml
       - name: Run pylint
         run: pylint --load-plugins pylint_yaml **/*.{py, yml}
 
