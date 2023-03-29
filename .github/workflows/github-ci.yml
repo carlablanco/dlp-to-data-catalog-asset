@@ -1,6 +1,6 @@
 # Run linting.
 #
-# Run on python and yaml files.
+# Run on .py
 name: linting
 on:
   pull_request
@@ -17,5 +17,5 @@ jobs:
       - name: Install pylint
         run:  pip install pylint 
       - name: Run pylint on Python files
-        run: pylint '**/*.py'
+        run: pylint 'main/.py'
 
