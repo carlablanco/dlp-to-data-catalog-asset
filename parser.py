@@ -1,6 +1,7 @@
-# Argument pareser.
-#
-# This is a helper function to parse command line arguments.
+# Copyright 2023 Google LLC. This software is provided as-is, without warranty
+# or representation for any use or purpose. Your use of it is subject to your
+# agreement with Google.
+"""Parses arguments before running DLP Scan."""
 import argparse
 from typing import List, Type
 import sys
@@ -12,33 +13,34 @@ def parse_arguments(argv: List[str]) -> Type[argparse.Namespace]:
         "--project",
         type=str,
         required=True,
-        help="""The project ID of the Cloud project you want to use.""")
+        help="The project ID of the Cloud project to be used.")
     parser.add_argument(
         "--dataset",
         type=str,
         required=True,
-        help="""The dataset ID of the BigQuery dataset you want to use.""")
+        help="The dataset ID of the BigQuery dataset to be used.")
     parser.add_argument(
         "--table",
         type=str,
-        required=True,
-        help="""The table ID of the BigQuery table you want to use.""")
+        help="The table of the bigquery dataset to be used.")
     parser.add_argument(
         "--parent",
         type=str,
         required=True,
-        help="""The parent of the infotype you want to inspect in the DLP API.""")
+        help="The group that the infotype belongs to.")
     parser.add_argument(
         "--location",
         type=str,
         required=True,
-        help="""The location of the DataCatalog.""")
+        help="The default location to be used.")
+
     return parser.parse_args(argv[0:])    
 
 def run(proyecto: str, dataset: str, table: str, parent: str, location: str):
-    # run the main function with the arguments parsed
-    main(proyecto, dataset, table, parent, location) 
+    """Run the main function with the arguments parsed."""
+    main(proyecto, dataset, table, parent, location)
+    raise NotImplementedError
 
 if __name__ == "__main__":
-    arguments = parse_arguments(sys.argv)
-    run(arguments.proyecto, arguments.dataset, arguments.table, arguments.parent, arguments.location)
+    arg = parse_arguments(sys.argv)
+    run(arg.project, arg.dataset,  arg.table, arg.parent, arg.location)
