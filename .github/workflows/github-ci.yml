@@ -17,5 +17,5 @@ jobs:
       - name: Install pylint
         run:  pip install pylint 
       - name: Run pylint on Python files
-        run: pylint 'main/.py'
+        run: pylint 'main/*.py'
 
