@@ -6,20 +6,6 @@ on:
   pull_request
 
 jobs:
-  upgrade_plugin:
-    runs-on: ubuntu-latest
-    container:
-      image: python:3.9
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-      - name: Upgrade pip
-        run: |
-          python -m pip install --upgrade pip
-          pip install --user --index-url https://pypi.org/simple/ pylint-plugin
-      - name: Run pylint on Python files
-        run: pylint --load-plugins pylint_plugin '**/*.py'
-        working-directory: ${{ github.workspace }}
   lint:
     runs-on: ubuntu-latest
     container:
@@ -32,7 +18,7 @@ jobs:
       - name: Install pylint and pyyaml
         run: |
           pip install pylint pyyaml
-          pip install --user --index-url https://pypi.org/simple/ pylint-plugin
+          pip install git+https://github.com/PyCQA/pylint-plugin-utils.git
       - name: Run pylint on Python files
         run: pylint --load-plugins pylint_plugin '**/*.py'
-        working-directory: ${{ github.workspace }}
+
