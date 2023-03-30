@@ -24,7 +24,7 @@ def parse_arguments(argv: List[str]) -> Type[argparse.Namespace]:
     parser.add_argument(
         "--table",
         type=str,
-        help="""The BigQuery table to be used. Optional arguments, 
+        help="""The BigQuery table to be used. Optional arguments,
                 if None, the entire dataset will be scanned""")
     parser.add_argument(
         "--language_code",
@@ -37,7 +37,7 @@ def parse_arguments(argv: List[str]) -> Type[argparse.Namespace]:
         required=True,
         help="The default location to be used.")
 
-    return parser.parse_args(argv[0:])    
+    return parser.parse_args(argv[0:])
 
 
 def run(project: str, dataset: str, table: str, language_code: str, location: str):
