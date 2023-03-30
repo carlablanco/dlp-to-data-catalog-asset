@@ -25,7 +25,7 @@ def parse_arguments(argv: List[str]) -> Type[argparse.Namespace]:
         "--table",
         type=str,
         help="""The BigQuery table to be used. Optional arguments,
-                if None, the entire dataset will be scanned""")
+                If None, the entire dataset will be scanned""")
     parser.add_argument(
         "--language_code",
         type=str,
@@ -36,7 +36,6 @@ def parse_arguments(argv: List[str]) -> Type[argparse.Namespace]:
         type=str,
         required=True,
         help="The default location to be used.")
-
     return parser.parse_args(argv[0:])
 
 
@@ -45,7 +44,8 @@ def run(project: str, dataset: str, table: str, language_code: str, location: st
     Args:
         project: Project ID for which the client acts on behalf of.
         dataset: The BigQuery dataset to be used.
-        table: The BigQuery table to be used.
+        table: The BigQuery table to be used. Optional arguments,
+                If None, the entire dataset will be scanned
         language_code: The BCP-47 language code to use, e.g. 'en-US'.
         location: Location where the jobs will be run.
     """
