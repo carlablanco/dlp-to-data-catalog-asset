@@ -15,7 +15,7 @@ def parse_arguments(argv: List[str]) -> Type[argparse.Namespace]:
         "--project",
         type=str,
         required=True,
-        help="The Cloud project to be used.")
+        help="The Google Cloud project to be used.")
     parser.add_argument(
         "--dataset",
         type=str,
@@ -24,12 +24,13 @@ def parse_arguments(argv: List[str]) -> Type[argparse.Namespace]:
     parser.add_argument(
         "--table",
         type=str,
-        help="The BigQuery table to be used.")
+        help="""The BigQuery table to be used. Optional arguments, 
+                if None, the entire dataset will be scanned""")
     parser.add_argument(
-        "--parent_infotype",
+        "--language_code",
         type=str,
         required=True,
-        help="The group that the Infotype belongs to.")
+        help="The BCP-47 language code to use, e.g. 'en-US'.")
     parser.add_argument(
         "--location",
         type=str,
@@ -39,18 +40,18 @@ def parse_arguments(argv: List[str]) -> Type[argparse.Namespace]:
     return parser.parse_args(argv[0:])    
 
 
-def run(project: str, dataset: str, table: str, parent_infotype: str, location: str):
-    """Run the main function with the arguments parsed.
+def run(project: str, dataset: str, table: str, language_code: str, location: str):
+    """Runs DLP inspection scan and tags the results to Data Catalog.
     Args:
-        project: The Google Cloud project id to use. 
+        project: Project ID for which the client acts on behalf of.
         dataset: The BigQuery dataset to be used.
         table: The BigQuery table to be used.
-        parent_infotype:The group that the Infotype belongs to.
-        location: The default location to be used.
+        language_code: The BCP-47 language code to use, e.g. 'en-US'.
+        location: Location where the jobs will be run.
     """
     raise NotImplementedError
 
 
 if __name__ == "__main__":
     args = parse_arguments(sys.argv)
-    run(args.project, args.dataset,  args.table, args.parent_infotype, args.location)
+    run(args.project, args.dataset,  args.table, args.language_code, args.location)
