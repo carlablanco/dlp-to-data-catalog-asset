@@ -27,7 +27,7 @@ class BigQuerySchemaRows:
         Returns:
             str: Sql query
         """
-        query = f"SELECT *  FROM `{table_id}` "
+        query = f"SELECT *  FROM `{table_id}`"
         return query
     
     def convert_to_dlp_table(self,table_id : str) -> dict:
