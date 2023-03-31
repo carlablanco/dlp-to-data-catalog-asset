@@ -3,9 +3,9 @@
 # agreement with Google.
 """Runs DLP inspection on a BigQuery dataset and tags the results in Data Catalog."""
 
-from google.cloud import bigquery
 import json
-import io
+from google.cloud import bigquery
+import io    
 from typing import Optional
 
 
@@ -68,7 +68,7 @@ class BigQuerySchemaRows:
         return item
 
     def get_dlp_table_list(self) -> list:
-        """Constructs a list of table items that can be ingested by DLP from a BigQuery dataset or table.
+        """Constructs a list of table items that can be ingested by DLP.
 
         Returns:
             list: A list of table items that can be ingested by DLP.
@@ -87,3 +87,4 @@ class BigQuerySchemaRows:
                     items.append(item)
 
         return items
+   
