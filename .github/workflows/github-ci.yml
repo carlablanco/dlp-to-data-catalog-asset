@@ -1,24 +1,22 @@
-name: Linting
+# Run linting.
+#
+# Run on .py
+name: linting
 on:
-  push:
-    branches-ignore: [master, main]
-  pull_request:
-    branches: [master, main]
+  pull_request
 jobs:
-  build:
-    name: Lint Code Base
+  lint:
     runs-on: ubuntu-latest
+    container:
+      image: python:3.9
     steps:
-      - name: Checkout Code
+      - name: Checkout code
         uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
-      - name: Lint Code Base
-        uses: docker://python:3.10-alpine
-        with:
-          args: "sh -c 'apk add --update --no-cache gcc musl-dev && pip install -r requirements.txt && flake8 .'"
-        env:
-          VALIDATE_ALL_CODEBASE: false
-          DEFAULT_BRANCH: master
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+      - name: global safe directory 
+        run: git config --global --add safe.directory '*'
+      - name: Upgrade pip
+        run: python -m pip install --upgrade pip
+      - name: Install pylint
+        run:  pip install pylint 
+      - name: Run pylint on Python files
+        run: pylint --jobs=0 $(git ls-files '*.py')
