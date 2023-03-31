@@ -4,9 +4,9 @@
 """Runs DLP inspection on a BigQuery dataset and tags the results in Data Catalog."""
 
 import json
-from google.cloud import bigquery
-import io    
 from typing import Optional
+import io
+from google.cloud import bigquery
 
 
 class BigQuerySchemaRows:
