@@ -12,31 +12,32 @@ from typing import Optional
 class BigQuerySchemaRows:
 
     def __init__(self,project:str,
-                 dataset:str,table: Optional[str] = None,limit:int=100):
+                 dataset:str,table: Optional[str] = None):
         self.bq_client = bigquery.Client()
         self.project = project
         self.dataset = dataset
         self.table = table 
-        self.limit = limit
 
     def get_query(self,table_id : str) -> str:
         """Makes the sql string to query.
+        
+        Args:
+            table_id (str): The fully qualified name of the BQ table.
 
         Returns:
             str: Sql query
         """
-        query = f"SELECT *  FROM `{table_id}` LIMIT {self.limit} "
+        query = f"SELECT *  FROM `{table_id}` "
         return query
     
     def convert_to_dlp_table(self,table_id : str) -> dict:
-        """A partir de un table_id se obtiene un diccionario con la info de la tabla
-        y el schema para ingresar a DLP.
+        """Converts a BQ table into a table item that can be ingested by DLP.
         
         Args:
-            table_id (str): La ruta completa de la tabla.
+            table_id (str): The fully qualified name of the BQ table.
 
         Returns:
-            dict: El item table para ingresar a dlp. 
+            dict: A table item that can be ingested by DLP. 
         """
         #Obtención de esquema json de la tabla BQ
         table_bq = self.bq_client.get_table(table_id)
@@ -65,11 +66,10 @@ class BigQuerySchemaRows:
         return item
      
     def get_dlp_table_list(self) -> list:
-        """Construye una lista de table items para poder ingresar a la DLP a
-        partir de un dataset o una tabla.
-
+        """Constructs a list of table items that can be ingested by DLP from a BigQuery dataset or table.
+        
         Returns:
-            list: Table items
+            list: A list of table items that can be ingested by DLP.
         """
         items = []
         if self.table:
