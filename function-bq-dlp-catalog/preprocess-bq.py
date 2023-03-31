@@ -32,7 +32,6 @@ class BigQuerySchemaRows:
         """A partir de un table_id se obtiene un diccionario con la info de la tabla
         y el schema para ingresar a DLP.
         
-
         Args:
             table_id (str): La ruta completa de la tabla.
 
