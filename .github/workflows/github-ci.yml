@@ -14,7 +14,11 @@ jobs:
       image: python:3.9
     steps:
       - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Set up Python
         uses: actions/setup-python@v2
+        with:
+          python-version: '3.9'
       - name: global safe directory 
         run: git config --global --add safe.directory '*'
       - name: Upgrade pip
