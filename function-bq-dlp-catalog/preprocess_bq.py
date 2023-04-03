@@ -45,6 +45,7 @@ class Preprocessing:
         Returns:
             tuple: A tuple containing the BigQuery schema and content.
         """
+
         table_bq = self.bq_client.get_table(table_id)
         f_temp = io.StringIO("")
         self.bq_client.schema_to_json(table_bq.schema, f_temp)
@@ -58,14 +59,14 @@ class Preprocessing:
 
         return bq_schema, bq_rows_content
 
-    def convert_to_dlp_table(self, bq_schema: dict,
-                             bq_rows_content: dict) -> dict:
+    def convert_to_dlp_table(self, bq_schema: list,
+                             bq_rows_content: list) -> dict:
         """Converts a BigQuery table into an object that can be inspected
         by Data Loss Prevention.
 
         Args:
-            bq_schema (dict): The schema of a BigQuery table.
-            bq_rows_content (dict): The content of a BigQuery table.
+            bq_schema (list): The schema of a BigQuery table.
+            bq_rows_content (list): The content of a BigQuery table.
 
         Returns:
             dict: A table object that can be inspected by Data Loss Prevention.
