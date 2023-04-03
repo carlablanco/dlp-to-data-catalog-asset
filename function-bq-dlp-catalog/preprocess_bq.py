@@ -4,22 +4,20 @@
 """Runs DLP inspection on a BigQuery dataset and tags the results in Data Catalog."""
 
 import json
-from typing import Optional
 import io
 from google.cloud import bigquery
 
 
-class PreprocessBqToDlp:
-    """Class for preprocessing BigQuery tables into Data Loss Prevention tables.
+class Preprocessing:
+    """Class for preprocessing tables into Data Loss Prevention tables.
     """
 
-    def __init__(self, project: str,
-                 dataset: str, table: Optional[str] = None):
+    def __init__(self, project: str, dataset: str, table: str = None):
         """
         Args:
-            project (str): The name of the GCP project where the BigQuery dataset exists.
+            project (str): The name of the GCP project.
             dataset (str): The name of the BigQuery dataset.
-            table (str, optional): The name of the BigQuery table. Defaults to None.
+            table (str, optional): The name of the BigQuery table.
         """
         self.bq_client = bigquery.Client()
         self.project = project
@@ -60,8 +58,10 @@ class PreprocessBqToDlp:
 
         return bq_schema, bq_rows_content
 
-    def convert_to_dlp_table(self, bq_schema: dict, bq_rows_content: dict) -> dict:
-        """Converts a BigQuery table into an object that can be inspected by Data Loss Prevention.
+    def convert_to_dlp_table(self, bq_schema: dict,
+                             bq_rows_content: dict) -> dict:
+        """Converts a BigQuery table into an object that can be inspected
+        by Data Loss Prevention.
 
         Args:
             bq_schema (dict): The schema of a BigQuery table.
@@ -78,64 +78,23 @@ class PreprocessBqToDlp:
         rows = []
         for row in bq_rows_content:
             rows.append(
-                {"values": [{"string_value": str(cell_val)} for cell_val in row.values()]})
+                {"values":
+                    [{"string_value":
+                        str(cell_val)} for cell_val in row.values()]}
+            )
 
         table_dlp = {"table": {"headers": headers, "rows": rows}}
 
         return table_dlp
 
     def get_dlp_table_list(self) -> list:
-        """Constructs a list of table objects that can be inspected by Data Loss Prevention.
+        """Constructs a list of table objects that can be inspected
+        by Data Loss Prevention.
 
         Returns:
-            list: A list of table object that can be inspected by Data Loss Prevention.
-             
-            table_dlp_list = [
-                {
-                "table": {
-                    "headers": [
-                        {
-                            "name": "id"
-                        },
-                        {
-                            "name": "name"
-                        },
-                        {
-                            "name": "age"
-                        }
-                    ],
-                    "rows": [
-                        {
-                            "values": [
-                                {
-                                    "string_value": "1"
-                                },
-                                {
-                                    "string_value": "John"
-                                },
-                                {
-                                    "string_value": "25"
-                                }
-                            ]
-                        },
-                        {
-                            "values": [
-                                {
-                                    "string_value": "2"
-                                },
-                                {
-                                    "string_value": "Mary"
-                                },
-                                {
-                                    "string_value": "30"
-                                }
-                            ]
-                        },
-                    ]
-                }
-            }
-            ]
-            
+            list: A list of table object that can be inspected
+            by Data Loss Prevention.
+
         """
 
         table_dlp_list = []
