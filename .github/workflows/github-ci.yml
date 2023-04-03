@@ -1,6 +1,25 @@
 # Run linting.
 #
 # Run on .py
+"""
+Github Actions workflow to run pylint on Python files in a repository on every push and pull request.
+
+Triggers:
+- Push event on any branch
+- Pull request event on any branch
+
+Runs on: 
+- Ubuntu latest
+
+Steps:
+1. Checkout code
+2. Set safe directory for git
+3. Upgrade pip
+4. Install pylint
+5. Run pylint on Python files
+
+Pylint is a Python linter that checks for errors and potential problems in Python code. This workflow installs pylint and runs it on all Python files in the repository, providing feedback on potential issues and suggesting corrections.
+"""
 name: linting
 on:
   push:
