@@ -1,1 +1,1 @@
-print('El linter funciona joya si no tira el error en esta linea')
+print('El linter funciona joya si no tira el error en esta line')
