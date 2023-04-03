@@ -1,6 +1,6 @@
 # Inspect your tables using Data Loss Prevention for PII data and automatically tag it on Data Catalog using Python #
 
-Our objective for this asset is to provide a solution for data cataloging that is more accessible for Python users. By leveraging [Data Loss Prevention][https://cloud.google.com/dlp] in Python, we aim to simplify the process of inspecting [BigQuery][https://cloud.google.com/bigquery] and [CloudSQL][https://cloud.google.com/sql] data and creating tags, making it easier for organizations to understand and manage their data assets.
+Our objective for this asset is to provide a solution for data cataloging that is more accessible for Python users. By leveraging [Data Loss Prevention](https://cloud.google.com/dlp) in Python, we aim to simplify the process of inspecting [BigQuery](https://cloud.google.com/bigquery) and [CloudSQL](https://cloud.google.com/sql) data and creating tags, making it easier for organizations to understand and manage their data assets.
 
 ## How it works ##
 
