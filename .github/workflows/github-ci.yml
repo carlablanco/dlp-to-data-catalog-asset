@@ -19,6 +19,8 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: '3.9'
+        runs:
+          using: 'node12'
       - name: global safe directory 
         run: git config --global --add safe.directory '*'
       - name: Upgrade pip
