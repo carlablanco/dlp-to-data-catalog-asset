@@ -3,8 +3,8 @@
 # Run on .py
 name: linting
 on:
-push:
-  branches:
+  push:
+    branches:
       - '**'
   pull_request:
 jobs:
