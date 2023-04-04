@@ -94,21 +94,20 @@ class Preprocessing:
 
         """
 
-        table_dlp_list = []
+        table_names = []
         if self.table:
-            table_id = f'{self.project}.{self.dataset}.{self.table}'
-            bq_schema, bq_rows_content = self.get_bigquery_table(table_id)
-            table_dlp = self.convert_to_dlp_table(bq_schema, bq_rows_content)
-            table_dlp_list.append(table_dlp)
+            table_names.append(self.table)
         else:
             tables = list(self.bq_client.list_tables(self.dataset))
             if tables:
                 for table in tables:
-                    table_id = f'{self.project}.{self.dataset}.{table.table_id}'
-                    bq_schema, bq_rows_content = self.get_bigquery_table(
-                        table_id)
-                    table_dlp = self.convert_to_dlp_table(
-                        bq_schema, bq_rows_content)
-                    table_dlp_list.append(table_dlp)
+                    table_names.append(table.table_id)
+
+        table_dlp_list = []
+        for table_name in table_names:
+            table_id = f'{self.project}.{self.dataset}.{table_name}'
+            bq_schema, bq_rows_content = self.get_bigquery_table(table_id)
+            table_dlp = self.convert_to_dlp_table(bq_schema, bq_rows_content)
+            table_dlp_list.append(table_dlp)
 
         return table_dlp_list
