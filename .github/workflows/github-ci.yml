@@ -1,6 +1,6 @@
-#Run linting.
+# Run linting.
 #
-#Run on .py
+# Run on .py.
 name: linting
 on:
   push:
