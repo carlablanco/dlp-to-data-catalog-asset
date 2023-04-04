@@ -22,7 +22,7 @@ jobs:
       - name: Install pylint
         run:  pip install pylint 
       - name: Install requirements
-        if: ${{ github.workspace }}/requirements.txt
+        if: ${{ file_exists(github.workspace + '/requirements.txt') }}
         run: pip install -r requirements.txt
       - name: Run pylint on Python files
         run: pylint --jobs=0 $(git ls-files '*.py')
