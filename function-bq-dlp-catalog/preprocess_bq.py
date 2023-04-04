@@ -45,12 +45,11 @@ class Preprocessing:
         Returns:
             tuple: A tuple containing the BigQuery schema and content.
         """
-
+        
         table_bq = self.bq_client.get_table(table_id)
-        f_temp = io.StringIO("")
-        self.bq_client.schema_to_json(table_bq.schema, f_temp)
-        bq_schema = json.loads(f_temp.getvalue())
-
+        table_schema = table_bq.schema
+        bq_schema = [schema_field.to_api_repr() for schema_field in table_schema]
+        
         sql_query = self.get_query(table_id)
         query_job = self.bq_client.query(sql_query)
         query_results = query_job.result()
@@ -72,9 +71,7 @@ class Preprocessing:
             dict: A table object that can be inspected by Data Loss Prevention.
         """
 
-        headers = []
-        for i in bq_schema:
-            headers.append({"name": i['name']})
+        headers = [{"name": i['name']} for i in bq_schema]
 
         rows = []
         for row in bq_rows_content:
