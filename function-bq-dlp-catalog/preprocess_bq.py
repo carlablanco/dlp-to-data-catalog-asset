@@ -45,11 +45,12 @@ class Preprocessing:
         Returns:
             tuple: A tuple containing the BigQuery schema and content.
         """
-        
+
         table_bq = self.bq_client.get_table(table_id)
         table_schema = table_bq.schema
-        bq_schema = [schema_field.to_api_repr() for schema_field in table_schema]
-        
+        bq_schema = [schema_field.to_api_repr()
+                     for schema_field in table_schema]
+
         sql_query = self.get_query(table_id)
         query_job = self.bq_client.query(sql_query)
         query_results = query_job.result()
