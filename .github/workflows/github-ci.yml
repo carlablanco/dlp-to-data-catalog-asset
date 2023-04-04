@@ -1,6 +1,6 @@
-# Run linting.
-#
-# Run on .py
+"""Run linting.
+
+Run on .py"""
 name: linting
 on:
   push:
@@ -27,3 +27,4 @@ jobs:
         run:  pip install pylint 
       - name: Run pylint on Python files
         run: pylint --jobs=0 $(git ls-files '*.py')
+ 
