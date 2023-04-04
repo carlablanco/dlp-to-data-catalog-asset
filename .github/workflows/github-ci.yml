@@ -1,7 +1,8 @@
-"""Run linting.
-
-Run on .py"""
+#Run linting.
+#
+#Run on .py
 name: linting
+'Lint procees started'
 on:
   push:
     branches:
@@ -15,10 +16,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-#      - name: Set up Python
-#        uses: actions/setup-python@v2
-#        with:
-#          python-version: '3.9'
       - name: global safe directory 
         run: git config --global --add safe.directory '*'
       - name: Upgrade pip
