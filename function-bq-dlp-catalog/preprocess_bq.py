@@ -3,8 +3,6 @@
 # agreement with Google.
 """Runs DLP inspection on a BigQuery dataset and tags the results in Data Catalog."""
 
-import json
-import io
 from google.cloud import bigquery
 
 
