@@ -61,7 +61,7 @@ class Preprocessing:
             bq_schema (list): The schema of a BigQuery table.
             bq_rows_content (list): The content of a BigQuery table.
         Returns:
-            dict: A table object that can be inspected by Data Loss Prevention. se agrega mas caractyeres para ver si falla!!!!
+            dict: A table object that can be inspected by Data Loss Prevention.
         """
 
         headers = [{"name": i['name']} for i in bq_schema]
@@ -103,4 +103,5 @@ class Preprocessing:
                         bq_schema, bq_rows_content)
                     table_dlp_list.append(table_dlp)
 
-        return table_dlp_list # se saca la ultima linea para ver si esto fallaaaa!!!!!!!!!
+        return table_dlp_list 
+    
