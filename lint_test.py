@@ -103,5 +103,5 @@ class Preprocessing:
                         bq_schema, bq_rows_content)
                     table_dlp_list.append(table_dlp)
 
-        return table_dlp_list 
+        return table_dlp_list
     
