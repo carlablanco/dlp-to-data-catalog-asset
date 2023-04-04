@@ -2,7 +2,6 @@
 #
 #Run on .py
 name: linting
-'Lint procees started'
 on:
   push:
     branches:
