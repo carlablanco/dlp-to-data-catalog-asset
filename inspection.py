@@ -6,7 +6,7 @@
 
 from google.cloud import dlp_v2
 
-class dlp_inspection:
+class DlpInspection:
     "Class for inspecting the table with the DLP API."
     def __init__(self, language_code: str, item: dict, response: dict):
         """
@@ -18,7 +18,7 @@ class dlp_inspection:
         self.language_code = language_code
         self.item = item
         self.response = response
-    
+
     def get_response(self):
         """API call for inspecting the content on the table.
         
@@ -27,7 +27,7 @@ class dlp_inspection:
         """
         self.response = self.dlp_client.inspect_content(
         request={"parent": self.language_code, "item": self.item})
-        
+
     def finding_results(self) -> dict:
         """In this section we are arranging the finding results
             in a new dictionary that counts the appearances of each infotype
@@ -60,7 +60,7 @@ class dlp_inspection:
         else:
             print("No findings.")
         return finding_results
-    
+ 
     def max_infotype(self) -> dict:
         """ Get max infotype.
             Need to keep only the the top infotype to add to the data catalog.
@@ -69,11 +69,12 @@ class dlp_inspection:
                 top_findings: A dictionary with the column name as key and the
                 top infotype as value.
             """
+        finding_results = self.finding_results()
         top_findings = {}
-        for column in self.finding_results:
+        for column in finding_results:
             max_infotype = None
             max_count = 0
-            for infotype, cnt in self.finding_results.get(column).items():
+            for infotype, cnt in finding_results.get(column).items():
                 if max_infotype is None or cnt > max_count:
                     max_infotype = infotype
                     max_count = cnt
