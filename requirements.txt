@@ -3,3 +3,4 @@
 google-cloud-bigquery >=3.6
 google-cloud-dlp >=3.12
 google-cloud-datacatalog >=3.11
+Pylint >= 2.17.2
