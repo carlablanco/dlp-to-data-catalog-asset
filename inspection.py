@@ -34,6 +34,7 @@ class DlpInspection:
     def finding_results(self) -> dict:
         """ Iterate over the findings in the response object and update
             the finding_results dictionary with the likelihood of each finding.
+            Ponderates each likelihood value to get a more accurate result.
 
             Returns:
                 finding_results: A dictionary with the column name as key and a
@@ -51,14 +52,18 @@ class DlpInspection:
                     if column in finding_results:
                         aux_infotypes = finding_results[column]
                         if finding.info_type.name in aux_infotypes:
-                            if value_likelihood[finding.likelihood.name] > aux_infotypes[finding.info_type.name]:
-                                aux_infotypes[finding.info_type.name] = value_likelihood[finding.likelihood.name]
+                            if value_likelihood[finding.likelihood.name] > (
+                                    aux_infotypes[finding.info_type.name]):
+                                aux_infotypes[finding.info_type.name] = (
+                                    value_likelihood[finding.likelihood.name])
                         else:
-                            aux_infotypes[finding.info_type.name] = value_likelihood[finding.likelihood.name]
+                            aux_infotypes[finding.info_type.name] = (
+                                value_likelihood[finding.likelihood.name])
                     else:
                         finding_results[column] = {}
                         aux_infotypes = finding_results[column]
-                        aux_infotypes[finding.info_type.name] = value_likelihood[finding.likelihood.name]
+                        aux_infotypes[finding.info_type.name] = (
+                            value_likelihood[finding.likelihood.name])
                 except AttributeError:
                     pass
         else:
