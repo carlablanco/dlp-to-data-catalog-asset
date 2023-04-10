@@ -35,20 +35,18 @@ class Preprocessing:
         query = f"SELECT *  FROM `{table_id}`"
         return query
 
-    def get_bigquery_tables(self) -> list[str]:
+    def get_bigquery_tables(self, dataset: str) -> List[str]:
         """Constructs a list of table names from a BigQuery dataset.
+
+        Args:
+            Dataset (str): Name of the dataset in BigQuery.
 
         Returns:
             List of tablenames.
         """
-        table_names = []
-        if self.table:
-            table_names.append(self.table)
-        else:
-            tables = list(self.bq_client.list_tables(self.dataset))
-            if tables:
-                for table in tables:
-                    table_names.append(table.table_id)
+
+        dataset_tables = list(self.bq_client.list_tables(dataset))
+        table_names = [table.table_id for table in dataset_tables]
         return table_names
 
     def get_bigquery_data(self, table_id: str) -> tuple:
@@ -106,19 +104,21 @@ class Preprocessing:
         The table objects that can be inspected by Data Loss Prevention.
 
         Returns:
-            list: A list of table objects.
+            list: A list of DLP table objects.
 
         """
-        table_dlp_list = []
+        dlp_tables_list = []
 
-        bigquery_tables = self.get_bigquery_tables()
+        if self.table:
+            bigquery_tables = [self.table]
+        else:
+            bigquery_tables = self.get_bigquery_tables(self.dataset)
 
         if bigquery_tables:
-            for table_name in bigquery_tables:
-                table_id = f'{self.project}.{self.dataset}.{table_name}'
-                schema, content = self.get_bigquery_data(
-                    table_id)
-                table_dlp = self.convert_to_dlp_table(schema, content)
-                table_dlp_list.append(table_dlp)
+            dlp_tables_list = [
+                self.convert_to_dlp_table(schema, data)
+                for table_name in bigquery_tables
+                for schema, data in [self.get_bigquery_data(f"{self.project}.{self.dataset}.{table_name}")]
+            ]
 
-        return table_dlp_list
+        return dlp_tables_list
