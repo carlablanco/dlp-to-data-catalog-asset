@@ -60,7 +60,7 @@ class DlpInspection:
         else:
             print("No findings.")
         return finding_results
- 
+
     def max_infotype(self) -> dict:
         """ Get max infotype.
             Need to keep only the the top infotype to add to the data catalog.
