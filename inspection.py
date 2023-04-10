@@ -25,36 +25,40 @@ class DlpInspection:
         Args:
            language_code: The BCP-47 language code to use, e.g. 'en-US'.
         """
+        inspect_config = {
+        "min_likelihood": dlp_v2.Likelihood.POSSIBLE
+        }
         self.response = self.dlp_client.inspect_content(
-        request={"parent": self.language_code, "item": self.item})
+        request={"parent": self.language_code, "item": self.item,  "inspect_config":inspect_config})
 
     def finding_results(self) -> dict:
-        """In this section we are arranging the finding results
-            in a new dictionary that counts the appearances of each infotype
-            and maps them with their respective columns.
+        """ Iterate over the findings in the response object and update
+            the finding_results dictionary with the likelihood of each finding.
 
             Returns:
                 finding_results: A dictionary with the column name as key and a
                 dictionary with the infotype as key and the count as value.
         """
+        value_likelihood = {
+        "POSSIBLE":1,
+        "LIKELY":1.2,
+        "VERY_LIKELY":1.4}
         finding_results = {}
         if self.response.result.findings:
             for finding in self.response.result.findings:
                 try:
                     column = finding.location.content_locations[0].record_location.field_id.name
-
                     if column in finding_results:
                         aux_infotypes = finding_results[column]
                         if finding.info_type.name in aux_infotypes:
-                            aux_infotypes[finding.info_type.name] = (
-                                aux_infotypes[finding.info_type.name] + 1
-                            )
+                            if value_likelihood[finding.likelihood.name] > aux_infotypes[finding.info_type.name]:
+                                aux_infotypes[finding.info_type.name] = value_likelihood[finding.likelihood.name]
                         else:
-                            aux_infotypes[finding.info_type.name] = 1
+                            aux_infotypes[finding.info_type.name] = value_likelihood[finding.likelihood.name]
                     else:
                         finding_results[column] = {}
                         aux_infotypes = finding_results[column]
-                        aux_infotypes[finding.info_type.name] = 1
+                        aux_infotypes[finding.info_type.name] = value_likelihood[finding.likelihood.name]
                 except AttributeError:
                     pass
         else:
@@ -69,15 +73,14 @@ class DlpInspection:
                 top_findings: A dictionary with the column name as key and the
                 top infotype as value.
             """
-        finding_results = self.finding_results()
-        top_findings = {}
+        finding_results = finding_results()
         for column in finding_results:
-            max_infotype = None
-            max_count = 0
-            for infotype, cnt in finding_results.get(column).items():
-                if max_infotype is None or cnt > max_count:
-                    max_infotype = infotype
-                    max_count = cnt
-            top_findings[column] = max_infotype
-        print(top_findings)
-        return top_findings
+            aux_infotypes = finding_results[column]
+            highest_likelihood = max(aux_infotypes.values())
+            filtered_infotypes = {}
+            for infotype, likelihood in aux_infotypes.items():
+                if likelihood == highest_likelihood:
+                    filtered_infotypes[infotype] = likelihood
+            finding_results[column] = filtered_infotypes
+        return finding_results
+    
