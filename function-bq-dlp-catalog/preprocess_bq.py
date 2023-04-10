@@ -115,10 +115,10 @@ class Preprocessing:
             bigquery_tables = self.get_bigquery_tables(self.dataset)
 
         if bigquery_tables:
-            dlp_tables_list = [
-                self.convert_to_dlp_table(schema, data)
-                for table_name in bigquery_tables
-                for schema, data in [self.get_bigquery_data(f"{self.project}.{self.dataset}.{table_name}")]
-            ]
+            for table_name in bigquery_tables:
+                schema, content = self.get_bigquery_data(
+                    f'{self.project}.{self.dataset}.{table_name}')
+                table_dlp = self.convert_to_dlp_table(schema, content)
+                dlp_tables_list.append(table_dlp)
 
         return dlp_tables_list
