@@ -17,7 +17,6 @@ class DlpInspection:
         self.dlp_client = dlp_v2.DlpServiceClient()
         self.language_code = language_code
         self.item = item
-        return
 
     def get_response(self):
         """API call for inspecting the content on the table.
@@ -60,9 +59,12 @@ class DlpInspection:
                 aux_infotypes = finding_results[column]
 
                 if finding.info_type.name not in aux_infotypes:
-                    aux_infotypes[finding.info_type.name] = value_likelihood[finding.likelihood.name]
-                elif value_likelihood[finding.likelihood.name] > aux_infotypes[finding.info_type.name]:
-                    aux_infotypes[finding.info_type.name] = value_likelihood[finding.likelihood.name]
+                    aux_infotypes[finding.info_type.name] = (
+                        value_likelihood[finding.likelihood.name])
+                elif value_likelihood[finding.likelihood.name] > (
+                    aux_infotypes[finding.info_type.name]):
+                    aux_infotypes[finding.info_type.name] = (
+                        value_likelihood[finding.likelihood.name])
         else:
             print("No findings.")
         return finding_results
@@ -75,7 +77,7 @@ class DlpInspection:
                 top_findings: A dictionary with the column name as key and the
                 top infotype as value.
             """
-        finding_results = finding_results()
+        finding_results = self.finding_results()
         for column in finding_results:
             aux_infotypes = finding_results[column]
             highest_likelihood = max(aux_infotypes.values())
