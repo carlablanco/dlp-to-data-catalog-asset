@@ -8,32 +8,26 @@ from google.cloud import dlp_v2
 
 class inspection:
     "Class for inspecting the table with the DLP API."
-    
     def __init__(self, language_code: str, item: dict):
         """
         Args:
             language_code: The BCP-47 language code to use, e.g. 'en-US'.
             item: The table to be inspected.
-        """
-        
+        """        
         self.dlp_client = dlp_v2.DlpServiceClient()
         self.language_code = language_code
         self.item = item 
     
-    
-    def get_response(self, parent:str):
+    def get_response(self):
         """API call for inspecting the content on the table.
         
         Args:
            language_code: The BCP-47 language code to use, e.g. 'en-US'.
         """
-        item = self.get_item
-        response = self.dlp_client.inspect_content(
-        request={"parent": self.language_code, "item": item}
+        self.response = self.dlp_client.inspect_content(
+        request={"parent": self.language_code, "item": self.item}
         )
         
-    
-    
     def finding_results(self) -> dict:
         """In this section we are arranging the finding results
             in a new dictionary that counts the appearances of each infotype
@@ -78,12 +72,10 @@ class inspection:
         for column in self.finding_results:
             max_infotype = None
             max_count = 0
-
             for it, cnt in self.finding_results.get(column).items():
-                if max_infotype == None or cnt > max_count:
+                if max_infotype is None or cnt > max_count:
                     max_infotype = it
                     max_count = cnt
             top_findings[column] = max_infotype
         print(top_findings)
         return top_findings
-    
