@@ -10,6 +10,7 @@ from google.api_core.exceptions import NotFound
 
 class Preprocessing:
     """Class for preprocessing tables into Data Loss Prevention tables."""
+
     def __init__(self, project: str, dataset: str, table: str = None):
         """
         Args:
@@ -58,9 +59,8 @@ class Preprocessing:
         """
         try:
             table_bq = self.bq_client.get_table(table_id)
-        except NotFound:
-            print(f"Error retrieving {table_id}")
-            return (None, None)
+        except NotFound as exc:
+            raise ValueError(f"Error retrieving table {table_id}.") from exc
 
         table_schema = table_bq.schema
         bq_schema = [schema_field.to_api_repr()
@@ -118,8 +118,7 @@ class Preprocessing:
             for table_name in bigquery_tables:
                 schema, content = self.get_bigquery_data(
                     f'{self.project}.{self.dataset}.{table_name}')
-                if schema and content:
-                    table_dlp = self.convert_to_dlp_table(schema, content)
-                    dlp_tables_list.append(table_dlp)
+                table_dlp = self.convert_to_dlp_table(schema, content)
+                dlp_tables_list.append(table_dlp)
 
         return dlp_tables_list
