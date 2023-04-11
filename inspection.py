@@ -1,6 +1,11 @@
-from google.cloud import dlp_v2
-from typing import Optional, Dict, List
+# Copyright 2023 Google LLC. This software is provided as-is, without warranty
+# or representation for any use or purpose. Your use of it is subject to your
+# agreement with Google.
+"""Runs the DLP inspection over the preprocessed table.
+"""
 
+from typing import Dict
+from google.cloud import dlp_v2
 
 class DlpInspection:
     "Class for inspecting the table with the DLP API."
@@ -75,11 +80,12 @@ class DlpInspection:
 
     def max_infotype(self) -> Dict:
         """ Get max infotype.
-            Need to keep only the the highest infotype to add to the data catalog.
+            Need to keep only the the highest infotype to add
+              to the data catalog.
 
             Returns:
-                top_findings: A dictionary with the column name as key and the
-                top infotype as value.
+                top_findings: A dictionary with the column name as key and
+                  the top infotype as value.
             """
         finding_results = self.finding_results()
         for column in finding_results:
@@ -91,3 +97,4 @@ class DlpInspection:
                     filtered_infotypes[infotype] = likelihood
             finding_results[column] = filtered_infotypes
         return finding_results
+    
