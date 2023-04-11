@@ -5,12 +5,11 @@
 
 from typing import List
 from google.cloud import bigquery
+from google.api_core.exceptions import NotFound
 
 
 class Preprocessing:
-    """Class for preprocessing tables into Data Loss Prevention tables.
-    """
-
+    """Class for preprocessing tables into Data Loss Prevention tables."""
     def __init__(self, project: str, dataset: str, table: str = None):
         """
         Args:
@@ -58,22 +57,26 @@ class Preprocessing:
         Returns:
             tuple: A tuple containing the BigQuery schema and content.
         """
+        try:
+            table_bq = self.bq_client.get_table(table_id)
+        except NotFound:
+            print(f"Error retrieving {table_id}")
+            return (None,None)
+        else:
+            table_schema = table_bq.schema
+            bq_schema = [schema_field.to_api_repr()
+                         for schema_field in table_schema]
 
-        table_bq = self.bq_client.get_table(table_id)
-        table_schema = table_bq.schema
-        bq_schema = [schema_field.to_api_repr()
-                     for schema_field in table_schema]
+            sql_query = self.get_query(table_id)
+            query_job = self.bq_client.query(sql_query)
+            query_results = query_job.result()
 
-        sql_query = self.get_query(table_id)
-        query_job = self.bq_client.query(sql_query)
-        query_results = query_job.result()
+            bq_rows_content = [dict(row) for row in query_results]
 
-        bq_rows_content = [dict(row) for row in query_results]
+            return bq_schema, bq_rows_content
 
-        return bq_schema, bq_rows_content
-
-    def convert_to_dlp_table(self, bq_schema: List,
-                             bq_rows_content: List) -> dict:
+    def convert_to_dlp_table(self, bq_schema: List[dict],
+                             bq_rows_content: List[dict]) -> dict:
         """Converts a BigQuery table into an object.
         The object that can be inspected by Data Loss Prevention.
 
@@ -99,7 +102,7 @@ class Preprocessing:
 
         return table_dlp
 
-    def get_dlp_table_list(self) -> List:
+    def get_dlp_table_list(self) -> List[dict]:
         """Constructs a list of table objects.
         The table objects that can be inspected by Data Loss Prevention.
 
@@ -118,7 +121,8 @@ class Preprocessing:
             for table_name in bigquery_tables:
                 schema, content = self.get_bigquery_data(
                     f'{self.project}.{self.dataset}.{table_name}')
-                table_dlp = self.convert_to_dlp_table(schema, content)
-                dlp_tables_list.append(table_dlp)
+                if schema and content:
+                    table_dlp = self.convert_to_dlp_table(schema, content)
+                    dlp_tables_list.append(table_dlp)
 
         return dlp_tables_list
