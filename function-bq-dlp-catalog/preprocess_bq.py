@@ -10,7 +10,6 @@ from google.api_core.exceptions import NotFound
 
 class Preprocessing:
     """Class for preprocessing tables into Data Loss Prevention tables."""
-
     def __init__(self, project: str, dataset: str, table: str = None):
         """
         Args:
@@ -44,7 +43,6 @@ class Preprocessing:
         Returns:
             List of tablenames.
         """
-
         dataset_tables = list(self.bq_client.list_tables(dataset))
         table_names = [table.table_id for table in dataset_tables]
         return table_names
@@ -88,7 +86,6 @@ class Preprocessing:
         Returns:
             dict: A table object that can be inspected by Data Loss Prevention.
         """
-
         headers = [{"name": i['name']} for i in bq_schema]
 
         rows = []
@@ -109,7 +106,6 @@ class Preprocessing:
 
         Returns:
             list: A list of DLP table objects.
-
         """
         dlp_tables_list = []
 
