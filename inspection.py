@@ -12,7 +12,7 @@ class DlpInspection:
         """
         Args:
             language_code: The BCP-47 language code to use, e.g. 'en-US'.
-            item: The table to be inspected.
+            item: The table to be inspected in the correct format.
         """
         self.dlp_client = dlp_v2.DlpServiceClient()
         self.language_code = language_code
@@ -27,6 +27,7 @@ class DlpInspection:
         inspect_config = {
         "min_likelihood": dlp_v2.Likelihood.POSSIBLE
         }
+        #parent es f"projects/{project_id}"
         response = self.dlp_client.inspect_content(
         request={"parent": self.language_code, "item": self.item,  "inspect_config":inspect_config})
         return response
