@@ -62,20 +62,19 @@ class Preprocessing:
             table_bq = self.bq_client.get_table(table_id)
         except NotFound:
             print(f"Error retrieving {table_id}")
-        else:
-            table_schema = table_bq.schema
-            bq_schema = [schema_field.to_api_repr()
-                         for schema_field in table_schema]
+            return (None, None)
 
-            sql_query = self.get_query(table_id)
-            query_job = self.bq_client.query(sql_query)
-            query_results = query_job.result()
+        table_schema = table_bq.schema
+        bq_schema = [schema_field.to_api_repr()
+                     for schema_field in table_schema]
 
-            bq_rows_content = [dict(row) for row in query_results]
+        sql_query = self.get_query(table_id)
+        query_job = self.bq_client.query(sql_query)
+        query_results = query_job.result()
 
-            return bq_schema, bq_rows_content
+        bq_rows_content = [dict(row) for row in query_results]
 
-        return (None, None)
+        return bq_schema, bq_rows_content
 
     def convert_to_dlp_table(self, bq_schema: List[dict],
                              bq_rows_content: List[dict]) -> dict:
