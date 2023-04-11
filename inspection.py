@@ -1,38 +1,41 @@
-# Copyright 2023 Google LLC. This software is provided as-is, without warranty
-# or representation for any use or purpose. Your use of it is subject to your
-# agreement with Google.
-"""Runs the DLP inspection over the preprocessed table.
-"""
-
 from google.cloud import dlp_v2
+from typing import Optional, Dict, List
+
 
 class DlpInspection:
     "Class for inspecting the table with the DLP API."
-    def __init__(self, language_code: str, item: dict):
+    def __init__(self, project_id: str, language_code: str, item: Dict):#, lista_infotypes = Optional[list]):
         """
         Args:
             language_code: The BCP-47 language code to use, e.g. 'en-US'.
             item: The table to be inspected in the correct format.
+            project_id:
         """
         self.dlp_client = dlp_v2.DlpServiceClient()
+        self.project_id = project_id
         self.language_code = language_code
         self.item = item
 
-    def get_response(self):
+
+
+    def response(self):
         """API call for inspecting the content on the table.
-        
-        Args:
-           language_code: The BCP-47 language code to use, e.g. 'en-US'.
         """
+        info_types = self.dlp_client.list_info_types(request={"language_code": self.language_code})
+        info_types_names = [info_type.name for info_type in info_types.info_types if self.language_code in info_type.name]
         inspect_config = {
-        "min_likelihood": dlp_v2.Likelihood.POSSIBLE
+            "info_types": [{"name": name} for name in info_types_names],
+            "min_likelihood": dlp_v2.Likelihood.POSSIBLE
         }
-        #parent es f"projects/{project_id}"
+
+        parent = f"projects/{self.project_id}"
         response = self.dlp_client.inspect_content(
-        request={"parent": self.language_code, "item": self.item,  "inspect_config":inspect_config})
+            request={"parent": parent, "item": self.item, "inspect_config": inspect_config})
         return response
 
-    def finding_results(self) -> dict:
+
+
+    def finding_results(self) -> Dict:
         """Get the results of the inspection.
             Creates a dictionary with the column name as key and a dictionary
             with the infotype as key and the likelihood as value.
@@ -41,7 +44,7 @@ class DlpInspection:
                 finding_results: A dictionary with the column name as key and a
                 dictionary with the infotype as key and the count as value.
         """
-        response = self.get_response()
+        response = self.response()
         value_likelihood = {
         "POSSIBLE":1,
         "LIKELY":1.2,
@@ -70,7 +73,7 @@ class DlpInspection:
             print("No findings.")
         return finding_results
 
-    def max_infotype(self) -> dict:
+    def max_infotype(self) -> Dict:
         """ Get max infotype.
             Need to keep only the the highest infotype to add to the data catalog.
 
@@ -88,4 +91,3 @@ class DlpInspection:
                     filtered_infotypes[infotype] = likelihood
             finding_results[column] = filtered_infotypes
         return finding_results
-    
