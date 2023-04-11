@@ -9,7 +9,7 @@ from google.cloud import dlp_v2
 
 class DlpInspection:
     "Class for inspecting the table with the DLP API."
-    def __init__(self, project_id: str, language_code: str, item: Dict):#, lista_infotypes = Optional[list]):
+    def __init__(self, project_id: str, language_code: str, item: Dict):
         """
         Args:
             language_code: The BCP-47 language code to use, e.g. 'en-US'.
@@ -27,7 +27,8 @@ class DlpInspection:
         """API call for inspecting the content on the table.
         """
         info_types = self.dlp_client.list_info_types(request={"language_code": self.language_code})
-        info_types_names = [info_type.name for info_type in info_types.info_types if self.language_code in info_type.name]
+        info_types_names = [info_type.name for info_type in info_types.info_types if 
+                            (self.language_code in info_type.name)]
         inspect_config = {
             "info_types": [{"name": name} for name in info_types_names],
             "min_likelihood": dlp_v2.Likelihood.POSSIBLE
