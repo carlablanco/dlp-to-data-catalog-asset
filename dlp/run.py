@@ -38,7 +38,7 @@ def parse_arguments() -> Type[argparse.Namespace]:
                 If None, the entire dataset will be scanned.""")
     return parser.parse_args()
 
-
+# pylint: disable=unused-argument
 def run(project: str, language_code: str, location: str, dataset: str, table: str = None):
     """Runs DLP inspection scan and tags the results to Data Catalog.
     Args:
