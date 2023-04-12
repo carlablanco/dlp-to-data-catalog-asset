@@ -7,6 +7,7 @@ from typing import Dict
 from google.cloud import dlp_v2
 
 class DlpInspection:
+    """Runs the DLP inspection over the preprocessed table."""
     def __init__(self, project_id: str, language_code: str, item: Dict):
         """Initializes the class with the required data.
 
@@ -54,9 +55,8 @@ class DlpInspection:
             "VERY_LIKELY":1.4
         }
         finding_results = {}
-        if not response or not response.result.findings:
+        if not response or not response.result.findings.location.content_locations[0].record_location.field_id.name:
             raise Exception("No findings returned from API call.")
-        
         for finding in response.result.findings:
             column = finding.location.content_locations[0].record_location.field_id.name
             if column not in finding_results:
