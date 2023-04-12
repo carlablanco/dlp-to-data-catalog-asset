@@ -55,7 +55,8 @@ class DlpInspection:
             "VERY_LIKELY":1.4
         }
         finding_results = {}
-        if not response or not response.result.findings.location.content_locations[0].record_location.field_id.name:
+        if not response or not (
+        response.result.findings.location.content_locations[0].record_location.field_id.name):
             raise Exception("No findings returned from API call.")
         for finding in response.result.findings:
             column = finding.location.content_locations[0].record_location.field_id.name
