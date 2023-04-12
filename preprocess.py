@@ -7,7 +7,6 @@ from typing import List
 from google.cloud import bigquery
 from google.api_core.exceptions import NotFound
 
-
 class Preprocessing:
     """Class for preprocessing tables into Data Loss Prevention tables."""
 
