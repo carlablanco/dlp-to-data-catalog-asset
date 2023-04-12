@@ -7,10 +7,8 @@ from typing import Dict
 from google.cloud import dlp_v2
 
 class DlpInspection:
-    "Inspect the table using the DLP API."
     def __init__(self, project_id: str, language_code: str, item: Dict):
-        """
-        Initializes the class with the required data.
+        """Initializes the class with the required data.
 
         Args:
             project_id: The project ID to be used.
@@ -35,7 +33,6 @@ class DlpInspection:
             "info_types": [{"name": name} for name in info_types_names],
             "min_likelihood": dlp_v2.Likelihood.POSSIBLE
         }
-
         parent = f"projects/{self.project_id}"
         response = self.dlp_client.inspect_content(
             request={"parent": parent, "item": self.item, "inspect_config": inspect_config})
@@ -43,12 +40,12 @@ class DlpInspection:
 
     def finding_results(self) -> Dict:
         """ Get the results of the inspection.
-            Creates a dictionary with the column name as key and a dictionary
-            with the infotype as key and the likelihood as value.
+        Creates a dictionary with the column name as key and a dictionary
+        with the infotype as key and the likelihood as value.
 
-            Returns:
-            finding_results: A dictionary with the column name as key and a
-            dictionary with the infotype as key and the count as value.
+        Returns:
+        finding_results: A dictionary with the column name as key and a
+        dictionary with the infotype as key and the count as value.
         """
         response = self.response()
         value_likelihood = {
@@ -57,18 +54,11 @@ class DlpInspection:
             "VERY_LIKELY":1.4
         }
         finding_results = {}
-        if response.result.findings:
+        if not response or not response.result.findings:
+            raise Exception("No findings returned from API call.")
+        else:
             for finding in response.result.findings:
-                try:
-                    column = finding.location.content_locations[0].record_location.field_id.name
-                except AttributeError as exception:
-                    mensaje = f"""An error was raised while trying to access
-                    the 'name' attribute of the 'field_id' object in the first
-                    element of the 'content_locations' list within the
-                    'location' object of the finding: {str(exception)}"""
-                    print(mensaje)
-                    continue
-
+                column = finding.location.content_locations[0].record_location.field_id.name
                 if column not in finding_results:
                     finding_results[column] = {}
 
@@ -81,18 +71,18 @@ class DlpInspection:
                     aux_infotypes[finding.info_type.name]):
                     aux_infotypes[finding.info_type.name] = (
                         value_likelihood[finding.likelihood.name])
-        else:
-            print("No findings.")
         return finding_results
 
     def max_infotype(self) -> Dict:
-        """ Iterates over the finding results and returns the infotype with
-            the highest likelihood.
+        """Returns the infotype with the highest likelihood.
 
-            Returns:
-            top_findings: A dictionary with the column name as key and
-            the top infotype as value.
-            """
+        Iterates over the finding results and returns the infotype with
+        the highest likelihood.
+
+        Returns:
+        top_findings: A dictionary with the column name as key and
+        the top infotype as value.
+        """
         finding_results = self.finding_results()
         for column in finding_results:
             aux_infotypes = finding_results[column]
@@ -103,4 +93,4 @@ class DlpInspection:
                     filtered_infotypes[infotype] = likelihood
             finding_results[column] = filtered_infotypes
         return finding_results
-    
+     
