@@ -56,21 +56,21 @@ class DlpInspection:
         finding_results = {}
         if not response or not response.result.findings:
             raise Exception("No findings returned from API call.")
-        else:
-            for finding in response.result.findings:
-                column = finding.location.content_locations[0].record_location.field_id.name
-                if column not in finding_results:
-                    finding_results[column] = {}
+        
+        for finding in response.result.findings:
+            column = finding.location.content_locations[0].record_location.field_id.name
+            if column not in finding_results:
+                finding_results[column] = {}
 
-                aux_infotypes = finding_results[column]
+            aux_infotypes = finding_results[column]
 
-                if finding.info_type.name not in aux_infotypes:
-                    aux_infotypes[finding.info_type.name] = (
-                        value_likelihood[finding.likelihood.name])
-                elif value_likelihood[finding.likelihood.name] > (
-                    aux_infotypes[finding.info_type.name]):
-                    aux_infotypes[finding.info_type.name] = (
-                        value_likelihood[finding.likelihood.name])
+            if finding.info_type.name not in aux_infotypes:
+                aux_infotypes[finding.info_type.name] = (
+                    value_likelihood[finding.likelihood.name])
+            elif value_likelihood[finding.likelihood.name] > (
+                aux_infotypes[finding.info_type.name]):
+                aux_infotypes[finding.info_type.name] = (
+                    value_likelihood[finding.likelihood.name])
         return finding_results
 
     def max_infotype(self) -> Dict:
