@@ -44,7 +44,7 @@ def run(project: str, language_code: str, location: str, dataset: str, table: st
     Args:
         project: Project ID for which the client acts on behalf of.
         language_code: The BCP-47 language code to use, e.g. 'en-US'.
-        param location: Location where the jobs will be run. 
+        location: Location where the jobs will be run. 
         dataset: The BigQuery dataset to be scanned.
         table: The BigQuery table to be scanned. Optional.
                 If None, the entire dataset will be scanned.
