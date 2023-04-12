@@ -61,11 +61,12 @@ class DlpInspection:
             for finding in response.result.findings:
                 try:
                     column = finding.location.content_locations[0].record_location.field_id.name
-                except AttributeError as e:
+                except AttributeError as exception:
                     mensaje = f"""An error was raised while trying to access
                     the 'name' attribute of the 'field_id' object in the first
                     element of the 'content_locations' list within the
-                    'location' object of the finding: {str(e)}"""
+                    'location' object of the finding: {str(exception)}"""
+                    print(mensaje)
                     continue
 
                 if column not in finding_results:
