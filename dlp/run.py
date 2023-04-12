@@ -1,11 +1,11 @@
 # Copyright 2023 Google LLC. This software is provided as-is, without warranty
 # or representation for any use or purpose. Your use of it is subject to your
 # agreement with Google.
-"""Parses arguments before running DLP Scan."""
+"""Runs DLP inspection on a BigQuery dataset and tags the results in Data Catalog."""
 
 import argparse
 from typing import Type
-from preprocess import Preprocessing
+from dlp.preprocess import Preprocessing
 
 
 def parse_arguments() -> Type[argparse.Namespace]:
@@ -36,6 +36,7 @@ def parse_arguments() -> Type[argparse.Namespace]:
 # pylint: disable=unused-argument
 def run(project: str, language_code: str, dataset: str, table: str = None):
     """Runs DLP inspection scan and tags the results to Data Catalog.
+
     Args:
         project: Project ID for which the client acts on behalf of.
         language_code: The BCP-47 language code to use, e.g. 'en-US'.
@@ -43,7 +44,6 @@ def run(project: str, language_code: str, dataset: str, table: str = None):
         table: The BigQuery table to be scanned. Optional.
                 If None, the entire dataset will be scanned.
     """
-
     preprocess = Preprocessing(
         project=project, dataset=dataset, table=table)
     preprocess.get_dlp_table_list()
