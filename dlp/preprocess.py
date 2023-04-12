@@ -17,7 +17,7 @@ class Preprocessing:
             dataset (str): The name of the BigQuery dataset.
             table (str, optional): The name of the BigQuery table.
         """
-        self.bq_client = bigquery.Client()
+        self.bq_client = bigquery.Client(project=project)
         self.project = project
         self.dataset = dataset
         self.table = table
