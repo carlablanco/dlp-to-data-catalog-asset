@@ -22,11 +22,6 @@ def parse_arguments() -> Type[argparse.Namespace]:
         required=True,
         help="The BCP-47 language code to use, e.g. 'en-US'.")
     parser.add_argument(
-        "--location",
-        type=str,
-        required=True,
-        help=" Location where the jobs will be run.")
-    parser.add_argument(
         "--dataset",
         type=str,
         required=True,
@@ -39,12 +34,11 @@ def parse_arguments() -> Type[argparse.Namespace]:
     return parser.parse_args()
 
 # pylint: disable=unused-argument
-def run(project: str, language_code: str, location: str, dataset: str, table: str = None):
+def run(project: str, language_code: str, dataset: str, table: str = None):
     """Runs DLP inspection scan and tags the results to Data Catalog.
     Args:
         project: Project ID for which the client acts on behalf of.
         language_code: The BCP-47 language code to use, e.g. 'en-US'.
-        location: Location where the jobs will be run. 
         dataset: The BigQuery dataset to be scanned.
         table: The BigQuery table to be scanned. Optional.
                 If None, the entire dataset will be scanned.
@@ -58,4 +52,4 @@ def run(project: str, language_code: str, location: str, dataset: str, table: st
 if __name__ == "__main__":
     args = parse_arguments()
     run(args.project, args.language_code,
-        args.location, args.dataset, args.table)
+        args.dataset, args.table)
