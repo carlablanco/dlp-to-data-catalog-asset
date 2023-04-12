@@ -1,14 +1,14 @@
 # Copyright 2023 Google LLC. This software is provided as-is, without warranty
 # or representation for any use or purpose. Your use of it is subject to your
 # agreement with Google.
-"""Parses arguments before running DLP Scan."""
+"""Runs DLP inspection on a BigQuery dataset and tags the results in Data Catalog."""
 
 import argparse
-from typing import List, Type
-import sys
+from typing import Type
+from dlp.preprocess import Preprocessing
 
 
-def parse_arguments(argv: List[str]) -> Type[argparse.Namespace]:
+def parse_arguments() -> Type[argparse.Namespace]:
     """Parses command line arguments."""
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -22,11 +22,6 @@ def parse_arguments(argv: List[str]) -> Type[argparse.Namespace]:
         required=True,
         help="The BCP-47 language code to use, e.g. 'en-US'.")
     parser.add_argument(
-        "--location",
-        type=str,
-        required=True,
-        help=" Location where the jobs will be run.")
-    parser.add_argument(
         "--dataset",
         type=str,
         required=True,
@@ -36,22 +31,25 @@ def parse_arguments(argv: List[str]) -> Type[argparse.Namespace]:
         type=str,
         help="""The BigQuery table to be scanned. Optional.
                 If None, the entire dataset will be scanned.""")
-    return parser.parse_args(argv[0:])
+    return parser.parse_args()
 
-
-def run(project: str, language_code: str, location: str, dataset: str, table: str = None):
+# pylint: disable=unused-argument
+def run(project: str, language_code: str, dataset: str, table: str = None):
     """Runs DLP inspection scan and tags the results to Data Catalog.
+
     Args:
         project: Project ID for which the client acts on behalf of.
         language_code: The BCP-47 language code to use, e.g. 'en-US'.
-        location: Location where the jobs will be run.
         dataset: The BigQuery dataset to be scanned.
         table: The BigQuery table to be scanned. Optional.
                 If None, the entire dataset will be scanned.
     """
-    raise NotImplementedError
+    preprocess = Preprocessing(
+        project=project, dataset=dataset, table=table)
+    preprocess.get_dlp_table_list()
 
 
 if __name__ == "__main__":
-    args = parse_arguments(sys.argv)
-    run(args.project, args.language_code, args.location, args.dataset, args.table)
+    args = parse_arguments()
+    run(args.project, args.language_code,
+        args.dataset, args.table)
