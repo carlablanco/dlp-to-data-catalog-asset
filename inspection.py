@@ -1,30 +1,32 @@
 # Copyright 2023 Google LLC. This software is provided as-is, without warranty
 # or representation for any use or purpose. Your use of it is subject to your
 # agreement with Google.
-"""Runs the DLP inspection over the preprocessed table.
-"""
+"""Runs the DLP inspection over the preprocessed table."""
 
 from typing import Dict
 from google.cloud import dlp_v2
 
 class DlpInspection:
-    "Class for inspecting the table with the DLP API."
+    "Inspect the table using the DLP API."
     def __init__(self, project_id: str, language_code: str, item: Dict):
         """
+        Initializes the class with the required data.
+
         Args:
+            project_id: The project ID to be used.
             language_code: The BCP-47 language code to use, e.g. 'en-US'.
             item: The table to be inspected in the correct format.
-            project_id:
         """
         self.dlp_client = dlp_v2.DlpServiceClient()
         self.project_id = project_id
         self.language_code = language_code
         self.item = item
 
-
-
     def response(self):
         """API call for inspecting the content on the table.
+
+        Returns:
+        The response from the API call.
         """
         info_types = self.dlp_client.list_info_types(request={"language_code": self.language_code})
         info_types_names = [info_type.name for info_type in info_types.info_types if
@@ -39,28 +41,31 @@ class DlpInspection:
             request={"parent": parent, "item": self.item, "inspect_config": inspect_config})
         return response
 
-
-
     def finding_results(self) -> Dict:
-        """Get the results of the inspection.
+        """ Get the results of the inspection.
             Creates a dictionary with the column name as key and a dictionary
             with the infotype as key and the likelihood as value.
 
             Returns:
-                finding_results: A dictionary with the column name as key and a
-                dictionary with the infotype as key and the count as value.
+            finding_results: A dictionary with the column name as key and a
+            dictionary with the infotype as key and the count as value.
         """
         response = self.response()
         value_likelihood = {
-        "POSSIBLE":1,
-        "LIKELY":1.2,
-        "VERY_LIKELY":1.4}
+            "POSSIBLE":1,
+            "LIKELY":1.2,
+            "VERY_LIKELY":1.4
+        }
         finding_results = {}
         if response.result.findings:
             for finding in response.result.findings:
                 try:
                     column = finding.location.content_locations[0].record_location.field_id.name
-                except AttributeError:
+                except AttributeError as e:
+                    mensaje = f"""An error was raised while trying to access
+                    the 'name' attribute of the 'field_id' object in the first
+                    element of the 'content_locations' list within the
+                    'location' object of the finding: {str(e)}"""
                     continue
 
                 if column not in finding_results:
@@ -80,13 +85,12 @@ class DlpInspection:
         return finding_results
 
     def max_infotype(self) -> Dict:
-        """ Get max infotype.
-            Need to keep only the the highest infotype to add
-              to the data catalog.
+        """ Iterates over the finding results and returns the infotype with
+            the highest likelihood.
 
             Returns:
-                top_findings: A dictionary with the column name as key and
-                  the top infotype as value.
+            top_findings: A dictionary with the column name as key and
+            the top infotype as value.
             """
         finding_results = self.finding_results()
         for column in finding_results:
