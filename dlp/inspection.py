@@ -83,10 +83,9 @@ class DlpInspection:
                         infotypes[finding.info_type.name] = likelihood
                 except AttributeError:
                     pass
- 
         return finding_results
 
-    def max_infotype(self) -> Dict:
+    def get_max_infotype(self) -> Dict:
         """Returns the infotype with the highest likelihood.
 
             Iterates over the finding results and returns the infotype with
