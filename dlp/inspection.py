@@ -66,7 +66,7 @@ class DlpInspection:
             "VERY_LIKELY":1.4
         }
         finding_results = {}
-        response = self.response()
+        response = self.get_table_inspected()
         if response.result.findings:
             for finding in response.result.findings:
                 try:
@@ -83,7 +83,7 @@ class DlpInspection:
                         infotypes[finding.info_type.name] = likelihood
                 except AttributeError:
                     pass
-        
+ 
         return finding_results
 
     def max_infotype(self) -> Dict:
@@ -97,15 +97,13 @@ class DlpInspection:
               "infotype" and "likelihood value"
         """
         top_findings = {}
-        finding_results = self.finding_results()
-        
+        finding_results = self.analyze_inspection_result()
         for column in finding_results:
             max_infotype = None
             max_count = 0
             for infotype, count in finding_results.get(column).items():
-                if max_infotype == None or cnt > max_count:
+                if max_infotype is None or count > max_count:
                     max_infotype = infotype
                     max_count = count
             top_findings[column] = max_infotype
-            
         return top_findings
