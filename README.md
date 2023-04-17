@@ -16,9 +16,9 @@ These are the Google Cloud Platform services leveraged for the solution:
 1. <a href= "https://cloud.google.com/dlp?hl=es-419"> Data Loss Prevention</a>
 2. <a href= "https://cloud.google.com/products?hl=es-419"> Data Catalog</a>
 
-## Authentication instructions for running the process locally ##
-Follow the steps below to authenticate your Google account and set up Application Default Credentials for your local machine.
+## Setup ##
+Google Cloud Platform Credentials
 
-1.  <a href= "https://cloud.google.com/sdk/docs/install"> Install the gcloud CLI</a>
-2. Authenticate your Google Account `gcloud auth login`
-3. Set up Application Default Credentials `gcloud auth application-default login`
+Authenticate your Google Account and setup Application Default Credentials.
+`gcloud auth login`
+`gcloud auth application-default login`
