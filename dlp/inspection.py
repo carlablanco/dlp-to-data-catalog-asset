@@ -121,13 +121,14 @@ class DlpInspection:
            Returns:
                 results: A list of dictionaries with the infotype with the
                     highest likelihood.
-                    Example: [{'name': 'PERSON_NAME', 'age': 'AGE'}, {'name2': 'PERSON_NAME', 'age2': 'AGE'}]"""
+                    Example: [{'name': 'PERSON_NAME', 'age': 'AGE'},
+                     {'name2': 'PERSON_NAME', 'age2': 'AGE'}]"""
         results = []
         parent, inspect_config = self.get_table_inspected()
         for table in self.tables:
             response = self.dlp_client.inspect_content(
                 request={"parent": parent, "item": table, "inspect_config": inspect_config})
-            finding_results = self.analyze_inspection_result(table_inspected)
+            finding_results = self.analyze_inspection_result(response)
             top_findings = self.get_max_infotype(finding_results)
             results.append(top_findings)
         return results
