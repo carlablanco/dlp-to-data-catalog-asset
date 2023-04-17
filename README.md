@@ -17,8 +17,9 @@ These are the Google Cloud Platform services leveraged for the solution:
 2. <a href= "https://cloud.google.com/products?hl=es-419"> Data Catalog</a>
 
 ## Setup ##
-Google Cloud Platform Credentials
+#Google Cloud Platform Credentials
 
 Authenticate your Google Account and setup Application Default Credentials.
+
 `gcloud auth login`
 `gcloud auth application-default login`
