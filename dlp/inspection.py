@@ -82,8 +82,8 @@ class DlpInspection:
                         # If the infotype is not in the dictionary, add it with
                         # the likelihood value.
                         infotypes[finding.info_type.name] = likelihood
-                except AttributeError:
-                    raise ValueError("AttributeError: No findings returned from API call.")
+                except AttributeError as err:
+                    raise ValueError("AttributeError: No findings returned from API call.") from err
         return finding_results
 
     def get_max_infotype(self, finding_results: Dict) -> Dict:
@@ -132,6 +132,6 @@ class DlpInspection:
             finding_results = self.analyze_inspection_result(response)
             # Gets the max infotype for each variable.
             top_findings = self.get_max_infotype(finding_results)
-            # Add to the results list.
+            # Append to the results list.
             results.append(top_findings)
         return results
