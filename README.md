@@ -18,7 +18,6 @@ These are the Google Cloud Platform services leveraged for the solution:
 
 ## Setup ##
 ### Google Cloud Platform Credentials
-
 Authenticate your Google Account and setup Application Default Credentials.
 
 ```
