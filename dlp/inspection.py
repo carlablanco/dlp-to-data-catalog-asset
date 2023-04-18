@@ -132,6 +132,6 @@ class DlpInspection:
             finding_results = self.analyze_inspection_result(response)
             # Gets the max infotype for each variable.
             top_findings = self.get_max_infotype(finding_results)
-            # Append to the results list.
+            # Add to the results list.
             results.append(top_findings)
         return results
