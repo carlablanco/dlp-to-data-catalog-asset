@@ -1,22 +1,22 @@
 # Copyright 2023 Google LLC. This software is provided as-is, without warranty
 # or representation for any use or purpose. Your use of it is subject to your
 # agreement with Google.
-"""Processes input data to fit to DLP inspection standards."""
+"""Runs DLP inspection on a BigQuery dataset and tags the results in Data Catalog."""
 
 from typing import List
-from google.cloud import bigquery
+from google.cloud import bigquery, dlp_v2
 from google.api_core.exceptions import NotFound
 
+
 class Preprocessing:
-    """Converts input data into Data Loss Prevention tables."""
+    """Class for preprocessing tables into Data Loss Prevention tables."""
 
     def __init__(self, project: str, dataset: str, table: str = None):
         """
         Args:
-            project (str): The name of the Google Cloud Platform project.
+            project (str): The name of the GCP project.
             dataset (str): The name of the BigQuery dataset.
-            table (str, optional): The name of the BigQuery table. Optional.
-                Defaults to None.
+            table (str, optional): The name of the BigQuery table.
         """
         self.bq_client = bigquery.Client(project=project)
         self.project = project
@@ -27,7 +27,7 @@ class Preprocessing:
         """Creates an SQL query as string.
 
         Args:
-            table_id (str): Fully qualified BigQuery tablename.
+            table_id (str): The fully qualified tablename.
 
         Returns:
             str: SQL query as string.
@@ -75,40 +75,34 @@ class Preprocessing:
         return bq_schema, bq_rows_content
 
     def convert_to_dlp_table(self, bq_schema: List[dict],
-                             bq_content: List[dict]) -> dict:
-        """Converts a BigQuery table into a DLP table.
-
-        Converts a BigQuery table into a Data Loss Prevention table,
-        an object that can be inspected by Data Loss Prevention.
+                             bq_rows_content: List[dict]) -> dlp_v2.Table:
+        """Converts a BigQuery table into an object.
+        The object that can be inspected by Data Loss Prevention.
 
         Args:
             bq_schema (list): The schema of a BigQuery table.
-            bq_content (list): The content of a BigQuery table.
+            bq_rows_content (list): The content of a BigQuery table.
 
         Returns:
-            A table object that can be inspected by Data Loss Prevention.
+            dict: A table object that can be inspected by Data Loss Prevention.
         """
-        headers = [{"name": i['name']} for i in bq_schema]
+        table_dlp = dlp_v2.Table()
+        table_dlp.headers = [
+            {"name": i['name']} for i in bq_schema
+        ]
 
-        rows = []
-        for row in bq_content:
-            rows.append(
-                {"values":
-                    [{"string_value":
-                        str(cell_val)} for cell_val in row.values()]}
-            )
+        table_dlp.rows = [dlp_v2.Table.Row(values=[dlp_v2.Value(
+            string_value=str(cell_val)) for cell_val in row.values()])
+            for row in bq_rows_content]
 
-        table_dlp = {"table": {"headers": headers, "rows": rows}}
         return table_dlp
 
-    def get_dlp_table_list(self) -> List[dict]:
+    def get_dlp_table_list(self) -> List[dlp_v2.Table]:
         """Constructs a list of table objects.
-
-        Constructs a list from the table objects that to be inspected
-            by Data Loss Prevention.
+        The table objects that can be inspected by Data Loss Prevention.
 
         Returns:
-            A list of Data Loss Prevention table objects.
+            list: A list of DLP table objects.
         """
         dlp_tables_list = []
 

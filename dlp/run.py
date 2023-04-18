@@ -5,7 +5,7 @@
 
 import argparse
 from typing import Type
-from dlp.preprocess import Preprocessing
+from preprocess import Preprocessing
 
 
 def parse_arguments() -> Type[argparse.Namespace]:
