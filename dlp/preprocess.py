@@ -91,9 +91,13 @@ class Preprocessing:
             {"name": i['name']} for i in bq_schema
         ]
 
-        table_dlp.rows = [dlp_v2.Table.Row(values=[dlp_v2.Value(
-            string_value=str(cell_val)) for cell_val in row.values()])
-            for row in bq_rows_content]
+        rows = []
+        for row in bq_rows_content:
+            rows.append(dlp_v2.Table.Row(
+                values=[dlp_v2.Value(
+                string_value=str(cell_val)) for cell_val in row.values()]))
+
+        table_dlp.rows = rows
 
         return table_dlp
 
