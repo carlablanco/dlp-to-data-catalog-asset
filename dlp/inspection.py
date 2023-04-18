@@ -90,7 +90,7 @@ class DlpInspection:
         """Gets the max infotype for each variable.
 
             Iterates over the finding results and returns the infotype with
-            the highest likelihood.
+            the highest likelihoood.
 
             Args:
                 finding_results: The findings result to be analyzed.
