@@ -26,7 +26,8 @@ class DlpInspection:
         """Gets the table to be inspected with an API call.
 
             Args:
-                table: The particular table to be inspected in the correct format.
+                table: The particular table to be inspected in the correct 
+                        format.
 
             Returns:
                 parent: The project route in GCP.
@@ -34,8 +35,10 @@ class DlpInspection:
         """
         info_types = self.dlp_client.list_info_types(
                         request={"language_code": self.language_code})
-        info_types_names = [info_type.name for info_type in info_types.info_types
-                            if (self.language_code in info_type.name)]
+        info_types_names = [
+                        info_type.name for info_type in info_types.info_types
+                        if self.language_code in info_type.name
+                        ]
         inspect_config = {
             "info_types": [{"name": name} for name in info_types_names],
             "min_likelihood": dlp_v2.Likelihood.POSSIBLE
@@ -70,7 +73,8 @@ class DlpInspection:
         if table_inspected.result.findings:
             for finding in table_inspected.result.findings:
                 try:
-                    column = finding.location.content_locations[0].record_location.field_id.name
+                    column = finding.location.content_locations[0].(
+                                record_location.field_id.name)
 
                     infotypes = finding_results.setdefault(column, {})
                     likelihood = value_likelihood.get(finding.likelihood.name, 0)
@@ -83,7 +87,8 @@ class DlpInspection:
                         # the likelihood value.
                         infotypes[finding.info_type.name] = likelihood
                 except AttributeError as err:
-                    raise ValueError("AttributeError: No findings returned from API call.") from err
+                    raise ValueError("""AttributeError: No findings
+                                        returned from API call.""") from err
         return finding_results
 
     def get_max_infotype(self, finding_results: Dict) -> Dict:
@@ -127,7 +132,8 @@ class DlpInspection:
         for table in self.tables:
             # Get table to be inspected.
             response = self.dlp_client.inspect_content(
-                request={"parent": parent, "item": table, "inspect_config": inspect_config})
+                request={"parent": parent, "item": table, 
+                            "inspect_config": inspect_config})
             # Processes the results of the inspection.
             finding_results = self.analyze_inspection_result(response)
             # Get the max infotype for each variable.
