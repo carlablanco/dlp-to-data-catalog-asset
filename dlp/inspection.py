@@ -3,7 +3,7 @@
 # agreement with Google.
 """Runs the DLP inspection over the preprocessed table."""
 
-from typing import Dict, Optional
+from typing import Dict
 from google.cloud import dlp_v2
 
 class DlpInspection:
