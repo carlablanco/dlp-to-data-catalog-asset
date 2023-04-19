@@ -77,7 +77,8 @@ class DlpInspection:
                                 record_location.field_id.name)
 
                     infotypes = finding_results.setdefault(column, {})
-                    likelihood = value_likelihood.get(finding.likelihood.name, 0)
+                    likelihood = value_likelihood.get(finding.likelihood.name,
+                                                         0)
                     # If the infotype is already in the dictionary, sum
                     # the likelihood value to the exisiting one.
                     if finding.info_type.name in infotypes:
