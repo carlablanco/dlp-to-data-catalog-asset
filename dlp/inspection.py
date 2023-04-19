@@ -104,10 +104,10 @@ class DlpInspection:
             max_infotype = None
             max_count = 0
             for infotype, count in finding_results.get(column).items():
-                # Add the infotype to the top_findings dict.
-                # If the infotype is already in the dict, sum the likelihood
-                # value to the existing one, otherwise add it with the
-                # likelihood value.
+                # Add the infotype to the top_findings dictionary.
+                # If the infotype is already in the dictionary, sum the
+                # likelihood value to the existing one, otherwise add it
+                # with the likelihood value.
                 if max_infotype is None or count > max_count:
                     max_infotype = infotype
                     max_count = count
@@ -115,7 +115,7 @@ class DlpInspection:
         return top_findings
 
     def main(self):
-        """Iterates over every table and analyzes each one.
+        """Iterates over the given tables and analyzes each one.
             
            Returns:
                 results: A list of dictionaries with the infotype with the
@@ -125,12 +125,12 @@ class DlpInspection:
         results = []
         parent, inspect_config = self.get_inspection_parameters()
         for table in self.tables:
-            # Get table inspeceted
+            # Get table to be inspeceted.
             response = self.dlp_client.inspect_content(
                 request={"parent": parent, "item": table, "inspect_config": inspect_config})
             # Processes the results of the inspection.
             finding_results = self.analyze_inspection_result(response)
-            # Gets the max infotype for each variable.
+            # Get the max infotype for each variable.
             top_findings = self.get_max_infotype(finding_results)
             # Append to the results list.
             results.append(top_findings)
