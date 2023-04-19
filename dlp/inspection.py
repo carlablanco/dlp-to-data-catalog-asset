@@ -34,8 +34,8 @@ class DlpInspection:
         """
         info_types = self.dlp_client.list_info_types(
                         request={"language_code": self.language_code})
-        info_types_names = [info_type.name for info_type in info_types.info_types if
-                            (self.language_code in info_type.name)]
+        info_types_names = [info_type.name for info_type in info_types.info_types
+                            if (self.language_code in info_type.name)]
         inspect_config = {
             "info_types": [{"name": name} for name in info_types_names],
             "min_likelihood": dlp_v2.Likelihood.POSSIBLE
