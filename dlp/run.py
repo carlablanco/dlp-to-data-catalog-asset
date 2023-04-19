@@ -47,6 +47,8 @@ def run(project: str, language_code: str, dataset: str, table: str = None):
     preprocess = Preprocessing(
         project=project, dataset=dataset, table=table)
     preprocess.get_dlp_table_list()
+    tables = preprocess.get_dlp_table_list()
+    inspection = DlpInspection(project_id = project, language_code = language_code, tables = tables)
 
 
 if __name__ == "__main__":
