@@ -6,6 +6,7 @@
 import argparse
 from typing import Type
 from dlp.preprocess import Preprocessing
+from inspection import DlpInspection
 
 
 def parse_arguments() -> Type[argparse.Namespace]:
