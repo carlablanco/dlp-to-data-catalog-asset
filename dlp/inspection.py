@@ -73,9 +73,8 @@ class DlpInspection:
         if table_inspected.result.findings:
             for finding in table_inspected.result.findings:
                 try:
-                    column = finding.location.content_locations[0].(
-                                record_location.field_id.name)
-
+                    column = finding.location.content_locations[
+                        0].record_location.field_id.name
                     infotypes = finding_results.setdefault(column, {})
                     likelihood = value_likelihood.get(finding.likelihood.name,
                                                          0)

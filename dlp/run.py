@@ -1,7 +1,7 @@
 # Copyright 2023 Google LLC. This software is provided as-is, without warranty
 # or representation for any use or purpose. Your use of it is subject to your
 # agreement with Google.
-"""Runs DLP inspection on a BigQuery dataset and tags the results in Data Catalog."""
+"""Runs DLP inspection on a dataset and tags the results in Data Catalog."""
 
 import argparse
 from typing import Type
