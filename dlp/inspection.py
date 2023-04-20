@@ -116,7 +116,7 @@ class DlpInspection:
                 if max_infotype is None or count > max_count:
                     max_infotype = infotype
                     max_count = count
-            top_findings[column] = max_infotype
+            top_findings[column] = max_infotype 
         return top_findings
 
     def main(self):
