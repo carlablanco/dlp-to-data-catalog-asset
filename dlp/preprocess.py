@@ -78,7 +78,7 @@ class Preprocessing:
     def convert_to_dlp_table(self, bq_schema: List[dict],
                              bq_content: List[dict]) -> dlp_v2.Table:
         """Converts a BigQuery table into a DLP table.
-        
+
         Converts a BigQuery table into a Data Loss Prevention table,
         an object that can be inspected by Data Loss Prevention.
 
@@ -98,7 +98,7 @@ class Preprocessing:
         for row in bq_content:
             rows.append(dlp_v2.Table.Row(
                 values=[dlp_v2.Value(
-                string_value=str(cell_val)) for cell_val in row.values()]))
+                    string_value=str(cell_val)) for cell_val in row.values()]))
 
         table_dlp.rows = rows
 

@@ -132,7 +132,7 @@ class DlpInspection:
         for table in self.tables:
             # Get table to be inspected.
             response = self.dlp_client.inspect_content(
-                request={"parent": parent, "item": table,
+                request={"parent": parent, "item": {"table" : table},
                             "inspect_config": inspect_config})
             # Processes the results of the inspection.
             finding_results = self.analyze_inspection_result(response)
