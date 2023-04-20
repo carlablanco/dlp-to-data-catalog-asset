@@ -91,7 +91,7 @@ class Preprocessing:
         """
         table_dlp = dlp_v2.Table()
         table_dlp.headers = [
-            {"name": i['name']} for i in bq_schema
+            {"name": schema_object['name']} for schema_object in bq_schema
         ]
 
         rows = []
