@@ -1,11 +1,12 @@
 # Copyright 2023 Google LLC. This software is provided as-is, without warranty
 # or representation for any use or purpose. Your use of it is subject to your
 # agreement with Google.
-"""Runs DLP inspection on a BigQuery dataset and tags the results in Data Catalog."""
+"""Runs DLP inspection on a dataset and tags the results in Data Catalog."""
 
 import argparse
 from typing import Type
 from dlp.preprocess import Preprocessing
+from dlp.inspection import DlpInspection
 
 
 def parse_arguments() -> Type[argparse.Namespace]:
@@ -47,6 +48,10 @@ def run(project: str, language_code: str, dataset: str, table: str = None):
     preprocess = Preprocessing(
         project=project, dataset=dataset, table=table)
     preprocess.get_dlp_table_list()
+    tables = preprocess.get_dlp_table_list()
+    inspection = DlpInspection(project_id = project,
+                        language_code = language_code, tables = tables)
+    inspection.main()
 
 
 if __name__ == "__main__":
