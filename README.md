@@ -10,9 +10,17 @@ To create the Data Catalog template, our program uses the Cloud Data Catalog API
 
 In short, our program is a comprehensive and effective tool for protecting the privacy of an organization's data. By using the Google Cloud DLP and Data Catalog API, our program can automatically detect any sensitive data and effectively tag it in a data catalog linked to the BigQuery table. This provides greater transparency and control over sensitive data in an organization, which can help improve overall data privacy and security.
 
-
 ## Technical Requirements ##
 These are the Google Cloud Platform services leveraged for the solution:
 
 1. <a href= "https://cloud.google.com/dlp?hl=es-419"> Data Loss Prevention</a>
 2. <a href= "https://cloud.google.com/products?hl=es-419"> Data Catalog</a>
+
+## Setup ##
+### Google Cloud Platform Credentials
+Authenticate your Google Account and setup Application Default Credentials.
+
+```
+gcloud auth login
+gcloud auth application-default login
+```

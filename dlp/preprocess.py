@@ -105,8 +105,7 @@ class Preprocessing:
         return table_dlp
 
     def get_dlp_table_list(self) -> List[dlp_v2.Table]:
-        """Constructs a list from the table objects that to be inspected
-            by Data Loss Prevention.
+        """Constructs a list of DLP Table objects
 
         Returns:
             A list of Data Loss Prevention table objects.
