@@ -7,7 +7,7 @@ from typing import Dict
 from google.cloud import dlp_v2
 
 class DlpInspection:
-    """The DlpInspection class performs a DLP inspection on a preprocessed
+    """Performs a DLP inspection on a preprocessed
       table to identify sensitive information."""
     def __init__(self, project_id: str, language_code: str, tables: Dict):
         """Initializes the class with the required data.
@@ -116,7 +116,7 @@ class DlpInspection:
                 if max_infotype is None or count > max_count:
                     max_infotype = infotype
                     max_count = count
-            top_findings[column] = max_infotype 
+            top_findings[column] = max_infotype
         return top_findings
 
     def main(self):
