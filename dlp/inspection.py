@@ -7,8 +7,8 @@ from typing import Dict
 from google.cloud import dlp_v2
 
 class DlpInspection:
-    """Performs a DLP inspection on a preprocessed
-      table to identify sensitive information."""
+    """Performs a DLP inspection on a preprocessed table to identify
+            sensitive information."""
     def __init__(self, project_id: str, language_code: str, tables: Dict):
         """Initializes the class with the required data.
 
