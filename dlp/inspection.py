@@ -9,7 +9,8 @@ from google.cloud import dlp_v2
 class DlpInspection:
     """Performs a DLP inspection on a preprocessed table to identify
             sensitive information."""
-    def __init__(self, project_id: str, language_code: str, tables: List[dlp_v2.Table]):
+    def __init__(self, project_id: str, language_code: str,
+                 tables: List[dlp_v2.Table]):
         """Initializes the class with the required data.
 
         Args:
