@@ -3,13 +3,14 @@
 # agreement with Google.
 """Runs the DLP inspection over the preprocessed table."""
 
-from typing import Dict
+from typing import List, Dict
 from google.cloud import dlp_v2
 
 class DlpInspection:
     """Performs a DLP inspection on a preprocessed table to identify
             sensitive information."""
-    def __init__(self, project_id: str, language_code: str, tables: Dict):
+    def __init__(self, project_id: str, language_code: str,
+                 tables: List[dlp_v2.Table]):
         """Initializes the class with the required data.
 
         Args:
@@ -132,7 +133,7 @@ class DlpInspection:
         for table in self.tables:
             # Get table to be inspected.
             response = self.dlp_client.inspect_content(
-                request={"parent": parent, "item": table,
+                request={"parent": parent, "item": {"table" : table},
                             "inspect_config": inspect_config})
             # Processes the results of the inspection.
             finding_results = self.analyze_inspection_result(response)

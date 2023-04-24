@@ -4,8 +4,9 @@
 """Processes input data to fit to DLP inspection standards."""
 
 from typing import List
-from google.cloud import bigquery
+from google.cloud import bigquery, dlp_v2
 from google.api_core.exceptions import NotFound
+
 
 class Preprocessing:
     """Converts input data into Data Loss Prevention tables."""
@@ -75,7 +76,7 @@ class Preprocessing:
         return bq_schema, bq_rows_content
 
     def convert_to_dlp_table(self, bq_schema: List[dict],
-                             bq_content: List[dict]) -> dict:
+                             bq_content: List[dict]) -> dlp_v2.Table:
         """Converts a BigQuery table into a DLP table.
 
         Converts a BigQuery table into a Data Loss Prevention table,
@@ -88,24 +89,23 @@ class Preprocessing:
         Returns:
             A table object that can be inspected by Data Loss Prevention.
         """
-        headers = [{"name": i['name']} for i in bq_schema]
+        table_dlp = dlp_v2.Table()
+        table_dlp.headers = [
+            {"name": schema_object['name']} for schema_object in bq_schema
+        ]
 
         rows = []
         for row in bq_content:
-            rows.append(
-                {"values":
-                    [{"string_value":
-                        str(cell_val)} for cell_val in row.values()]}
-            )
+            rows.append(dlp_v2.Table.Row(
+                values=[dlp_v2.Value(
+                    string_value=str(cell_val)) for cell_val in row.values()]))
 
-        table_dlp = {"table": {"headers": headers, "rows": rows}}
+        table_dlp.rows = rows
+
         return table_dlp
 
-    def get_dlp_table_list(self) -> List[dict]:
-        """Constructs a list of table objects.
-
-        Constructs a list from the table objects that to be inspected
-            by Data Loss Prevention.
+    def get_dlp_table_list(self) -> List[dlp_v2.Table]:
+        """Constructs a list of DLP Table objects
 
         Returns:
             A list of Data Loss Prevention table objects.
