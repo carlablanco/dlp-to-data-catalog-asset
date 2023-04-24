@@ -4,12 +4,10 @@
 """Processes input data to fit to DLP inspection standards."""
 
 from typing import List
-from google.cloud import bigquery
-from google.api_core.exceptions import NotFound
-from concurrent.futures import ThreadPoolExecutor
 import concurrent.futures
 import math
-
+from google.cloud import bigquery
+from google.api_core.exceptions import NotFound
 
 class Preprocessing:
     """Converts input data into Data Loss Prevention tables."""
@@ -48,7 +46,7 @@ class Preprocessing:
         content = []
         [content.append(row[0:(len(fields))]) for row in rows_iter]
         return content
-    
+
     def parallel_read(self):
         """Constructs a list with the content of the table
 
@@ -56,12 +54,11 @@ class Preprocessing:
             rows (List[tuples]): Conetent of the table
         """
         table = self.bq_client.get_table(self.table_id)
-        fields = table.schema
         rows = []
 
         # Determine the number of rows and an appropriate level of parallelism
         num_rows = table.num_rows
-        num_parallel = num_parallel = min(math.ceil(num_rows / 10000), 10)  
+        num_parallel = num_parallel = min(math.ceil(num_rows / 10000), 10)
 
         # Fetch rows in parallel threads
         with concurrent.futures.ThreadPoolExecutor(max_workers=
@@ -85,7 +82,7 @@ class Preprocessing:
         table_names = [table.table_id for table in dataset_tables]
         return table_names
 
-    def get_bigquery_data(self, table_id: str) -> tuple:
+    def get_bigquery_data(self) -> tuple:
         """Retrieves the schema and content of a BigQuery table.
 
         Args:
