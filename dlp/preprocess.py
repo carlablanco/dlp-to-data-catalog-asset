@@ -36,6 +36,7 @@ class Preprocessing:
             content (list): A list of rows, where each row is a tuple containing
             the values for each field in the table schema.
         """
+        content = []
         table = self.bq_client.get_table(self.table_id)
         fields = table.schema
         rows_iter = self.bq_client.list_rows(
@@ -43,8 +44,7 @@ class Preprocessing:
             start_index=start_index,
             max_results=500
         )
-        content = []
-        [content.append(row[0:(len(fields))]) for row in rows_iter]
+        content = [content.append(row[0:(len(fields))]) for row in rows_iter]
         return content
 
     def parallel_read(self):
@@ -150,7 +150,7 @@ class Preprocessing:
 
         if bigquery_tables:
             for table_name in bigquery_tables:
-                schema, content = self.get_bigquery_data(self.table_id)
+                schema, content = self.get_bigquery_data()
                 table_dlp = self.convert_to_dlp_table(schema, content)
                 dlp_tables_list.append(table_dlp)
 
