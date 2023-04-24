@@ -64,7 +64,7 @@ class Preprocessing:
         with concurrent.futures.ThreadPoolExecutor(max_workers=
                                                    num_parallel) as executor:
             futures = [executor.submit(self.fetch_rows, start_index)
-                       for start_index in range(0, num_rows, num_rows)]
+                       for start_index in range(0, num_rows, 500)]
             for future in concurrent.futures.as_completed(futures):
                 rows.extend(future.result())
         return rows
