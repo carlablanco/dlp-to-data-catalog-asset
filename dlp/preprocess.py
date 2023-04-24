@@ -25,17 +25,17 @@ class Preprocessing:
         self.project = project
         self.dataset = dataset
         self.table = table
-        
 
     def fetch_rows(self, start_index, table_id: str) -> List[dict]:
         """Fetches a batch of rows from a BigQuery table.
 
         Args:
             start_index (int): The starting index of the batch.
+            table_id = The path of the table were the data is fetched.
 
         Returns:
-            content (list): A list of rows, where each row is a tuple containing
-            the values for each field in the table schema.
+            content (list[dicts]): A list of rows, where each row is a tuple
+            containing the values for each field in the table schema.
         """
         content = []
         fields = table_id.schema
@@ -54,8 +54,11 @@ class Preprocessing:
     def parallel_read(self, table_id: str) -> List[dict]:
         """Constructs a list with the content of the table
 
+         Args:
+            table_id = The path of the table were the data is fetched.
+
         Returns:
-            rows (List[tuples]): Conetent of the table
+            rows (List[dicts]): Conetent of the table
         """
         table = self.bq_client.get_table(table_id)
         rows = []
@@ -65,7 +68,8 @@ class Preprocessing:
         num_parallel = min(math.ceil(num_rows / 10000), 10)
 
         # Fetch rows in parallel threads
-        with concurrent.futures.ThreadPoolExecutor(max_workers=num_parallel) as executor:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=
+                                                   num_parallel) as executor:
             futures = [executor.submit(self.fetch_rows, start_index, table_id)
                        for start_index in range(0, num_rows, 500)]
             for future in concurrent.futures.as_completed(futures):
@@ -104,8 +108,6 @@ class Preprocessing:
         bq_schema = [schema_field.to_api_repr()
                      for schema_field in table_schema]
 
-        
-        
         bq_rows_content = self.parallel_read(table_bq)
 
         return bq_schema, bq_rows_content
