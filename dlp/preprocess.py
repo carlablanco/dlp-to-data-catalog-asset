@@ -6,6 +6,10 @@
 from typing import List
 from google.cloud import bigquery
 from google.api_core.exceptions import NotFound
+from concurrent.futures import ThreadPoolExecutor
+import concurrent.futures
+import math
+
 
 class Preprocessing:
     """Converts input data into Data Loss Prevention tables."""
@@ -22,18 +26,51 @@ class Preprocessing:
         self.project = project
         self.dataset = dataset
         self.table = table
+        self.table_id = f'{project}.{dataset}.{table}'
 
-    def get_query(self, table_id: str) -> str:
-        """Creates an SQL query as string.
+    def fetch_rows(self, start_index):
+        """Fetches a batch of rows from a BigQuery table.
 
         Args:
-            table_id (str): Fully qualified BigQuery tablename.
+            start_index (int): The starting index of the batch.
 
         Returns:
-            str: SQL query as string.
+            content (list): A list of rows, where each row is a tuple containing
+            the values for each field in the table schema.
         """
-        query = f"SELECT *  FROM `{table_id}`"
-        return query
+        table = self.bq_client.get_table(self.table_id)
+        fields = table.schema
+        rows_iter = self.bq_client.list_rows(
+            self.table_id,
+            start_index=start_index,
+            max_results=500
+        )
+        content = []
+        [content.append(row[0:(len(fields))]) for row in rows_iter]
+        return content
+    
+    def parallel_read(self):
+        """Constructs a list with the content of the table
+
+        Returns:
+            rows (List[tuples]): Conetent of the table
+        """
+        table = self.bq_client.get_table(self.table_id)
+        fields = table.schema
+        rows = []
+
+        # Determine the number of rows and an appropriate level of parallelism
+        num_rows = table.num_rows
+        num_parallel = num_parallel = min(math.ceil(num_rows / 10000), 10)  
+
+        # Fetch rows in parallel threads
+        with concurrent.futures.ThreadPoolExecutor(max_workers=
+                                                   num_parallel) as executor:
+            futures = [executor.submit(self.fetch_rows, start_index)
+                       for start_index in range(0, num_rows, 500)]
+            for future in concurrent.futures.as_completed(futures):
+                rows.extend(future.result())
+        return rows
 
     def get_bigquery_tables(self, dataset: str) -> List[str]:
         """Constructs a list of table names from a BigQuery dataset.
@@ -56,26 +93,23 @@ class Preprocessing:
 
         Returns:
             tuple: A tuple containing the BigQuery schema and content.
+            
         """
         try:
-            table_bq = self.bq_client.get_table(table_id)
-        except NotFound as exc:
-            raise ValueError(f"Error retrieving table {table_id}.") from exc
+            table_bq = self.bq_client.get_table(self.table_id)
+        except NotFound as ex:
+            raise ValueError(f"Error retrieving table {self.table_id}.") from ex
 
         table_schema = table_bq.schema
         bq_schema = [schema_field.to_api_repr()
                      for schema_field in table_schema]
 
-        sql_query = self.get_query(table_id)
-        query_job = self.bq_client.query(sql_query)
-        query_results = query_job.result()
+        rows = self.parallel_read()
 
-        bq_rows_content = [dict(row) for row in query_results]
-
-        return bq_schema, bq_rows_content
+        return bq_schema, rows
 
     def convert_to_dlp_table(self, bq_schema: List[dict],
-                             bq_content: List[dict]) -> dict:
+                             bq_content: List[tuple]) -> dict:
         """Converts a BigQuery table into a DLP table.
 
         Converts a BigQuery table into a Data Loss Prevention table,
@@ -95,7 +129,7 @@ class Preprocessing:
             rows.append(
                 {"values":
                     [{"string_value":
-                        str(cell_val)} for cell_val in row.values()]}
+                        str(cell_val)} for cell_val in row]}
             )
 
         table_dlp = {"table": {"headers": headers, "rows": rows}}
@@ -119,8 +153,7 @@ class Preprocessing:
 
         if bigquery_tables:
             for table_name in bigquery_tables:
-                schema, content = self.get_bigquery_data(
-                    f'{self.project}.{self.dataset}.{table_name}')
+                schema, content = self.get_bigquery_data(self.table_id)
                 table_dlp = self.convert_to_dlp_table(schema, content)
                 dlp_tables_list.append(table_dlp)
 
