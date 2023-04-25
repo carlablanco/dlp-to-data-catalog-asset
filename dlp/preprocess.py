@@ -50,7 +50,7 @@ class Preprocessing:
             row_dict = {}
             for i, field in enumerate(fields):
                 row_dict[field.name] = row[i]
-                content.append(row_dict)
+            content.append(row_dict)
         return content
 
     def parallel_read(self, table_id: str) -> List[dict]:
