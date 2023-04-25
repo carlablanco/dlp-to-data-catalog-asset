@@ -26,7 +26,7 @@ class Preprocessing:
         self.dataset = dataset
         self.table = table
 
-    def fetch_rows(self, start_index, table_id: str) -> List[dict]: 
+    def fetch_rows(self, start_index, table_id: str) -> List[dict]:
         """Fetches a batch of rows from a BigQuery table.
 
            Args:
@@ -64,7 +64,6 @@ class Preprocessing:
         """
         # Get the table reference.
         table = self.bq_client.get_table(table_id)
-        
         rows = []
 
         # Determine the number of rows and an appropriate level of parallelism.
@@ -75,9 +74,9 @@ class Preprocessing:
         with concurrent.futures.ThreadPoolExecutor(max_workers=
                                                    num_parallel) as executor:
              # Creates a list of futures, where each future will be executed
-             # in a separate thread. 
+             # in a separate thread.
             futures = [executor.submit(self.fetch_rows, start_index, table_id)
-                       for start_index in range(0, num_rows, 
+                       for start_index in range(0, num_rows,
                                                 int(num_rows*0.03))]
             # Iterates over the list of futures and adds the results of the
             # task to the `rows` list.
