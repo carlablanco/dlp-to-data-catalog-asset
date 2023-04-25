@@ -26,55 +26,63 @@ class Preprocessing:
         self.dataset = dataset
         self.table = table
 
-    def fetch_rows(self, start_index, table_id: str) -> List[dict]:
+    def fetch_rows(self, start_index, table_id: str) -> List[dict]: 
         """Fetches a batch of rows from a BigQuery table.
 
-        Args:
-            start_index (int): The starting index of the batch.
-            table_id = The path of the table were the data is fetched.
+           Args:
+              start_index (int): The starting index of the batch.
+              table_id = The path of the table were the data is fetched.
 
-        Returns:
-            content (list[dicts]): A list of rows, where each row is a tuple
-            containing the values for each field in the table schema.
-        """
+           Returns:
+              content (list[dicts]): A list of rows, where each row is a tuple
+              containing the values for each field in the table schema.
+                """
         content = []
         fields = table_id.schema
+        table = self.bq_client.get_table(table_id)
+        num_rows = table.num_rows
         rows_iter = self.bq_client.list_rows(
             table_id,
             start_index=start_index,
-            max_results=500
+            max_results= int(num_rows*0.03)
         )
         for row in rows_iter:
             row_dict = {}
             for i, field in enumerate(fields):
                 row_dict[field.name] = row[i]
-            content.append(row_dict)
+                content.append(row_dict)
         return content
 
     def parallel_read(self, table_id: str) -> List[dict]:
-        """Constructs a list with the content of the table
+        """Constructs a list with the content of the table.
 
          Args:
             table_id = The path of the table were the data is fetched.
 
         Returns:
-            rows (List[dicts]): Conetent of the table
+            rows (List[dicts]): Conetent of the table.
         """
+        # Get the table reference.
         table = self.bq_client.get_table(table_id)
+        
         rows = []
 
-        # Determine the number of rows and an appropriate level of parallelism
+        # Determine the number of rows and an appropriate level of parallelism.
         num_rows = table.num_rows
         num_parallel = min(math.ceil(num_rows / 10000), 10)
 
-        # Fetch rows in parallel threads
+        # Creates a thread pool with `num_parallel` threads.
         with concurrent.futures.ThreadPoolExecutor(max_workers=
                                                    num_parallel) as executor:
+             # Creates a list of futures, where each future will be executed
+             # in a separate thread. 
             futures = [executor.submit(self.fetch_rows, start_index, table_id)
-                       for start_index in range(0, num_rows, 500)]
+                       for start_index in range(0, num_rows, 
+                                                int(num_rows*0.03))]
+            # Iterates over the list of futures and adds the results of the
+            # task to the `rows` list.
             for future in concurrent.futures.as_completed(futures):
                 rows.extend(future.result())
-
         return rows
 
     def get_bigquery_tables(self, dataset: str) -> List[str]:
