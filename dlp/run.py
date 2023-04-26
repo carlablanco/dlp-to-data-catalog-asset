@@ -5,9 +5,13 @@
 
 import argparse
 from typing import Type
+import os
+import sys
+from dotenv import load_dotenv
 from dlp.preprocess import Preprocessing
 from dlp.inspection import DlpInspection
 
+load_dotenv()
 
 def parse_arguments() -> Type[argparse.Namespace]:
     """Parses command line arguments."""
@@ -35,7 +39,11 @@ def parse_arguments() -> Type[argparse.Namespace]:
     return parser.parse_args()
 
 # pylint: disable=unused-argument
-def run(project: str, language_code: str, dataset: str, table: str = None):
+
+
+def run(mode:str, project: str, language_code: str, dataset: str= None,
+        table: str = None, instance:str = None, zone:str = None, db:str = None,
+        db_user:str = None, db_password:str = None):
     """Runs DLP inspection scan and tags the results to Data Catalog.
 
     Args:
@@ -46,15 +54,26 @@ def run(project: str, language_code: str, dataset: str, table: str = None):
                 If None, the entire dataset will be scanned.
     """
     preprocess = Preprocessing(
-        project=project, dataset=dataset, table=table)
-    preprocess.get_dlp_table_list()
+        mode=mode, project=project, dataset=dataset, table=table, instance=instance,
+        zone= zone, db_user=db_user, db_password=db_password, db=db)
     tables = preprocess.get_dlp_table_list()
-    inspection = DlpInspection(project_id = project,
-                        language_code = language_code, tables = tables)
+    print(tables)
+    inspection = DlpInspection(project_id=project,
+                               language_code=language_code, tables=tables)
     inspection.main()
 
 
 if __name__ == "__main__":
-    args = parse_arguments()
-    run(args.project, args.language_code,
-        args.dataset, args.table)
+    # args = parse_arguments()
+    project = os.getenv('PROJECT')
+    dataset = os.getenv('DATASET')
+    language_code = os.getenv('LANGUAGE_CODE')
+    table = os.getenv('TABLE')
+    mode = os.getenv('MODE')
+    instance = os.getenv('INSTANCE')
+    zone = os.getenv('ZONE')
+    db = os.getenv('DB')
+    db_user = os.getenv('DB_USER')
+    db_password = os.getenv('DB_PASSWORD')
+    run(mode, project, language_code,
+        dataset, table, instance, zone, db, db_user, db_password)

@@ -65,6 +65,9 @@ class DlpInspection:
                 Example: {'name': {'PERSON_NAME': 4.4}, 'age': {'AGE': 5.8}}
         """
         value_likelihood = {
+            "LIKELIHOOD_UNSPECIFIED":1,
+            "VERY_UNLIKELY":0.6,
+            "UNLIKELY":0.8,
             "POSSIBLE":1,
             "LIKELY":1.2,
             "VERY_LIKELY":1.4
@@ -132,7 +135,7 @@ class DlpInspection:
         for table in self.tables:
             # Get table to be inspected.
             response = self.dlp_client.inspect_content(
-                request={"parent": parent, "item": table,
+                request={"parent": parent, "item": {"table":table},
                             "inspect_config": inspect_config})
             # Processes the results of the inspection.
             finding_results = self.analyze_inspection_result(response)
