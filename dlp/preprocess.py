@@ -3,7 +3,7 @@
 # agreement with Google.
 """Processes input data to fit to DLP inspection standards."""
 
-from typing import List
+from typing import List, Tuple
 from google.api_core.exceptions import NotFound
 from google.cloud import bigquery, dlp_v2
 
@@ -44,18 +44,19 @@ class Preprocessing:
          """
         content = []
         fields = table_id.schema
-        try:
-            rows_iter = self.bq_client.list_rows(table_id)
-        except NotFound as exc:
-            raise ValueError(f"Error retrieving table {table_id}.") from exc
-        for row in rows_iter:
-            row_dict = {}
-            for i, field in enumerate(fields):
-                row_dict[field.name] = row[i]
-            content.append(row_dict)
+        rows_iter = self.bq_client.list_rows(table_id)
+
+        if not rows_iter.total_rows:
+            print("Table is empty. Please populate the table and try again.")
+        else:
+            for row in rows_iter:
+                row_dict = {}
+                for i, field in enumerate(fields):
+                    row_dict[field.name] = row[i]
+                content.append(row_dict)
         return content
 
-    def get_bigquery_data(self, table_id: str) -> tuple:
+    def get_bigquery_data(self, table_id: str) -> Tuple[List[dict], List[dict]]:
         """Retrieves the schema and content of a BigQuery table.
         Args:
             table_id (str): The fully qualified name of the BigQuery table.
