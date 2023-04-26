@@ -7,15 +7,15 @@ from typing import List
 from google.api_core.exceptions import NotFound
 from google.cloud import bigquery, dlp_v2
 from google.cloud.sql.connector import Connector
+from getpass import getpass
 
 
 class Preprocessing:
     """Converts input data into Data Loss Prevention tables."""
 
-    def __init__(self, mode: str, project: str, dataset: str = None,
-                 table: str = None, instance: str = None, zone: str = None, 
-                 db_user: str = None, db_password: str = None, db: str = None,
-                 ):
+    def __init__(self, db: str, project: str, dataset: str = None,
+                 table: str = None, instance: str = None, zone: str = None,
+                 db_user: str = None, database: str = None):
         """
         Args:
             project (str): The name of the Google Cloud Platform project.
@@ -23,31 +23,31 @@ class Preprocessing:
             table (str, optional): The name of the BigQuery table. Optional.
                 Defaults to None.
         """
-        
+
         self.project = project
-        self.mode = mode
-        
-        if mode == 'bigquery':
+        self.db = db
+
+        if db == 'bigquery':
             self.bq_client = bigquery.Client(project=project)
             self.dataset = dataset
             self.table = table
-        elif mode == 'cloudsql-mysql' or mode == 'cloudsql-postgres':
+        elif db == 'cloudsql-mysql' or db == 'cloudsql-postgres':
             self.connector = Connector()
             self.connection_name = f'{project}:{zone}:{instance}'
-            self.db = db
+            self.database = database
             self.db_user = db_user
-            self.db_password = db_password
+            self.db_password = getpass("Enter DB password: ")
             self.table = table
 
     def get_query_mysql(self, connection_name: str, db_user: str,
-                        db_password: str, db:str, table:str):
+                        db_password: str, database: str, table: str):
         """_summary_
 
         Args:
             connection_name (str): _description_
             db_user (str): _description_
             db_password (str): _description_
-            db (str): _description_
+            database (str): _description_
             table (str): _description_
 
         Returns:
@@ -56,9 +56,9 @@ class Preprocessing:
         conn = self.connector.connect(
             connection_name,
             "pymysql",
-            user = db_user,
-            password = db_password,
-            db = db
+            user=db_user,
+            password=db_password,
+            db=database
         )
         with conn.cursor() as cursor:
             query = f"select * from {table} limit 10"
@@ -66,15 +66,15 @@ class Preprocessing:
             rows = [row for row in cursor.fetchall()]
             return rows
 
-    def get_query_postgres(self, connection_name:str, db_user:str,
-                           db_password:str, db:str, table:str):
+    def get_query_postgres(self, connection_name: str, db_user: str,
+                           db_password: str, database: str, table: str):
         """_summary_
 
         Args:
             connection_name (str): _description_
             db_user (str): _description_
             db_password (str): _description_
-            db (str): _description_
+            database (str): _description_
             table (str): _description_
 
         Returns:
@@ -83,10 +83,11 @@ class Preprocessing:
         conn = self.connector.connect(
             connection_name,
             "pg8000",
-            user = db_user,
-            password = db_password,
-            db = db
+            user=db_user,
+            password=db_password,
+            db=database
         )
+        print(conn)
         cursor = conn.cursor()
         query = f"select * from {table} limit 10"
         cursor.execute(query)
@@ -181,7 +182,7 @@ class Preprocessing:
         """
         dlp_tables_list = []
 
-        if self.mode == 'bigquery':
+        if self.db == 'bigquery':
             if self.table:
                 bigquery_tables = [self.table]
             else:
@@ -193,10 +194,16 @@ class Preprocessing:
                         f'{self.project}.{self.dataset}.{table_name}')
                     table_dlp = self.convert_to_dlp_table(schema, content)
                     dlp_tables_list.append(table_dlp)
-        elif self.mode == 'cloudsql-mysql':
-            print(self.get_query_mysql(self.connection_name, self.db_user, self.db_password, self.db, self.table))
-        elif self.mode == 'cloudsql-postgres':
-            print(self.get_query_postgres(self.connection_name, self.db_user, self.db_password, self.db, self.table))
-            
-        
+        elif self.db == 'cloudsql-mysql':
+            print(self.get_query_mysql(self.connection_name, self.db_user,
+                  self.db_password, self.database, self.table))
+        elif self.db == 'cloudsql-postgres':
+            print(self.connection_name)
+            print(self.db_user)
+            print(self.db_password)
+            print(self.database)
+            print(self.table)
+            print(self.get_query_postgres(self.connection_name,
+                  self.db_user, self.db_password, self.database, self.table))
+
         return dlp_tables_list

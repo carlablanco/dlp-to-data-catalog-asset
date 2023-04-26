@@ -5,17 +5,18 @@
 
 import argparse
 from typing import Type
-import os
-import sys
-from dotenv import load_dotenv
 from dlp.preprocess import Preprocessing
 from dlp.inspection import DlpInspection
 
-load_dotenv()
 
 def parse_arguments() -> Type[argparse.Namespace]:
     """Parses command line arguments."""
     parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--db",
+        type=str,
+        required=True,
+        help="The source of data used, e.g. 'cloudsql-postgres' 'cloudsql-mysql' 'bigquery'.")
     parser.add_argument(
         "--project",
         type=str,
@@ -29,21 +30,35 @@ def parse_arguments() -> Type[argparse.Namespace]:
     parser.add_argument(
         "--dataset",
         type=str,
-        required=True,
         help="The BigQuery dataset to be scanned.")
     parser.add_argument(
         "--table",
         type=str,
         help="""The BigQuery table to be scanned. Optional.
                 If None, the entire dataset will be scanned.""")
+    parser.add_argument(
+        "--instance",
+        type=str,
+        help="""The instance to be used. Optional.""")
+    parser.add_argument(
+        "--zone",
+        type=str,
+        help="""The zone to use, e.g. us-central1-b. Optional.""")
+    parser.add_argument(
+        "--database",
+        type=str,
+        help="""The database to use. Optional.""")
+    parser.add_argument(
+        "--db_user",
+        type=str,
+        help="""The database user. Optional.""")
+    
     return parser.parse_args()
 
 # pylint: disable=unused-argument
-
-
-def run(mode:str, project: str, language_code: str, dataset: str= None,
-        table: str = None, instance:str = None, zone:str = None, db:str = None,
-        db_user:str = None, db_password:str = None):
+def run(db:str, project: str, language_code: str, dataset: str= None,
+        table: str = None, instance:str = None, zone:str = None,
+        database:str = None, db_user:str = None):
     """Runs DLP inspection scan and tags the results to Data Catalog.
 
     Args:
@@ -54,8 +69,8 @@ def run(mode:str, project: str, language_code: str, dataset: str= None,
                 If None, the entire dataset will be scanned.
     """
     preprocess = Preprocessing(
-        mode=mode, project=project, dataset=dataset, table=table, instance=instance,
-        zone= zone, db_user=db_user, db_password=db_password, db=db)
+        db=db, project=project, dataset=dataset, table=table,
+        instance=instance, zone= zone, db_user=db_user, database=database)
     tables = preprocess.get_dlp_table_list()
     print(tables)
     inspection = DlpInspection(project_id=project,
@@ -64,16 +79,7 @@ def run(mode:str, project: str, language_code: str, dataset: str= None,
 
 
 if __name__ == "__main__":
-    # args = parse_arguments()
-    project = os.getenv('PROJECT')
-    dataset = os.getenv('DATASET')
-    language_code = os.getenv('LANGUAGE_CODE')
-    table = os.getenv('TABLE')
-    mode = os.getenv('MODE')
-    instance = os.getenv('INSTANCE')
-    zone = os.getenv('ZONE')
-    db = os.getenv('DB')
-    db_user = os.getenv('DB_USER')
-    db_password = os.getenv('DB_PASSWORD')
-    run(mode, project, language_code,
-        dataset, table, instance, zone, db, db_user, db_password)
+    args = parse_arguments()
+    run(args.db, args.project, args.language_code,
+        args.dataset, args.table, args.instance, args.zone,
+        args.database, args.db_user)
