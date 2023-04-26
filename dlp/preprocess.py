@@ -33,9 +33,8 @@ class Preprocessing:
         dataset_tables = list(self.bq_client.list_tables(dataset))
         table_names = [table.table_id for table in dataset_tables]
         return table_names
-    
-    
-    def fetch_rows(self, table_id: str) -> List[dict]: 
+
+    def fetch_rows(self, table_id: str) -> List[dict]:
         """Fetches a batch of rows from a BigQuery table.
            Args:
               table_id (str) = The path of the table were the data is fetched.
@@ -45,15 +44,15 @@ class Preprocessing:
          """
         content = []
         fields = table_id.schema
-        rows_iter = self.bq_client.list_rows(
-            table_id,
-        )
+        try:
+            rows_iter = self.bq_client.list_rows(table_id)
+        except NotFound as exc:
+            raise ValueError(f"Error retrieving table {table_id}.") from exc
         for row in rows_iter:
-            row_dict = {}
-            for i, field in enumerate(fields):
-                row_dict[field.name] = row[i]
-            content.append(row_dict)
-  
+                row_dict = {}
+                for i, field in enumerate(fields):
+                    row_dict[field.name] = row[i]
+                content.append(row_dict)
         return content
 
     def get_bigquery_data(self, table_id: str) -> tuple:
@@ -123,4 +122,3 @@ class Preprocessing:
                 dlp_tables_list.append(table_dlp)
 
         return dlp_tables_list
-
