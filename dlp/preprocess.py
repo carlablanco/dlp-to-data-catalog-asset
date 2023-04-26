@@ -3,12 +3,9 @@
 # agreement with Google.
 """Processes input data to fit to DLP inspection standards."""
 
-import concurrent.futures
-import math
+from typing import List
 from google.api_core.exceptions import NotFound
 from google.cloud import bigquery, dlp_v2
-from typing import List
-
 
 class Preprocessing:
     """Converts input data into Data Loss Prevention tables."""
@@ -38,7 +35,7 @@ class Preprocessing:
         return table_names
     
     
-    def fetch_rows(self, table_id: str) -> List[dict]: #ultimas busquedas dicen q talvez no  es tan importante
+    def fetch_rows(self, table_id: str) -> List[dict]: 
         """Fetches a batch of rows from a BigQuery table.
            Args:
               table_id (str) = The path of the table were the data is fetched.
@@ -48,8 +45,6 @@ class Preprocessing:
          """
         content = []
         fields = table_id.schema
-        table = self.bq_client.get_table(table_id)
-        num_rows = table.num_rows
         rows_iter = self.bq_client.list_rows(
             table_id,
         )
@@ -128,3 +123,4 @@ class Preprocessing:
                 dlp_tables_list.append(table_dlp)
 
         return dlp_tables_list
+
