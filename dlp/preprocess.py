@@ -49,10 +49,10 @@ class Preprocessing:
         except NotFound as exc:
             raise ValueError(f"Error retrieving table {table_id}.") from exc
         for row in rows_iter:
-                row_dict = {}
-                for i, field in enumerate(fields):
-                    row_dict[field.name] = row[i]
-                content.append(row_dict)
+            row_dict = {}
+            for i, field in enumerate(fields):
+                row_dict[field.name] = row[i]
+            content.append(row_dict)
         return content
 
     def get_bigquery_data(self, table_id: str) -> tuple:
