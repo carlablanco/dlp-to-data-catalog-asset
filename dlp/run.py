@@ -7,7 +7,7 @@ import argparse
 from typing import Type
 from dlp.preprocess import Preprocessing
 from dlp.inspection import DlpInspection
-
+from getpass import getpass
 
 def parse_arguments() -> Type[argparse.Namespace]:
     """Parses command line arguments."""
@@ -68,15 +68,18 @@ def run(db:str, project: str, language_code: str, dataset: str= None,
         table: The BigQuery table to be scanned. Optional.
                 If None, the entire dataset will be scanned.
     """
+    db_password = None
+    if db == 'cloudsql-mysql' or db == 'cloudsql-postgres':
+        db_password = getpass("Enter DB password: ")
+        
     preprocess = Preprocessing(
         db=db, project=project, dataset=dataset, table=table,
-        instance=instance, zone= zone, db_user=db_user, database=database)
+        instance=instance, zone= zone, db_user=db_user, db_password=db_password, database=database)
     tables = preprocess.get_dlp_table_list()
     print(tables)
     inspection = DlpInspection(project_id=project,
                                language_code=language_code, tables=tables)
     inspection.main()
-
 
 if __name__ == "__main__":
     args = parse_arguments()

@@ -7,7 +7,6 @@ from typing import List
 from google.api_core.exceptions import NotFound
 from google.cloud import bigquery, dlp_v2
 from google.cloud.sql.connector import Connector
-from getpass import getpass
 
 
 class Preprocessing:
@@ -15,15 +14,19 @@ class Preprocessing:
 
     def __init__(self, db: str, project: str, dataset: str = None,
                  table: str = None, instance: str = None, zone: str = None,
-                 db_user: str = None, database: str = None):
+                 db_user: str = None, db_password: str = None, database: str = None):
         """
         Args:
             project (str): The name of the Google Cloud Platform project.
             dataset (str): The name of the BigQuery dataset.
             table (str, optional): The name of the BigQuery table. Optional.
                 Defaults to None.
+            instance (str, optional):
+            zone(str, optional):
+            db_user(str, optional):
+            db_password(str, optional):
+            database(str, optional):
         """
-
         self.project = project
         self.db = db
 
@@ -36,10 +39,10 @@ class Preprocessing:
             self.connection_name = f'{project}:{zone}:{instance}'
             self.database = database
             self.db_user = db_user
-            self.db_password = getpass("Enter DB password: ")
+            self.db_password = db_password
             self.table = table
 
-    def get_query_mysql(self, connection_name: str, db_user: str,
+    def get_mysql_data(self, connection_name: str, db_user: str,
                         db_password: str, database: str, table: str):
         """_summary_
 
@@ -61,12 +64,13 @@ class Preprocessing:
             db=database
         )
         with conn.cursor() as cursor:
-            query = f"select * from {table} limit 10"
+            query = f"select * from {table}"
             cursor.execute(query)
+            schema = [schema_field[0] for schema_field in cursor.description]
             rows = [row for row in cursor.fetchall()]
-            return rows
+            return schema, rows
 
-    def get_query_postgres(self, connection_name: str, db_user: str,
+    def get_postgres_data(self, connection_name: str, db_user: str,
                            db_password: str, database: str, table: str):
         """_summary_
 
@@ -87,12 +91,13 @@ class Preprocessing:
             password=db_password,
             db=database
         )
-        print(conn)
         cursor = conn.cursor()
-        query = f"select * from {table} limit 10"
+        query = f"select * from {table}"
         cursor.execute(query)
+        schema = [schema_field[0] for schema_field in cursor.description]
         rows = [row for row in cursor.fetchall()]
-        return rows
+        conn.close()
+        return schema, rows
 
     def get_query(self, table_id: str) -> str:
         """Creates an SQL query as string.
@@ -134,19 +139,19 @@ class Preprocessing:
             raise ValueError(f"Error retrieving table {table_id}.") from exc
 
         table_schema = table_bq.schema
-        bq_schema = [schema_field.to_api_repr()
+        bq_schema = [schema_field.to_api_repr()['name']
                      for schema_field in table_schema]
 
         sql_query = self.get_query(table_id)
         query_job = self.bq_client.query(sql_query)
         query_results = query_job.result()
 
-        bq_rows_content = [dict(row) for row in query_results]
+        bq_rows_content = [dict(row).values() for row in query_results]
 
         return bq_schema, bq_rows_content
 
-    def convert_to_dlp_table(self, bq_schema: List[dict],
-                             bq_content: List[dict]) -> dlp_v2.Table:
+    def convert_to_dlp_table(self, schema: List[list],
+                                      content: List[list]) -> dlp_v2.Table:
         """Converts a BigQuery table into a DLP table.
 
         Converts a BigQuery table into a Data Loss Prevention table,
@@ -161,14 +166,14 @@ class Preprocessing:
         """
         table_dlp = dlp_v2.Table()
         table_dlp.headers = [
-            {"name": schema_object['name']} for schema_object in bq_schema
+            {"name": schema_object} for schema_object in schema
         ]
 
         rows = []
-        for row in bq_content:
+        for row in content:
             rows.append(dlp_v2.Table.Row(
                 values=[dlp_v2.Value(
-                    string_value=str(cell_val)) for cell_val in row.values()]))
+                    string_value=str(cell_val)) for cell_val in row]))
 
         table_dlp.rows = rows
 
@@ -195,15 +200,15 @@ class Preprocessing:
                     table_dlp = self.convert_to_dlp_table(schema, content)
                     dlp_tables_list.append(table_dlp)
         elif self.db == 'cloudsql-mysql':
-            print(self.get_query_mysql(self.connection_name, self.db_user,
-                  self.db_password, self.database, self.table))
+            schema, content = self.get_mysql_data(self.connection_name, self.db_user,
+                                                   self.db_password, self.database, self.table)
+            table_dlp = self.convert_to_dlp_table(schema, content)
+            dlp_tables_list.append(table_dlp)
         elif self.db == 'cloudsql-postgres':
-            print(self.connection_name)
-            print(self.db_user)
-            print(self.db_password)
-            print(self.database)
-            print(self.table)
-            print(self.get_query_postgres(self.connection_name,
-                  self.db_user, self.db_password, self.database, self.table))
-
+            schema, content = self.get_postgres_data(self.connection_name,
+                                                      self.db_user, self.db_password,
+                                                      self.database, self.table)
+            table_dlp = self.convert_to_dlp_table(schema, content)
+            dlp_tables_list.append(table_dlp)
+            
         return dlp_tables_list
