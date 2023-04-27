@@ -3,7 +3,7 @@
 # agreement with Google.
 """Processes input data to fit to DLP inspection standards."""
 
-from typing import List, Tuple
+from typing import List, Tuple, Dict
 from google.api_core.exceptions import NotFound
 from google.cloud import bigquery, dlp_v2
 
@@ -36,14 +36,14 @@ class Preprocessing:
         table_names = [table.table_id for table in dataset_tables]
         return table_names
 
-    def fetch_rows(self, table_id: str) -> List[dict]:
+    def fetch_rows(self, table_id: str) -> List[Dict]:
         """Fetches a batch of rows from a BigQuery table.
 
            Args:
               table_id (str) = The path of the table were the data is fetched.
 
            Returns:
-              list[dicts]: A list of rows, where each row is a tuple
+              list[Dict]: A list of rows, where each row is a tuple
               containing the values for each field in the table schema.
          """
         content = []
@@ -55,13 +55,13 @@ class Preprocessing:
                                                         table and try again.""")
         else:
             for row in rows_iter:
-                row_dict = {}
+                row_Dict = {}
                 for i, field in enumerate(fields):
-                    row_dict[field.name] = row[i]
-                content.append(row_dict)
+                    row_Dict[field.name] = row[i]
+                content.append(row_Dict)
         return content
 
-    def get_bigquery_data(self, table_id: str) -> Tuple[List[dict], List[dict]]:
+    def get_bigquery_data(self, table_id: str) -> Tuple[List[Dict], List[Dict]]:
         """Retrieves the schema and content of a BigQuery table.
 
         Args:
@@ -69,7 +69,7 @@ class Preprocessing:
 
         Returns:
             tuple: A tuple containing the BigQuery schema and content as a List
-            of Dictionaries
+            of Dictionaries.
         """
         try:
             table_bq = self.bq_client.get_table(table_id)
@@ -84,8 +84,8 @@ class Preprocessing:
 
         return bq_schema, bq_rows_content
 
-    def convert_to_dlp_table(self, bq_schema: List[dict],
-                             bq_content: List[dict]) -> dlp_v2.Table:
+    def convert_to_dlp_table(self, bq_schema: List[Dict],
+                             bq_content: List[Dict]) -> dlp_v2.Table:
         """Converts a BigQuery table into a DLP table.
 
         Converts a BigQuery table into a Data Loss Prevention table,
