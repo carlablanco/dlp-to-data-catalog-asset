@@ -47,7 +47,7 @@ class Preprocessing:
         rows_iter = self.bq_client.list_rows(table_id)
 
         if not rows_iter.total_rows:
-            print("Table is empty. Please populate the table and try again.")
+            print(f"The Table {table_id}is empty. Please populate the table and try again.")
         else:
             for row in rows_iter:
                 row_dict = {}
