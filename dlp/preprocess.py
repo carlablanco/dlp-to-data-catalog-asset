@@ -43,7 +43,7 @@ class Preprocessing:
               table_id (str) = The path of the table were the data is fetched.
 
            Returns:
-              list[Dict]: A list of rows, where each row is a tuple
+              List[Dict]: A list of rows, where each row is a tuple
               containing the values for each field in the table schema.
          """
         content = []
@@ -68,7 +68,7 @@ class Preprocessing:
             table_id (str): The fully qualified name of the BigQuery table.
 
         Returns:
-            tuple: A tuple containing the BigQuery schema and content as a List
+            Tuple: A tuple containing the BigQuery schema and content as a List
             of Dictionaries.
         """
         try:
@@ -92,8 +92,8 @@ class Preprocessing:
         an object that can be inspected by Data Loss Prevention.
 
         Args:
-            bq_schema (list): The schema of a BigQuery table.
-            bq_content (list): The content of a BigQuery table.
+            bq_schema (List): The schema of a BigQuery table.
+            bq_content (List): The content of a BigQuery table.
 
         Returns:
             A table object that can be inspected by Data Loss Prevention.
