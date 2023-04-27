@@ -43,7 +43,7 @@ class Preprocessing:
               table_id (str) = The path of the table were the data is fetched.
 
            Returns:
-              content (list[dicts]): A list of rows, where each row is a tuple
+              list[dicts]: A list of rows, where each row is a tuple
               containing the values for each field in the table schema.
          """
         content = []
@@ -68,8 +68,8 @@ class Preprocessing:
             table_id (str): The fully qualified name of the BigQuery table.
 
         Returns:
-            bq_schema (tuple): A tuple containing the BigQuery schema.
-            bq_content (tuple): A tuple containing the BigQuery content.
+            tuple: A tuple containing the BigQuery schema and content as a List
+            of Dictionaries
         """
         try:
             table_bq = self.bq_client.get_table(table_id)
