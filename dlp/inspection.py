@@ -163,8 +163,8 @@ class DlpInspection:
 
         results = {}
         # Create a dictionary in the correct format to analyze the API response.
-        for i in range(enumerate(results_list)):
-            results["result"] = results_list[i].result
+        for i in range(len(results_list)):
+            results["result"] = results_list[i].result 
         return results
 
     def main(self):
