@@ -55,10 +55,10 @@ class Preprocessing:
                                                         table and try again.""")
         else:
             for row in rows_iter:
-                row_Dict = {}
+                row_dict = {}
                 for i, field in enumerate(fields):
-                    row_Dict[field.name] = row[i]
-                content.append(row_Dict)
+                    row_dict[field.name] = row[i]
+                content.append(row_dict)
         return content
 
     def get_bigquery_data(self, table_id: str) -> Tuple[List[Dict], List[Dict]]:
