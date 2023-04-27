@@ -5,6 +5,7 @@
 
 from typing import List, Dict
 from google.cloud import dlp_v2
+import math
 
 class DlpInspection:
     """Performs a DLP inspection on a preprocessed table to identify
@@ -12,7 +13,6 @@ class DlpInspection:
     def __init__(self, project_id: str, language_code: str,
                  tables: List[dlp_v2.Table]):
         """Initializes the class with the required data.
-
         Args:
             project_id: The project ID to be used.
             language_code: The BCP-47 language code to use, e.g. 'en-US'.
@@ -25,11 +25,7 @@ class DlpInspection:
 
     def get_inspection_parameters(self):
         """Gets the table to be inspected with an API call.
-
-            Args:
-                table: The particular table to be inspected in the correct 
-                        format.
-
+            
             Returns:
                 parent: The project route in GCP.
                 inspect_config: The configuration for the inspection.
@@ -49,17 +45,14 @@ class DlpInspection:
 
     def analyze_inspection_result(self, table_inspected: Dict) -> Dict:
         """Processes the results of the inspection.
-
             This code iterates through an API response and constructs a
             dictionary.
             Each entry in the dictionary is associated with a column and
             contains a sub-dictionary for each infotype found in the response.
             In each sub-dictionary, the variable name is used as the key
             and the associated value is the likelihood.
-
             Args:
                 table_inspected: The API response to be analyzed.
-
             Returns:
                 finding_results: For every variable there is a dictionary with
                     the infotype and the likelihood value.
@@ -71,8 +64,8 @@ class DlpInspection:
             "VERY_LIKELY":1.4
         }
         finding_results = {}
-        if table_inspected.result.findings:
-            for finding in table_inspected.result.findings:
+        if table_inspected['result'].findings:
+            for finding in table_inspected['result'].findings:
                 try:
                     column = finding.location.content_locations[
                         0].record_location.field_id.name
@@ -94,13 +87,10 @@ class DlpInspection:
 
     def get_max_infotype(self, finding_results: Dict) -> Dict:
         """Gets the max infotype for each variable.
-
             Iterates over the finding results and returns the infotype with
             the highest likelihood.
-
             Args:
                 finding_results: The findings result to be analyzed.
-
             Returns:
             top_findings: A dictionary where each variable has its respective
               "infotype" and "likelihood value."
@@ -120,6 +110,66 @@ class DlpInspection:
             top_findings[column] = max_infotype
         return top_findings
 
+    def dlp_inspection(self, parent, table, inspect_config):
+        """ Analyze the complete DLP table in blocks of 10000 cells.
+        
+            Args:
+               parent: The project route in GCP.
+               table: The particular table to be inspected in the correct 
+                        format.
+               inspect_config: The configuration for the inspection.
+               
+            Returns:
+                res: A dictionary with the complete response of the API
+            
+        """
+        
+        num_headers = len(table.headers)
+        # Get the headers from the first row of the table.
+        table_dlp = dlp_v2.Table()
+        table_dlp.headers = [
+            {"name": table.headers[i].name} for i in range(num_headers)]
+        
+        
+        # List of data chunks of 10000 cells.
+        data_chunks = [table.rows[i:i+int((10000/num_headers))]
+                       for i in range(0, len(table.rows),
+                                      int((10000/num_headers)))] 
+        
+        # Create a list for the DLP inspections.
+        results_list = []
+        
+        for chunk in data_chunks:
+            # Get specific data chunk.
+            chunk_data = [[value.string_value for value in row.values]
+                          for row in chunk]
+            
+            # Add the specific data chunk to the dlp object.
+            rows = []
+            for row in chunk_data:
+                rows.append(dlp_v2.Table.Row(
+                    values=[dlp_v2.Value(
+                        string_value=cell_val) for cell_val in row]))
+
+            table_dlp.rows = rows
+
+            # Make the API request for the chunk of data.
+            response = self.dlp_client.inspect_content(
+                request={
+                    "parent": parent,
+                    "item": {"table": table_dlp},
+                    "inspect_config": inspect_config
+                }
+            )
+            # Append the chunk inspection into the results_list
+            results_list.append(response)
+
+        results = {}
+        # Create a dictionary in the correct format to analyze the API response.                  
+        for i in range(len(results_list)):
+            results["result"] = results_list[i].result 
+        return results
+    
     def main(self):
         """Iterates over the given tables and analyzes each one.
             
@@ -132,13 +182,12 @@ class DlpInspection:
         parent, inspect_config = self.get_inspection_parameters()
         for table in self.tables:
             # Get table to be inspected.
-            response = self.dlp_client.inspect_content(
-                request={"parent": parent, "item": {"table" : table},
-                            "inspect_config": inspect_config})
+            response = self.dlp_inspection(parent, table, inspect_config)
             # Processes the results of the inspection.
             finding_results = self.analyze_inspection_result(response)
             # Get the max infotype for each variable.
             top_findings = self.get_max_infotype(finding_results)
             # Append to the results list.
             results.append(top_findings)
+            
         return results
