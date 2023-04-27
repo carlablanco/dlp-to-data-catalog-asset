@@ -92,8 +92,8 @@ class Preprocessing:
         an object that can be inspected by Data Loss Prevention.
 
         Args:
-            bq_schema (List): The schema of a BigQuery table.
-            bq_content (List): The content of a BigQuery table.
+            bq_schema (List[Dict]): The schema of a BigQuery table.
+            bq_content (List[Dict]): The content of a BigQuery table.
 
         Returns:
             A table object that can be inspected by Data Loss Prevention.
