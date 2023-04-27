@@ -25,8 +25,10 @@ class Preprocessing:
 
     def get_bigquery_tables(self, dataset: str) -> List[str]:
         """Constructs a list of table names from a BigQuery dataset.
+
         Args:
             Dataset (str): Name of the dataset in BigQuery.
+
         Returns:
             List of tablenames.
         """
@@ -36,8 +38,10 @@ class Preprocessing:
 
     def fetch_rows(self, table_id: str) -> List[dict]:
         """Fetches a batch of rows from a BigQuery table.
+
            Args:
               table_id (str) = The path of the table were the data is fetched.
+
            Returns:
               content (list[dicts]): A list of rows, where each row is a tuple
               containing the values for each field in the table schema.
@@ -47,7 +51,8 @@ class Preprocessing:
         rows_iter = self.bq_client.list_rows(table_id)
 
         if not rows_iter.total_rows:
-            print(f"The Table {table_id} is empty. Please populate the table and try again.")
+            print(f"""The Table {table_id} is empty. Please populate the 
+                                                        table and try again.""")
         else:
             for row in rows_iter:
                 row_dict = {}
@@ -58,8 +63,10 @@ class Preprocessing:
 
     def get_bigquery_data(self, table_id: str) -> Tuple[List[dict], List[dict]]:
         """Retrieves the schema and content of a BigQuery table.
+
         Args:
             table_id (str): The fully qualified name of the BigQuery table.
+
         Returns:
             bq_schema (tuple): A tuple containing the BigQuery schema.
             bq_content (tuple): A tuple containing the BigQuery content.
@@ -80,11 +87,14 @@ class Preprocessing:
     def convert_to_dlp_table(self, bq_schema: List[dict],
                              bq_content: List[dict]) -> dlp_v2.Table:
         """Converts a BigQuery table into a DLP table.
+
         Converts a BigQuery table into a Data Loss Prevention table,
         an object that can be inspected by Data Loss Prevention.
+
         Args:
             bq_schema (list): The schema of a BigQuery table.
             bq_content (list): The content of a BigQuery table.
+
         Returns:
             A table object that can be inspected by Data Loss Prevention.
         """
@@ -105,6 +115,7 @@ class Preprocessing:
 
     def get_dlp_table_list(self) -> List[dlp_v2.Table]:
         """Constructs a list of DLP Table objects
+
         Returns:
             A list of Data Loss Prevention table objects.
         """
