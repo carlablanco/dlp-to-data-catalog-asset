@@ -127,7 +127,7 @@ class DlpInspection:
         table_dlp = dlp_v2.Table()
         table_dlp.headers = [
             {"name": table.headers[i].name} for i in range(num_headers)]
-        
+
         # List of data chunks of 10000 cells.
         data_chunks = [table.rows[i:i+int((10000/num_headers))]
                        for i in range(0, len(table.rows),
@@ -163,7 +163,7 @@ class DlpInspection:
 
         results = {}
         # Create a dictionary in the correct format to analyze the API response.
-        for i in range(len(results_list)):
+        for i in range(enumerate(results_list)):
             results["result"] = results_list[i].result
         return results
 
@@ -186,5 +186,5 @@ class DlpInspection:
             top_findings = self.get_max_infotype(finding_results)
             # Append to the results list.
             results.append(top_findings)
-            
+
         return results
