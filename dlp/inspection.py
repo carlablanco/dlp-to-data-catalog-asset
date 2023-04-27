@@ -5,7 +5,6 @@
 
 from typing import List, Dict
 from google.cloud import dlp_v2
-import math
 
 class DlpInspection:
     """Performs a DLP inspection on a preprocessed table to identify
@@ -123,27 +122,25 @@ class DlpInspection:
                 res: A dictionary with the complete response of the API
             
         """
-        
         num_headers = len(table.headers)
         # Get the headers from the first row of the table.
         table_dlp = dlp_v2.Table()
         table_dlp.headers = [
             {"name": table.headers[i].name} for i in range(num_headers)]
         
-        
         # List of data chunks of 10000 cells.
         data_chunks = [table.rows[i:i+int((10000/num_headers))]
                        for i in range(0, len(table.rows),
-                                      int((10000/num_headers)))] 
-        
+                                      int((10000/num_headers)))]
+
         # Create a list for the DLP inspections.
         results_list = []
-        
+
         for chunk in data_chunks:
             # Get specific data chunk.
             chunk_data = [[value.string_value for value in row.values]
                           for row in chunk]
-            
+
             # Add the specific data chunk to the dlp object.
             rows = []
             for row in chunk_data:
@@ -165,14 +162,14 @@ class DlpInspection:
             results_list.append(response)
 
         results = {}
-        # Create a dictionary in the correct format to analyze the API response.                  
+        # Create a dictionary in the correct format to analyze the API response.
         for i in range(len(results_list)):
-            results["result"] = results_list[i].result 
+            results["result"] = results_list[i].result
         return results
-    
+
     def main(self):
         """Iterates over the given tables and analyzes each one.
-            
+
            Returns:
                 results: A list of dictionaries with the infotype with the
                     highest likelihood.
