@@ -12,9 +12,10 @@ class DlpInspection:
     def __init__(self, project_id: str, language_code: str,
                  tables: List[dlp_v2.Table]):
         """Initializes the class with the required data.
+
         Args:
             project_id: The project ID to be used.
-            language_code: The BCP-47 language code to use, e.g. 'en-US'.
+            language_code: The BCP-47 language code to use, e.g. "en-US".
             tables: Tables to be inspected in the correct format.
         """
         self.dlp_client = dlp_v2.DlpServiceClient()
@@ -58,7 +59,7 @@ class DlpInspection:
             Returns:
                 finding_results: For every variable there is a dictionary with
                     the infotype and the likelihood value.
-                Example: {'name': {'PERSON_NAME': 4.4}, 'age': {'AGE': 5.8}}
+                Example: {"name": {"PERSON_NAME": 4.4}, "age": {"AGE": 5.8}}
         """
         value_likelihood = {
             "POSSIBLE":1,
@@ -66,8 +67,8 @@ class DlpInspection:
             "VERY_LIKELY":1.4
         }
         finding_results = {}
-        if table_inspected['result'].findings:
-            for finding in table_inspected['result'].findings:
+        if table_inspected["result"].findings:
+            for finding in table_inspected["result"].findings:
                 try:
                     column = finding.location.content_locations[
                         0].record_location.field_id.name
@@ -117,7 +118,12 @@ class DlpInspection:
 
     def dlp_inspection(self, parent, table, inspect_config):
         """ Analyze the complete DLP table in blocks of 10000 cells.
-        
+
+            This function iteratively analyzes a large DLP table by making API
+            calls in blocks of 10000 cells at a time. This helps to avoid
+            exceeding API quotas and rate limits, which can cause errors
+            and delays.
+
             Args:
                parent: The project route in GCP.
                table: The particular table to be inspected in the correct 
@@ -125,7 +131,7 @@ class DlpInspection:
                inspect_config: The configuration for the inspection.
                
             Returns:
-                res: A dictionary with the complete response of the API
+                Dict: The complete response of the API
             
         """
         num_headers = len(table.headers)
@@ -164,13 +170,13 @@ class DlpInspection:
                     "inspect_config": inspect_config
                 }
             )
-            # Append the chunk inspection into the results_list
+            # Append the chunk inspection into the results_list.
             results_list.append(response)
 
         results = {}
         # Create a dictionary in the correct format to analyze the API response.
-        for i in range(len(results_list)):
-            results["result"] = results_list[i].result
+        for i, elem in enumerate(results_list):
+            results["result"] = elem.result
         return results
 
     def main(self):
@@ -179,8 +185,8 @@ class DlpInspection:
            Returns:
                 results: A list of dictionaries with the infotype with the
                     highest likelihood.
-                    Example: [{'name': 'PERSON_NAME', 'age': 'AGE'},
-                     {'DNI': 'GOVERMENT_ID', 'token': 'AUTH_TOKEN'}]"""
+                    Example: [{"name": "PERSON_NAME", "age": "AGE"},
+                     {"DNI": "GOVERMENT_ID", "token": "AUTH_TOKEN"}]"""
         results = []
         parent, inspect_config = self.get_inspection_parameters()
         for table in self.tables:
