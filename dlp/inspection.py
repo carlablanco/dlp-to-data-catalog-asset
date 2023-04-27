@@ -46,12 +46,15 @@ class DlpInspection:
         """Processes the results of the inspection.
             This code iterates through an API response and constructs a
             dictionary.
+
             Each entry in the dictionary is associated with a column and
             contains a sub-dictionary for each infotype found in the response.
             In each sub-dictionary, the variable name is used as the key
             and the associated value is the likelihood.
+
             Args:
                 table_inspected: The API response to be analyzed.
+
             Returns:
                 finding_results: For every variable there is a dictionary with
                     the infotype and the likelihood value.
@@ -86,10 +89,13 @@ class DlpInspection:
 
     def get_max_infotype(self, finding_results: Dict) -> Dict:
         """Gets the max infotype for each variable.
+
             Iterates over the finding results and returns the infotype with
             the highest likelihood.
+
             Args:
                 finding_results: The findings result to be analyzed.
+
             Returns:
             top_findings: A dictionary where each variable has its respective
               "infotype" and "likelihood value."
