@@ -137,7 +137,7 @@ class DlpInspection:
                inspect_config: The configuration for the inspection.
 
             Returns:
-                Dict: The complete response of the API
+                Dict: The complete response of the API.
             
         """
         num_headers = len(table.headers)
