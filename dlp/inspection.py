@@ -64,8 +64,8 @@ class DlpInspection:
 
         table_inspected = {}
         # Create a dictionary in the correct format to analyze the API response.
-        for elem in (results_list):
-            table_inspected["result"] = elem.result
+        for result in (results_list):
+            table_inspected["result"] = result.result
 
         value_likelihood = {
             "POSSIBLE":1,
@@ -149,7 +149,7 @@ class DlpInspection:
         # List of data chunks of 10000 cells.
         data_chunks = [table.rows[i:i+int((10000/num_headers))]
                        for i in range(0, len(table.rows),
-                                      int((10000/num_headers)))]
+                        int((10000/num_headers)))]
 
         # Create a list for the DLP inspections.
         results_list = []
