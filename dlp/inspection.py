@@ -43,7 +43,7 @@ class DlpInspection:
         parent = f"projects/{self.project_id}"
         return parent, inspect_config
 
-    def analyze_inspection_result(self, table_inspected: Dict) -> Dict:
+    def analyze_inspection_result(self, results_list: List[Dict] ) -> Dict:
         """Processes the results of the inspection.
             This code iterates through an API response and constructs a
             dictionary.
@@ -61,6 +61,12 @@ class DlpInspection:
                     the infotype and the likelihood value.
                 Example: {"name": {"PERSON_NAME": 4.4}, "age": {"AGE": 5.8}}
         """
+        
+        table_inspected = {}
+        # Create a dictionary in the correct format to analyze the API response.
+        for i, elem in enumerate(results_list):
+            table_inspected["result"] = elem.result
+    
         value_likelihood = {
             "POSSIBLE":1,
             "LIKELY":1.2,
@@ -172,12 +178,7 @@ class DlpInspection:
             )
             # Append the chunk inspection into the results_list.
             results_list.append(response)
-
-        results = {}
-        # Create a dictionary in the correct format to analyze the API response.
-        for i, elem in enumerate(results_list):
-            results["result"] = elem.result
-        return results
+        return results_list
 
     def main(self):
         """Iterates over the given tables and analyzes each one.
@@ -200,3 +201,4 @@ class DlpInspection:
             results.append(top_findings)
 
         return results
+    
