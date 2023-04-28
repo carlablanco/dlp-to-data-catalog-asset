@@ -25,7 +25,7 @@ class DlpInspection:
 
     def get_inspection_parameters(self):
         """Gets the table to be inspected with an API call.
-            
+
             Returns:
                 parent: The project route in GCP.
                 inspect_config: The configuration for the inspection.
@@ -64,7 +64,7 @@ class DlpInspection:
 
         table_inspected = {}
         # Create a dictionary in the correct format to analyze the API response.
-        for i, elem in enumerate(results_list):
+        for elem in (results_list):
             table_inspected["result"] = elem.result
 
         value_likelihood = {
@@ -135,7 +135,7 @@ class DlpInspection:
                table: The particular table to be inspected in the correct 
                         format.
                inspect_config: The configuration for the inspection.
-               
+
             Returns:
                 Dict: The complete response of the API
             
