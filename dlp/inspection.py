@@ -61,12 +61,12 @@ class DlpInspection:
                     the infotype and the likelihood value.
                 Example: {"name": {"PERSON_NAME": 4.4}, "age": {"AGE": 5.8}}
         """
-        
+
         table_inspected = {}
         # Create a dictionary in the correct format to analyze the API response.
         for i, elem in enumerate(results_list):
             table_inspected["result"] = elem.result
-    
+
         value_likelihood = {
             "POSSIBLE":1,
             "LIKELY":1.2,
