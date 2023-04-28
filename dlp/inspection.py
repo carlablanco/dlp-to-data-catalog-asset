@@ -159,7 +159,7 @@ class DlpInspection:
             chunk_data = [[value.string_value for value in row.values]
                           for row in chunk]
 
-            # Add the specific data chunk to the dlp object.
+            # Add the specific data chunk to the DLP object.
             rows = []
             for row in chunk_data:
                 rows.append(dlp_v2.Table.Row(
