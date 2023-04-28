@@ -123,7 +123,7 @@ class DlpInspection:
         return top_findings
 
     def dlp_inspection(self, parent, table, inspect_config):
-        """ Analyze the complete DLP table in blocks of 10000 cells.
+        """Runs an inspection job on the DLP table.
 
             This function iteratively analyzes a large DLP table by making API
             calls in blocks of 10000 cells at a time. This helps to avoid
