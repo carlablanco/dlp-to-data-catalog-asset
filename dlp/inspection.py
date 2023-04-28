@@ -148,8 +148,8 @@ class DlpInspection:
 
         # List of data chunks of 10000 cells.
         data_chunks = [table.rows[i:i+int((10000/num_headers))]
-                       for i in range(0, len(table.rows),
-                        int((10000/num_headers)))]
+                                for i in range(0, len(table.rows),
+                                            int((10000/num_headers)))]
 
         # Create a list for the DLP inspections.
         results_list = []
