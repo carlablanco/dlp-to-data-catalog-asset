@@ -52,10 +52,7 @@ def parse_arguments() -> Type[argparse.Namespace]:
 
     return parser.parse_args()
 
-# pylint: disable=unused-argument
-def run(db_source: str, project: str, language_code: str, dataset: str = None,
-        table: str = None, instance: str = None, zone: str = None,
-        database: str = None):
+def run(args):
     """Runs DLP inspection scan and tags the results to Data Catalog.
 
     Args:
@@ -66,17 +63,16 @@ def run(db_source: str, project: str, language_code: str, dataset: str = None,
                 If None, the entire dataset will be scanned.
     """
     preprocess = Preprocessing(
-        db_source=db_source, project=project, dataset=dataset, table=table,
-        instance=instance, zone=zone, database=database)
+        db_source=args.DB, project=args.project, dataset=args.dataset,
+        table=args.table, instance=args.instance, zone=args.zone,
+        database=args.database)
     tables = preprocess.get_dlp_table_list()
     print(tables)
-    inspection = DlpInspection(project_id=project,
-                               language_code=language_code, tables=tables)
+    inspection = DlpInspection(project_id=args.project,
+                               language_code=args.language_code, tables=tables)
     inspection.main()
 
 
 if __name__ == "__main__":
     args = parse_arguments()
-    run(args.DB, args.project, args.language_code,
-        args.dataset, args.table, args.instance, args.zone,
-        args.database)
+    run(args)
