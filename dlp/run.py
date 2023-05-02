@@ -52,6 +52,7 @@ def parse_arguments() -> Type[argparse.Namespace]:
 
     return parser.parse_args()
 
+
 def run(args: Type[argparse.Namespace]):
     """Runs DLP inspection scan and tags the results to Data Catalog.
 
@@ -63,11 +64,12 @@ def run(args: Type[argparse.Namespace]):
                 If None, the entire dataset will be scanned.
     """
     preprocess = Preprocessing(
-        db_source=args.DB, project=args.project, 
-        bigquery_args={ "dataset":args.dataset,"table":args.table },
-        cloudsql_args={"instance":args.instance, "zone": args.zone,"database":args.database,"table":args.table })
+        db_source=args.DB, project=args.project,
+        bigquery_args={"dataset": args.dataset, "table": args.table},
+        cloudsql_args={"instance": args.instance, "zone": args.zone,
+                       "database": args.database, "table": args.table})
     tables = preprocess.get_dlp_table_list()
-    
+
     inspection = DlpInspection(project_id=args.project,
                                language_code=args.language_code, tables=tables)
     inspection.main()

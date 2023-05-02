@@ -14,6 +14,8 @@ from sqlalchemy import create_engine, MetaData, Table
 
 @dataclasses.dataclass
 class Bigquery:
+    """Represents a connection to a Google BigQuery dataset and table.
+    """
     bq_client: bigquery.Client
     dataset: str
     table: str
@@ -21,6 +23,8 @@ class Bigquery:
 
 @dataclasses.dataclass
 class Cloudsql:
+    """Represents a connection to a Google CloudSQL.
+    """
     connector: Connector
     connection_name: str
     database: str
@@ -29,6 +33,8 @@ class Cloudsql:
 
 @dataclasses.dataclass
 class DbSource:
+    """Represents available sources for database connections
+    """
     bigquery: str = "bigquery"
     postgres: str = "cloudsql-postgres"
     mysql: str = "cloudsql-mysql"
@@ -37,7 +43,8 @@ class DbSource:
 class Preprocessing:
     """Converts input data into Data Loss Prevention tables."""
 
-    def __init__(self, db_source: str, project: str, bigquery_args: Dict = None, cloudsql_args: Dict = None):
+    def __init__(self, db_source: str, project: str,
+                 bigquery_args: Dict = None, cloudsql_args: Dict = None):
         """
         Args:
             db_source (str)
@@ -57,11 +64,14 @@ class Preprocessing:
 
         if db_source == DbSource.bigquery:
             self.bigquery = Bigquery(bigquery.Client(
-                project=project), bigquery_args["dataset"], bigquery_args["table"])
+                project=project), bigquery_args["dataset"],
+                bigquery_args["table"])
         elif db_source in [DbSource.mysql, DbSource.postgres]:
+            zone = cloudsql_args["zone"]
+            instance = cloudsql_args["instance"]
             self.cloudsql = Cloudsql(
-                Connector(
-                ), f'{project}:{cloudsql_args["zone"]}:{cloudsql_args["instance"]}',
+                Connector(),
+                f'{project}:{zone}:{instance}',
                 cloudsql_args["database"], cloudsql_args["table"])
 
     def get_connection(self):
