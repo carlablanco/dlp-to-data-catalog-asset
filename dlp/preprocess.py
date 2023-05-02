@@ -93,7 +93,7 @@ class Preprocessing:
         # Get table contents
         with engine.connect() as connection:
             select = table.select().with_only_columns(table.columns)
-            content = [row for row in connection.execute(select).fetchall()]
+            content = list(connection.execute(select).fetchall())
 
         return schema, content
 

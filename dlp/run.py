@@ -53,8 +53,6 @@ def parse_arguments() -> Type[argparse.Namespace]:
     return parser.parse_args()
 
 # pylint: disable=unused-argument
-
-
 def run(db_source: str, project: str, language_code: str, dataset: str = None,
         table: str = None, instance: str = None, zone: str = None,
         database: str = None):
