@@ -5,6 +5,7 @@
 
 from typing import List, Dict
 from google.cloud import dlp_v2
+from google.api_core.exceptions import BadRequest
 
 class DlpInspection:
     """Performs a DLP inspection on a preprocessed table to identify
@@ -184,9 +185,9 @@ class DlpInspection:
                 )
                 # Append the chunk inspection into the results_list.
                 results_list.append(response)
-            except self.dlp_client.errors as error:
-                print("Error: {}".format(error))
-                return None
+            except BadRequest as error:
+                # Handle the BadRequest exception here
+                raise BadRequest(error)
         return results_list
 
     def main(self):
