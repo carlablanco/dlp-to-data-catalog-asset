@@ -60,12 +60,12 @@ class DlpInspection:
                     the infotype and the likelihood value.
                 Example: {"name": {"PERSON_NAME": 4.4}, "age": {"AGE": 5.8}}
         """
-        
+
         table_inspected = {}
         # Create a dictionary in the correct format to analyze the API response.
         for result in (results):
             table_inspected["result"] = result.result
-    
+
         value_likelihood = {
             "POSSIBLE":1,
             "LIKELY":1.2,
@@ -121,7 +121,8 @@ class DlpInspection:
             top_findings[column] = max_infotype
         return top_findings
 
-    def analyze_dlp_table(self, parent: str, table: str, inspect_config: Dict) -> List[Dict]:
+    def analyze_dlp_table(self, parent: str, table: str,
+                          inspect_config: Dict) -> List[Dict]:
         """ Analyze the complete DLP table in blocks of 10000 cells.
 
             This function iteratively analyzes a large DLP table by making API
@@ -133,12 +134,12 @@ class DlpInspection:
                parent (str): The project route in GCP.
                table: The particular table to be inspected in the correct 
                         format.
-               inspect_config (Dict): Parameters for the ispection. InfoTypes and the minimum
-                               likelihood.
+               inspect_config (Dict): Parameters for the ispection. InfoTypes
+                               and the minimum likelihood.
                
             Returns:
-                List[Dict]: The response from the API. Each varibale is inspected and
-                returns findings for each record
+                List[Dict]: The response from the API. Each varibale is
+                inspected and returns findings for each record
             
         """
         # The Block size adecuate to the DLP scan
@@ -172,17 +173,20 @@ class DlpInspection:
                         string_value=cell_val) for cell_val in row]))
 
             dlp_table.rows = rows
-            ''' meterle error handling'''
-            # Make the API request for the chunk of data.
-            response = self.dlp_client.inspect_content(
-                request={
-                    "parent": parent,
-                    "item": {"table": dlp_table},
-                    "inspect_config": inspect_config
-                }
-            )
-            # Append the chunk inspection into the results_list.
-            results_list.append(response)
+            try:
+                # Make the API request for the chunk of data.
+                response = self.dlp_client.inspect_content(
+                    request={
+                        "parent": parent,
+                        "item": {"table": dlp_table},
+                        "inspect_config": inspect_config
+                    }
+                )
+                # Append the chunk inspection into the results_list.
+                results_list.append(response)
+            except response.exceptions.HTTPError as e:
+                print("Error: {}".format(e))
+                return None
         return results_list
 
     def main(self):
@@ -197,7 +201,8 @@ class DlpInspection:
         parent, inspect_config = self.get_inspection_parameters()
         for table in self.tables:
             # Get the complete table inspected.
-            results_lists = self.analyze_dlp_table(parent, table, inspect_config)
+            results_lists = self.analyze_dlp_table(parent, table,
+                                                   inspect_config)
             # Processes the results of the inspection.
             finding_results = self.analyze_inspection_result(results_lists)
             # Get the max infotype for each variable.
