@@ -7,7 +7,7 @@ import argparse
 from typing import Type
 from dlp.preprocess import Preprocessing
 from dlp.inspection import DlpInspection
-from getpass import getpass
+
 
 def parse_arguments() -> Type[argparse.Namespace]:
     """Parses command line arguments."""
@@ -16,7 +16,8 @@ def parse_arguments() -> Type[argparse.Namespace]:
         "--DB",
         type=str,
         required=True,
-        help="The source of data used, e.g. 'cloudsql-postgres' 'cloudsql-mysql' 'bigquery'.")
+        help="""The source of data used, e.g. 'cloudsql-postgres'
+                'cloudsql-mysql' 'bigquery'.""")
     parser.add_argument(
         "--project",
         type=str,
@@ -48,13 +49,15 @@ def parse_arguments() -> Type[argparse.Namespace]:
         "--database",
         type=str,
         help="""The database to use. Optional.""")
-    
+
     return parser.parse_args()
 
 # pylint: disable=unused-argument
-def run(db_source:str, project: str, language_code: str, dataset: str= None,
-        table: str = None, instance:str = None, zone:str = None,
-        database:str = None):
+
+
+def run(db_source: str, project: str, language_code: str, dataset: str = None,
+        table: str = None, instance: str = None, zone: str = None,
+        database: str = None):
     """Runs DLP inspection scan and tags the results to Data Catalog.
 
     Args:
@@ -63,15 +66,16 @@ def run(db_source:str, project: str, language_code: str, dataset: str= None,
         dataset: The BigQuery dataset to be scanned.
         table: The BigQuery table to be scanned. Optional.
                 If None, the entire dataset will be scanned.
-    """ 
+    """
     preprocess = Preprocessing(
         db_source=db_source, project=project, dataset=dataset, table=table,
-        instance=instance, zone= zone, database=database)
+        instance=instance, zone=zone, database=database)
     tables = preprocess.get_dlp_table_list()
     print(tables)
     inspection = DlpInspection(project_id=project,
                                language_code=language_code, tables=tables)
     inspection.main()
+
 
 if __name__ == "__main__":
     args = parse_arguments()

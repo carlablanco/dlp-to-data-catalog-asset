@@ -3,12 +3,12 @@
 # agreement with Google.
 """Processes input data to fit to DLP inspection standards."""
 
-from typing import List, Tuple, Dict
+from typing import List, Tuple
+import subprocess
 from google.api_core.exceptions import NotFound
 from google.cloud import bigquery, dlp_v2
 from google.cloud.sql.connector import Connector
-from sqlalchemy import create_engine, MetaData, Table, Column, Integer, String
-import subprocess
+from sqlalchemy import create_engine, MetaData, Table
 
 
 class Preprocessing:
@@ -23,7 +23,7 @@ class Preprocessing:
             dataset (str): The name of the BigQuery dataset.
             table (str, optional): The name of the BigQuery table. Optional.
                 Defaults to None.
-            instance (str, optional):The name of the database instance. Optional.
+            instance (str, optional): Name of the database instance. Optional.
             zone(str, optional): The name of the zone. Optional.
             database(str, optional): The name of the database. Optional.
         """
@@ -34,7 +34,7 @@ class Preprocessing:
             self.bq_client = bigquery.Client(project=project)
             self.dataset = dataset
             self.table = table
-        elif db_source == 'cloudsql-mysql' or db_source == 'cloudsql-postgres':
+        elif db_source in ['cloudsql-mysql', 'cloudsql-postgres']:
             self.connector = Connector()
             self.connection_name = f'{project}:{zone}:{instance}'
             self.database = database
@@ -52,7 +52,8 @@ class Preprocessing:
             driver = "pg8000"
 
         user_result = subprocess.run(
-            ['gcloud', 'config', 'get-value', 'account'], capture_output=True, text=True)
+            ['gcloud', 'config', 'get-value', 'account'],
+            capture_output=True, text=True)
         gcloud_user = user_result.stdout.strip()
         conn = self.connector.connect(
             self.connection_name,
@@ -92,8 +93,7 @@ class Preprocessing:
         # Get table contents
         with engine.connect() as connection:
             select = table.select().with_only_columns(table.columns)
-            results = connection.execute(select).fetchall()
-            content = [row for row in results]
+            content = [row for row in connection.execute(select).fetchall()]
 
         return schema, content
 
@@ -121,7 +121,6 @@ class Preprocessing:
               containing the values for each field in the table schema.
          """
         content = []
-        fields = table_id.schema
         rows_iter = self.bq_client.list_rows(table_id)
 
         if not rows_iter.total_rows:
@@ -202,7 +201,7 @@ class Preprocessing:
                         f'{self.project}.{self.dataset}.{table_name}')
                     table_dlp = self.convert_to_dlp_table(schema, content)
                     dlp_tables_list.append(table_dlp)
-        elif self.db_source == 'cloudsql-mysql' or self.db_source == 'cloudsql-postgres':
+        elif self.db_source in ['cloudsql-mysql', 'cloudsql-postgres']:
             schema, content = self.get_cloudsql_data(self.table)
             table_dlp = self.convert_to_dlp_table(schema, content)
             dlp_tables_list.append(table_dlp)
