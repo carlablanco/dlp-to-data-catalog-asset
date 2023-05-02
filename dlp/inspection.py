@@ -184,8 +184,8 @@ class DlpInspection:
                 )
                 # Append the chunk inspection into the results_list.
                 results_list.append(response)
-            except self.dlp_client.errors.Error as e:
-                print("Error: {}".format(e))
+            except self.dlp_client.errors as error:
+                print("Error: {}".format(error))
                 return None
         return results_list
 
