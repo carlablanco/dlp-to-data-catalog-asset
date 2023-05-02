@@ -13,7 +13,7 @@ def parse_arguments() -> Type[argparse.Namespace]:
     """Parses command line arguments."""
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--db",
+        "--DB",
         type=str,
         required=True,
         help="The source of data used, e.g. 'cloudsql-postgres' 'cloudsql-mysql' 'bigquery'.")
@@ -48,17 +48,13 @@ def parse_arguments() -> Type[argparse.Namespace]:
         "--database",
         type=str,
         help="""The database to use. Optional.""")
-    parser.add_argument(
-        "--db_user",
-        type=str,
-        help="""The database user. Optional.""")
     
     return parser.parse_args()
 
 # pylint: disable=unused-argument
-def run(db:str, project: str, language_code: str, dataset: str= None,
+def run(db_source:str, project: str, language_code: str, dataset: str= None,
         table: str = None, instance:str = None, zone:str = None,
-        database:str = None, db_user:str = None):
+        database:str = None):
     """Runs DLP inspection scan and tags the results to Data Catalog.
 
     Args:
@@ -67,14 +63,10 @@ def run(db:str, project: str, language_code: str, dataset: str= None,
         dataset: The BigQuery dataset to be scanned.
         table: The BigQuery table to be scanned. Optional.
                 If None, the entire dataset will be scanned.
-    """
-    db_password = None
-    if db == 'cloudsql-mysql' or db == 'cloudsql-postgres':
-        db_password = getpass("Enter DB password: ")
-        
+    """ 
     preprocess = Preprocessing(
-        db=db, project=project, dataset=dataset, table=table,
-        instance=instance, zone= zone, db_user=db_user, db_password=db_password, database=database)
+        db_source=db_source, project=project, dataset=dataset, table=table,
+        instance=instance, zone= zone, database=database)
     tables = preprocess.get_dlp_table_list()
     print(tables)
     inspection = DlpInspection(project_id=project,
@@ -83,6 +75,6 @@ def run(db:str, project: str, language_code: str, dataset: str= None,
 
 if __name__ == "__main__":
     args = parse_arguments()
-    run(args.db, args.project, args.language_code,
+    run(args.DB, args.project, args.language_code,
         args.dataset, args.table, args.instance, args.zone,
-        args.database, args.db_user)
+        args.database)

@@ -11,3 +11,4 @@ cloud-sql-python-connector[pg8000]
 cloud-sql-python-connector[pymysql]
 cloud-sql-python-connector[pytds]
 python-dotenv >= 1.0.0
+SQLAlchemy >= 2.0.11

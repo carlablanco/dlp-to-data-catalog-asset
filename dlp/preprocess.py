@@ -3,113 +3,99 @@
 # agreement with Google.
 """Processes input data to fit to DLP inspection standards."""
 
-from typing import List
+from typing import List, Tuple, Dict
 from google.api_core.exceptions import NotFound
 from google.cloud import bigquery, dlp_v2
 from google.cloud.sql.connector import Connector
+from sqlalchemy import create_engine, MetaData, Table, Column, Integer, String
+import subprocess
 
 
 class Preprocessing:
     """Converts input data into Data Loss Prevention tables."""
 
-    def __init__(self, db: str, project: str, dataset: str = None,
+    def __init__(self, db_source: str, project: str, dataset: str = None,
                  table: str = None, instance: str = None, zone: str = None,
-                 db_user: str = None, db_password: str = None, database: str = None):
+                 database: str = None):
         """
         Args:
             project (str): The name of the Google Cloud Platform project.
             dataset (str): The name of the BigQuery dataset.
             table (str, optional): The name of the BigQuery table. Optional.
                 Defaults to None.
-            instance (str, optional):
-            zone(str, optional):
-            db_user(str, optional):
-            db_password(str, optional):
-            database(str, optional):
+            instance (str, optional):The name of the database instance. Optional.
+            zone(str, optional): The name of the zone. Optional.
+            database(str, optional): The name of the database. Optional.
         """
         self.project = project
-        self.db = db
+        self.db_source = db_source
 
-        if db == 'bigquery':
+        if db_source == 'bigquery':
             self.bq_client = bigquery.Client(project=project)
             self.dataset = dataset
             self.table = table
-        elif db == 'cloudsql-mysql' or db == 'cloudsql-postgres':
+        elif db_source == 'cloudsql-mysql' or db_source == 'cloudsql-postgres':
             self.connector = Connector()
             self.connection_name = f'{project}:{zone}:{instance}'
             self.database = database
-            self.db_user = db_user
-            self.db_password = db_password
             self.table = table
 
-    def get_mysql_data(self, connection_name: str, db_user: str,
-                        db_password: str, database: str, table: str):
-        """_summary_
-
-        Args:
-            connection_name (str): _description_
-            db_user (str): _description_
-            db_password (str): _description_
-            database (str): _description_
-            table (str): _description_
+    def get_connection(self):
+        """Return a connection to the database.
 
         Returns:
-            _type_: _description_
+        A connection object that can be used to execute queries on the database.
         """
+        if self.db_source == 'cloudsql-mysql':
+            driver = "pymysql"
+        if self.db_source == 'cloudsql-postgres':
+            driver = "pg8000"
+
+        user_result = subprocess.run(
+            ['gcloud', 'config', 'get-value', 'account'], capture_output=True, text=True)
+        gcloud_user = user_result.stdout.strip()
         conn = self.connector.connect(
-            connection_name,
-            "pymysql",
-            user=db_user,
-            password=db_password,
-            db=database
+            self.connection_name,
+            driver,
+            user=gcloud_user,
+            enable_iam_auth=True,
+            db=self.database
         )
-        with conn.cursor() as cursor:
-            query = f"select * from {table}"
-            cursor.execute(query)
-            schema = [schema_field[0] for schema_field in cursor.description]
-            rows = [row for row in cursor.fetchall()]
-            return schema, rows
+        return conn
 
-    def get_postgres_data(self, connection_name: str, db_user: str,
-                           db_password: str, database: str, table: str):
-        """_summary_
+    def get_cloudsql_data(self, table: str) -> Tuple[List]:
+        """Retrieve the schema and content of a table from a Cloud SQL database.
 
         Args:
-            connection_name (str): _description_
-            db_user (str): _description_
-            db_password (str): _description_
-            database (str): _description_
-            table (str): _description_
+            table (str): The name of the table.
 
         Returns:
-            _type_: _description_
+            Tuple[List]: A tuple containing the schema and content as a List.
         """
-        conn = self.connector.connect(
-            connection_name,
-            "pg8000",
-            user=db_user,
-            password=db_password,
-            db=database
-        )
-        cursor = conn.cursor()
-        query = f"select * from {table}"
-        cursor.execute(query)
-        schema = [schema_field[0] for schema_field in cursor.description]
-        rows = [row for row in cursor.fetchall()]
-        conn.close()
-        return schema, rows
+        if self.db_source == 'cloudsql-mysql':
+            connection_type = "mysql+pymysql"
+        if self.db_source == 'cloudsql-postgres':
+            connection_type = "postgresql+pg8000"
 
-    def get_query(self, table_id: str) -> str:
-        """Creates an SQL query as string.
+       # Create a database engine instance
+        engine = create_engine(f'{connection_type}://',
+                               creator=self.get_connection)
 
-        Args:
-            table_id (str): Fully qualified BigQuery tablename.
+        # Create a Metadata and Table instance
+        metadata = MetaData()
+        table = Table(table, metadata, extend_existing=True,
+                      autoload_with=engine)
 
-        Returns:
-            str: SQL query as string.
-        """
-        query = f"SELECT *  FROM `{table_id}`"
-        return query
+        # Get table schema
+        schema = [column.name for column in table.columns]
+
+        # Get table contents
+        with engine.connect() as connection:
+            select = table.select().with_only_columns(table.columns)
+            results = connection.execute(select).fetchall()
+            content = [row for row in results]
+
+        return schema, content
 
     def get_bigquery_tables(self, dataset: str) -> List[str]:
         """Constructs a list of table names from a BigQuery dataset.
@@ -124,14 +110,37 @@ class Preprocessing:
         table_names = [table.table_id for table in dataset_tables]
         return table_names
 
-    def get_bigquery_data(self, table_id: str) -> tuple:
+    def fetch_rows(self, table_id: str) -> List[Tuple]:
+        """Fetches a batch of rows from a BigQuery table.
+
+           Args:
+              table_id (str) = The path of the table were the data is fetched.
+
+           Returns:
+              List[Tuple]: A list of rows, where each row is a tuple
+              containing the values for each field in the table schema.
+         """
+        content = []
+        fields = table_id.schema
+        rows_iter = self.bq_client.list_rows(table_id)
+
+        if not rows_iter.total_rows:
+            print(f"""The Table {table_id} is empty. Please populate the
+                                                        table and try again.""")
+        else:
+            for row in rows_iter:
+                content.append(tuple(row))
+        return content
+
+    def get_bigquery_data(self, table_id: str) -> Tuple[List[str], List[Tuple]]:
         """Retrieves the schema and content of a BigQuery table.
 
         Args:
             table_id (str): The fully qualified name of the BigQuery table.
 
         Returns:
-            tuple: A tuple containing the BigQuery schema and content.
+            Tuple: A tuple containing the BigQuery schema and content as a List
+            of Dictionaries.
         """
         try:
             table_bq = self.bq_client.get_table(table_id)
@@ -141,25 +150,19 @@ class Preprocessing:
         table_schema = table_bq.schema
         bq_schema = [schema_field.to_api_repr()['name']
                      for schema_field in table_schema]
-
-        sql_query = self.get_query(table_id)
-        query_job = self.bq_client.query(sql_query)
-        query_results = query_job.result()
-
-        bq_rows_content = [dict(row).values() for row in query_results]
-
+        bq_rows_content = self.fetch_rows(table_bq)
         return bq_schema, bq_rows_content
 
-    def convert_to_dlp_table(self, schema: List[list],
-                                      content: List[list]) -> dlp_v2.Table:
+    def convert_to_dlp_table(self, schema: List[List],
+                             content: List[List]) -> dlp_v2.Table:
         """Converts a BigQuery table into a DLP table.
 
         Converts a BigQuery table into a Data Loss Prevention table,
         an object that can be inspected by Data Loss Prevention.
 
         Args:
-            bq_schema (list): The schema of a BigQuery table.
-            bq_content (list): The content of a BigQuery table.
+            bq_schema (List[Dict]): The schema of a BigQuery table.
+            bq_content (List[Dict]): The content of a BigQuery table.
 
         Returns:
             A table object that can be inspected by Data Loss Prevention.
@@ -187,7 +190,7 @@ class Preprocessing:
         """
         dlp_tables_list = []
 
-        if self.db == 'bigquery':
+        if self.db_source == 'bigquery':
             if self.table:
                 bigquery_tables = [self.table]
             else:
@@ -199,16 +202,9 @@ class Preprocessing:
                         f'{self.project}.{self.dataset}.{table_name}')
                     table_dlp = self.convert_to_dlp_table(schema, content)
                     dlp_tables_list.append(table_dlp)
-        elif self.db == 'cloudsql-mysql':
-            schema, content = self.get_mysql_data(self.connection_name, self.db_user,
-                                                   self.db_password, self.database, self.table)
+        elif self.db_source == 'cloudsql-mysql' or self.db_source == 'cloudsql-postgres':
+            schema, content = self.get_cloudsql_data(self.table)
             table_dlp = self.convert_to_dlp_table(schema, content)
             dlp_tables_list.append(table_dlp)
-        elif self.db == 'cloudsql-postgres':
-            schema, content = self.get_postgres_data(self.connection_name,
-                                                      self.db_user, self.db_password,
-                                                      self.database, self.table)
-            table_dlp = self.convert_to_dlp_table(schema, content)
-            dlp_tables_list.append(table_dlp)
-            
+
         return dlp_tables_list
