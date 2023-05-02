@@ -187,7 +187,7 @@ class DlpInspection:
                 results_list.append(response)
             except BadRequest as error:
                 # Handle the BadRequest exception here
-                raise BadRequest(error)
+                raise BadRequest(error) from error
         return results_list
 
     def main(self):
