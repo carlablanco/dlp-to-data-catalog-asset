@@ -140,10 +140,10 @@ class DlpInspection:
                
             Returns:
                 List[Dict]: The response from the API. Each varibale is
-                inspected and returns findings for each record
+                inspected and returns findings for each record.
             
         """
-        # The Block size adecuate to the DLP scan
+        # The Block size adecuate to the DLP scan.
         block_size = 10000
         num_headers = len(table.headers)
         # Get the headers from the first row of the table.
@@ -183,10 +183,10 @@ class DlpInspection:
                         "inspect_config": inspect_config
                     }
                 )
-                # Append the chunk inspection into the results_list.
+                # Append the chunk inspection into the results.
                 results_list.append(response)
             except BadRequest as error:
-                # Handle the BadRequest exception here
+                # Handle the BadRequest exception here.
                 raise BadRequest(error) from error
         return results_list
 
