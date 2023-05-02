@@ -53,7 +53,7 @@ class Preprocessing:
 
         user_result = subprocess.run(
             ['gcloud', 'config', 'get-value', 'account'],
-            capture_output=True, text=True)
+            capture_output=True, text=True, check=True)
         gcloud_user = user_result.stdout.strip()
         conn = self.connector.connect(
             self.connection_name,
