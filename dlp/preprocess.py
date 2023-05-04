@@ -22,7 +22,7 @@ class Bigquery:
 
 
 @dataclasses.dataclass
-class Cloudsql:
+class CloudSQL:
     """Represents a connection to a Google CloudSQL."""
     connector: Connector
     connection_name: str
@@ -57,7 +57,6 @@ class Preprocessing:
                 database(str, optional): The name of the database.
                 table (str, optional): The name of the table.
         """
-
         self.source = source
 
         if self.source == Source.BIGQUERY:
@@ -67,13 +66,13 @@ class Preprocessing:
         elif self.source in [Source.MYSQL, Source.POSTGRES]:
             zone = cloudsql_args["zone"]
             instance = cloudsql_args["instance"]
-            self.cloudsql = Cloudsql(
+            self.cloudsql = CloudSQL(
                 Connector(),
                 f"{project}:{zone}:{instance}",
                 cloudsql_args["database"], cloudsql_args["table"])
 
     def get_connection(self):
-        """Return a connection to the database.
+        """ReturnS a connection to the database.
 
         Returns:
         A connection object that can be used to execute queries on the database.

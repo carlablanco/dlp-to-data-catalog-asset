@@ -6,9 +6,11 @@
 from typing import List, Dict
 from google.cloud import dlp_v2
 
+
 class DlpInspection:
     """Performs a DLP inspection on a preprocessed table to identify
             sensitive information."""
+
     def __init__(self, project_id: str, language_code: str,
                  tables: List[dlp_v2.Table]):
         """Initializes the class with the required data.
@@ -35,11 +37,11 @@ class DlpInspection:
                 inspect_config: The configuration for the inspection.
         """
         info_types = self.dlp_client.list_info_types(
-                        request={"language_code": self.language_code})
+            request={"language_code": self.language_code})
         info_types_names = [
-                        info_type.name for info_type in info_types.info_types
-                        if self.language_code in info_type.name
-                        ]
+            info_type.name for info_type in info_types.info_types
+            if self.language_code in info_type.name
+        ]
         inspect_config = {
             "info_types": [{"name": name} for name in info_types_names],
             "min_likelihood": dlp_v2.Likelihood.POSSIBLE
@@ -66,12 +68,12 @@ class DlpInspection:
                 Example: {'name': {'PERSON_NAME': 4.4}, 'age': {'AGE': 5.8}}
         """
         value_likelihood = {
-            "LIKELIHOOD_UNSPECIFIED":1,
-            "VERY_UNLIKELY":0.6,
-            "UNLIKELY":0.8,
-            "POSSIBLE":1,
-            "LIKELY":1.2,
-            "VERY_LIKELY":1.4
+            "LIKELIHOOD_UNSPECIFIED": 1,
+            "VERY_UNLIKELY": 0.6,
+            "UNLIKELY": 0.8,
+            "POSSIBLE": 1,
+            "LIKELY": 1.2,
+            "VERY_LIKELY": 1.4
         }
         finding_results = {}
         if table_inspected.result.findings:
@@ -81,7 +83,7 @@ class DlpInspection:
                         0].record_location.field_id.name
                     infotypes = finding_results.setdefault(column, {})
                     likelihood = value_likelihood.get(finding.likelihood.name,
-                                                         0)
+                                                      0)
                     # If the infotype is already in the dictionary, sum
                     # the likelihood value to the exisiting one.
                     if finding.info_type.name in infotypes:
@@ -125,7 +127,7 @@ class DlpInspection:
 
     def main(self):
         """Iterates over the given tables and analyzes each one.
-            
+
            Returns:
                 results: A list of dictionaries with the infotype with the
                     highest likelihood.
@@ -136,8 +138,8 @@ class DlpInspection:
         for table in self.tables:
             # Get table to be inspected.
             response = self.dlp_client.inspect_content(
-                request={"parent": parent, "item": {"table" : table},
-                            "inspect_config": inspect_config})
+                request={"parent": parent, "item": {"table": table},
+                         "inspect_config": inspect_config})
             # Processes the results of the inspection.
             finding_results = self.analyze_inspection_result(response)
             # Get the max infotype for each variable.
