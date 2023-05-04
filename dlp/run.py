@@ -66,14 +66,14 @@ def run(args: Type[argparse.Namespace]):
                 If None, the entire dataset will be scanned.
     """
     preprocess = Preprocessing(
-        source = args.source, project = args.project,
-        bigquery_args = {"dataset": args.dataset, "table": args.table},
-        cloudsql_args = {"instance": args.instance, "zone": args.zone,
+        source=args.source, project=args.project,
+        bigquery_args={"dataset": args.dataset, "table": args.table},
+        cloudsql_args={"instance": args.instance, "zone": args.zone,
                        "database": args.database, "table": args.table})
     tables = preprocess.get_dlp_table_list()
     print(tables)
-    inspection = DlpInspection(project_id = args.project,
-                               language_code = args.language_code, tables = tables)
+    inspection = DlpInspection(project_id=args.project,
+                               language_code=args.language_code, tables=tables)
     inspection.main()
 
 

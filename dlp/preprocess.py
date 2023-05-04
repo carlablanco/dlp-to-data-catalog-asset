@@ -96,7 +96,7 @@ class Preprocessing:
         return conn
 
     def get_cloudsql_data(self, table: str) -> Tuple[List]:
-        """Retrieves the schema and content of a table from a Cloud SQL database.
+        """Retrieves the schema and content of a table from CloudSQL.
 
         Args:
             table (str): The name of the table.
@@ -220,8 +220,8 @@ class Preprocessing:
         """
         if self.source == Source.BIGQUERY:
 
-            bigquery_tables = [self.bigquery.table] if self.bigquery.table else \
-                self.get_bigquery_tables(self.bigquery.dataset)
+            bigquery_tables = [self.bigquery.table] if self.bigquery.table \
+                else self.get_bigquery_tables(self.bigquery.dataset)
 
             schema_content_list = [self.get_bigquery_data(
                 f"{self.bigquery.dataset}.{table_name}")
