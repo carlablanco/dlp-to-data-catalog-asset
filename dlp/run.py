@@ -101,7 +101,7 @@ def run(args: Type[argparse.Namespace]):
         cloudsql_args={"instance": instance, "zone": zone,
                        "database": database, "table": table})
     tables = preprocess.get_dlp_table_list()
-    
+
     inspection = DlpInspection(project_id=project,
                                language_code=language_code, tables=tables)
     inspection.main()
