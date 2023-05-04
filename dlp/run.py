@@ -66,7 +66,7 @@ def run(args: Type[argparse.Namespace]):
                 If None, the entire dataset will be scanned.
     """
     preprocess = Preprocessing(
-        source = args.source, project=args.project,
+        source = args.source, project = args.project,
         bigquery_args = {"dataset": args.dataset, "table": args.table},
         cloudsql_args = {"instance": args.instance, "zone": args.zone,
                        "database": args.database, "table": args.table})

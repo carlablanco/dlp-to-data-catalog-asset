@@ -59,11 +59,11 @@ class Preprocessing:
 
         self.source = source
 
-        if source == Source.bigquery:
+        if source == Source.BIGQUERY:
             self.bigquery = Bigquery(bigquery.Client(
                 project=project), bigquery_args["dataset"],
                 bigquery_args["table"])
-        elif source in [Source.mysql, Source.postgres]:
+        elif source in [Source.MYSQL, Source.POSTGRES]:
             zone = cloudsql_args["zone"]
             instance = cloudsql_args["instance"]
             self.cloudsql = Cloudsql(
@@ -77,9 +77,9 @@ class Preprocessing:
         Returns:
         A connection object that can be used to execute queries on the database.
         """
-        if self.source == Source.mysql:
+        if self.source == Source.MYSQL:
             driver = "pymysql"
-        if self.source == Source.postgres:
+        if self.source == Source.POSTGRES:
             driver = "pg8000"
 
         user_result = subprocess.run(
@@ -104,9 +104,9 @@ class Preprocessing:
         Returns:
             Tuple[List]: A tuple containing the schema and content as a List.
         """
-        if self.source == Source.mysql:
+        if self.source == Source.MYSQL:
             connection_type = "mysql+pymysql"
-        if self.source == Source.postgres:
+        if self.source == Source.POSTGRES:
             connection_type = "postgresql+pg8000"
 
        # Create a database engine instance.
@@ -218,7 +218,7 @@ class Preprocessing:
         Returns:
             A list of Data Loss Prevention table objects.
         """
-        if self.source == Source.bigquery:
+        if self.source == Source.BIGQUERY:
 
             bigquery_tables = [self.bigquery.table] if self.bigquery.table else \
                 self.get_bigquery_tables(self.bigquery.dataset)
@@ -227,7 +227,7 @@ class Preprocessing:
                 f"{self.bigquery.dataset}.{table_name}")
                 for table_name in bigquery_tables]
 
-        elif self.source in [Source.mysql, Source.postgres]:
+        elif self.source in [Source.MYSQL, Source.POSTGRES]:
             schema_content_list = [self.get_cloudsql_data(self.cloudsql.table)]
 
         return [self.convert_to_dlp_table(
