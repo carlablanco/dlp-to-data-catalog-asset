@@ -42,9 +42,10 @@ class Preprocessing:
 
     def __init__(self, source: Source, project: str,
                  bigquery_args: Dict = None, cloudsql_args: Dict = None):
-        """
+        """Initializes `Preprocessing` class with arguments.
+
         Args:
-            source (str)
+            source (str): The name of the source of data used.
             project (str): The name of the Google Cloud Platform project.
             bigquery_args(Dict): 
                 dataset (str): The name of the BigQuery dataset.
@@ -59,11 +60,11 @@ class Preprocessing:
 
         self.source = source
 
-        if source == Source.BIGQUERY:
+        if self.source == Source.BIGQUERY:
             self.bigquery = Bigquery(bigquery.Client(
                 project=project), bigquery_args["dataset"],
                 bigquery_args["table"])
-        elif source in [Source.MYSQL, Source.POSTGRES]:
+        elif self.source in [Source.MYSQL, Source.POSTGRES]:
             zone = cloudsql_args["zone"]
             instance = cloudsql_args["instance"]
             self.cloudsql = Cloudsql(
