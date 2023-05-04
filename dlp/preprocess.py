@@ -32,9 +32,9 @@ class Cloudsql:
 
 class Source(Enum):
     """Represents available sources for database connections."""
-    bigquery: str = "bigquery"
-    postgres: str = "cloudsql-postgres"
-    mysql: str = "cloudsql-mysql"
+    BIGQUERY: str = "bigquery"
+    POSTGRES: str = "cloudsql-postgres"
+    MYSQL: str = "cloudsql-mysql"
 
 
 class Preprocessing:
