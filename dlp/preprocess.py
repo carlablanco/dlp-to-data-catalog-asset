@@ -6,6 +6,7 @@
 from typing import List, Tuple, Dict
 import subprocess
 import dataclasses
+from enum import Enum
 from google.api_core.exceptions import NotFound
 from google.cloud import bigquery, dlp_v2
 from google.cloud.sql.connector import Connector
@@ -14,8 +15,7 @@ from sqlalchemy import create_engine, MetaData, Table
 
 @dataclasses.dataclass
 class Bigquery:
-    """Represents a connection to a Google BigQuery dataset and table.
-    """
+    """Represents a connection to a Google BigQuery dataset and table."""
     bq_client: bigquery.Client
     dataset: str
     table: str
@@ -23,18 +23,15 @@ class Bigquery:
 
 @dataclasses.dataclass
 class Cloudsql:
-    """Represents a connection to a Google CloudSQL.
-    """
+    """Represents a connection to a Google CloudSQL."""
     connector: Connector
     connection_name: str
     database: str
     table: str
 
 
-@dataclasses.dataclass
-class DbSource:
-    """Represents available sources for database connections
-    """
+class Source(Enum):
+    """Represents available sources for database connections."""
     bigquery: str = "bigquery"
     postgres: str = "cloudsql-postgres"
     mysql: str = "cloudsql-mysql"
@@ -43,11 +40,11 @@ class DbSource:
 class Preprocessing:
     """Converts input data into Data Loss Prevention tables."""
 
-    def __init__(self, db_source: str, project: str,
+    def __init__(self, source: Source, project: str,
                  bigquery_args: Dict = None, cloudsql_args: Dict = None):
         """
         Args:
-            db_source (str)
+            source (str)
             project (str): The name of the Google Cloud Platform project.
             bigquery_args(Dict): 
                 dataset (str): The name of the BigQuery dataset.
@@ -60,18 +57,18 @@ class Preprocessing:
                 table (str, optional): The name of the table.
         """
 
-        self.db_source = db_source
+        self.source = source
 
-        if db_source == DbSource.bigquery:
+        if source == Source.bigquery:
             self.bigquery = Bigquery(bigquery.Client(
                 project=project), bigquery_args["dataset"],
                 bigquery_args["table"])
-        elif db_source in [DbSource.mysql, DbSource.postgres]:
+        elif source in [Source.mysql, Source.postgres]:
             zone = cloudsql_args["zone"]
             instance = cloudsql_args["instance"]
             self.cloudsql = Cloudsql(
                 Connector(),
-                f'{project}:{zone}:{instance}',
+                f"{project}:{zone}:{instance}",
                 cloudsql_args["database"], cloudsql_args["table"])
 
     def get_connection(self):
@@ -80,13 +77,13 @@ class Preprocessing:
         Returns:
         A connection object that can be used to execute queries on the database.
         """
-        if self.db_source == DbSource.mysql:
+        if self.source == Source.mysql:
             driver = "pymysql"
-        if self.db_source == DbSource.postgres:
+        if self.source == Source.postgres:
             driver = "pg8000"
 
         user_result = subprocess.run(
-            ['gcloud', 'config', 'get-value', 'account'],
+            ["gcloud", "config", "get-value", "account"],
             capture_output=True, text=True, check=True)
         gcloud_user = user_result.stdout.strip()
         conn = self.cloudsql.connector.connect(
@@ -99,7 +96,7 @@ class Preprocessing:
         return conn
 
     def get_cloudsql_data(self, table: str) -> Tuple[List]:
-        """Retrieve the schema and content of a table from a Cloud SQL database.
+        """Retrieves the schema and content of a table from a Cloud SQL database.
 
         Args:
             table (str): The name of the table.
@@ -107,24 +104,24 @@ class Preprocessing:
         Returns:
             Tuple[List]: A tuple containing the schema and content as a List.
         """
-        if self.db_source == DbSource.mysql:
+        if self.source == Source.mysql:
             connection_type = "mysql+pymysql"
-        if self.db_source == DbSource.postgres:
+        if self.source == Source.postgres:
             connection_type = "postgresql+pg8000"
 
-       # Create a database engine instance
+       # Create a database engine instance.
         engine = create_engine(f'{connection_type}://',
                                creator=self.get_connection)
 
-        # Create a Metadata and Table instance
+        # Create a Metadata and Table instance.
         metadata = MetaData()
         table = Table(table, metadata, extend_existing=True,
                       autoload_with=engine)
 
-        # Get table schema
+        # Get table schema.
         schema = [column.name for column in table.columns]
 
-        # Get table contents
+        # Get table contents.
         with engine.connect() as connection:
             select = table.select().with_only_columns(table.columns)
             content = list(connection.execute(select).fetchall())
@@ -181,7 +178,7 @@ class Preprocessing:
             raise ValueError(f"Error retrieving table {table_id}.") from exc
 
         table_schema = table_bq.schema
-        bq_schema = [schema_field.to_api_repr()['name']
+        bq_schema = [schema_field.to_api_repr()["name"]
                      for schema_field in table_schema]
         bq_rows_content = self.fetch_rows(table_bq)
         return bq_schema, bq_rows_content
@@ -221,24 +218,17 @@ class Preprocessing:
         Returns:
             A list of Data Loss Prevention table objects.
         """
-        dlp_tables_list = []
+        if self.source == Source.bigquery:
 
-        if self.db_source == DbSource.bigquery:
-            if self.bigquery.table:
-                bigquery_tables = [self.bigquery.table]
-            else:
-                bigquery_tables = self.get_bigquery_tables(
-                    self.bigquery.dataset)
+            bigquery_tables = [self.bigquery.table] if self.bigquery.table else \
+                self.get_bigquery_tables(self.bigquery.dataset)
 
-            if bigquery_tables:
-                for table_name in bigquery_tables:
-                    schema, content = self.get_bigquery_data(
-                        f'{self.bigquery.dataset}.{table_name}')
-                    table_dlp = self.convert_to_dlp_table(schema, content)
-                    dlp_tables_list.append(table_dlp)
-        elif self.db_source in [DbSource.mysql, DbSource.postgres]:
-            schema, content = self.get_cloudsql_data(self.cloudsql.table)
-            table_dlp = self.convert_to_dlp_table(schema, content)
-            dlp_tables_list.append(table_dlp)
+            schema_content_list = [self.get_bigquery_data(
+                f"{self.bigquery.dataset}.{table_name}")
+                for table_name in bigquery_tables]
 
-        return dlp_tables_list
+        elif self.source in [Source.mysql, Source.postgres]:
+            schema_content_list = [self.get_cloudsql_data(self.cloudsql.table)]
+
+        return [self.convert_to_dlp_table(
+            schema, content) for schema, content in schema_content_list]

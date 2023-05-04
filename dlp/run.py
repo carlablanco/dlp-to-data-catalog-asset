@@ -5,16 +5,18 @@
 
 import argparse
 from typing import Type
-from dlp.preprocess import Preprocessing
+from dlp.preprocess import Preprocessing, Source
 from dlp.inspection import DlpInspection
 
 
 def parse_arguments() -> Type[argparse.Namespace]:
     """Parses command line arguments."""
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser() 
     parser.add_argument(
-        "--DB",
-        type=str,
+        "--source",
+        type=Source,
+        choices=Source,
+        metavar="SOURCE[bigquery, cloudsql-postgres, cloudsql-mysql]",
         required=True,
         help="""The source of data used, e.g. 'cloudsql-postgres'
                 'cloudsql-mysql' 'bigquery'.""")
@@ -64,12 +66,12 @@ def run(args: Type[argparse.Namespace]):
                 If None, the entire dataset will be scanned.
     """
     preprocess = Preprocessing(
-        db_source=args.DB, project=args.project,
+        source=args.source, project=args.project,
         bigquery_args={"dataset": args.dataset, "table": args.table},
         cloudsql_args={"instance": args.instance, "zone": args.zone,
                        "database": args.database, "table": args.table})
     tables = preprocess.get_dlp_table_list()
-
+    print(tables)
     inspection = DlpInspection(project_id=args.project,
                                language_code=args.language_code, tables=tables)
     inspection.main()
