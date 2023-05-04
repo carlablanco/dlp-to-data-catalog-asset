@@ -76,7 +76,7 @@ class Preprocessing:
         """ReturnS a connection to the database.
 
         Returns:
-            A connection object that can be used to execute queries on the database.
+            A connection object that can be used to execute queries.
         """
         if self.source == Source.MYSQL:
             driver = "pymysql"
