@@ -3,10 +3,11 @@
 # agreement with Google.
 """Processes input data to fit to DLP inspection standards."""
 
-from typing import List, Tuple, Dict
 import subprocess
 import dataclasses
 from enum import Enum
+
+from typing import List, Tuple, Dict
 from google.api_core.exceptions import NotFound
 from google.cloud import bigquery, dlp_v2
 from google.cloud.sql.connector import Connector
@@ -75,7 +76,7 @@ class Preprocessing:
         """ReturnS a connection to the database.
 
         Returns:
-        A connection object that can be used to execute queries on the database.
+            A connection object that can be used to execute queries on the database.
         """
         if self.source == Source.MYSQL:
             driver = "pymysql"
