@@ -76,11 +76,15 @@ def run(args: Type[argparse.Namespace]):
     """Runs DLP inspection scan and tags the results to Data Catalog.
 
     Args:
-        project: Project ID for which the client acts on behalf of.
-        language_code: The BCP-47 language code to use, e.g. 'en-US'.
-        dataset: The BigQuery dataset to be scanned.
-        table: The BigQuery table to be scanned. Optional.
-                If None, the entire dataset will be scanned.
+        args:
+                source: The source of data used.
+                project: Project ID for which the client acts on behalf of.
+                language_code: The BCP-47 language code to use, e.g. 'en-US'.
+                dataset: The BigQuery dataset to be scanned.
+                table (str): The name of the table.
+                instance (str): Name of the database instance.
+                zone(str): The name of the zone.
+                database(str): The name of the database.
     """
     source = args.source
     project = args.project

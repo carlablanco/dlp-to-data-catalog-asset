@@ -52,10 +52,10 @@ class Preprocessing:
                 table (str, optional): The name of the BigQuery table. Optional.
                     Defaults to None.
             cloudsql_args(Dict):
-                instance (str, optional): Name of the database instance.
-                zone(str, optional): The name of the zone. Optional.
-                database(str, optional): The name of the database.
-                table (str, optional): The name of the table.
+                instance (str): Name of the database instance.
+                zone(str): The name of the zone.
+                database(str): The name of the database.
+                table (str): The name of the table.
         """
         self.source = source
 
