@@ -30,7 +30,7 @@ class Preprocessing:
             Dataset (str): Name of the dataset in BigQuery.
 
         Returns:
-            List of tablenames.
+            List of table names.
         """
         dataset_tables = list(self.bq_client.list_tables(dataset))
         table_names = [table.table_id for table in dataset_tables]
