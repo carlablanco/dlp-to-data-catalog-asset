@@ -138,7 +138,7 @@ class Preprocessing:
 
         columns_selected = ', '.join(str(column) for column in bq_schema)
 
-        unnest = f"""UNNEST ([{main_nested_schema[0]}]) as 
+        unnest = f"""UNNEST ([{main_nested_schema[0]}]) as
                     {main_nested_schema[0]}"""
 
         query = f"""SELECT {columns_selected}
