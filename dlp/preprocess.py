@@ -60,7 +60,7 @@ class Preprocessing:
                 for i, field in enumerate(fields):
                     row_dict[field.name] = row[i]
                 content.append(row_dict)
-#bla
+
         return content
 
     def get_table_schema(self, table_id):
