@@ -71,11 +71,13 @@ class Preprocessing:
                 to be generated.
 
             Returns:
-                tuple: A tuple containing three lists - schema, nested_schema, and
-                main_nested_schema.
+                tuple: A tuple containing three lists - schema, nested_schema,
+                and main_nested_schema.
                     - schema (list): The list of fields in the schema.
-                    - nested_schema (list): The list of nested fields in the schema.
-                    - main_nested_schema (list): The list of main fields associated
+                    - nested_schema (list): The list of nested fields in the
+                    schema.
+                    - main_nested_schema (list): The list of main fields
+                    associated
                     with the nested fields.
             """
         schema = []
@@ -109,16 +111,16 @@ class Preprocessing:
         nested = False
         main_cell = False
         if field.field_type == "RECORD":
-            recordField = []
+            field_names = []
             for subfield in field.fields:
                 main_cell = field.name
                 cell = field.name+"."+subfield.name
                 if subfield.field_type == "RECORD":
-                    recordField.append(self.get_field(subfield))
+                    field_names.append(self.get_field(subfield))
                 else:
-                    recordField.append(cell)
+                    field_names.append(cell)
             nested = True
-            return recordField, nested, main_cell
+            return field_names, nested, main_cell
 
         return field.name, nested, main_cell
 
@@ -139,7 +141,7 @@ class Preprocessing:
         unnest = f"""UNNEST ([{main_nested_schema[0]}]) as 
                     {main_nested_schema[0]}"""
 
-        query = f"""SELECT {columns_selected} 
+        query = f"""SELECT {columns_selected}
         FROM `{table_id}`, 
         {unnest}"""
         return query
@@ -160,7 +162,7 @@ class Preprocessing:
 
         unnest = f"""UNNEST ({main_nested_schema[0]})"""
 
-        query = f"""SELECT {columns_selected} 
+        query = f"""SELECT {columns_selected}
             FROM `{table_id}`, 
             {unnest}"""
         return query
