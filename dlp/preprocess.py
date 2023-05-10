@@ -3,8 +3,6 @@
 # agreement with Google.
 """Processes input data to fit to DLP inspection standards."""
 
-import pandas as pd
-import itertools
 from typing import List, Tuple, Dict
 from google.api_core.exceptions import NotFound
 from google.cloud import bigquery, dlp_v2
@@ -87,7 +85,7 @@ class Preprocessing:
         for field in fields:
 
             record, nested, main_field = self.get_field(field)
-            if nested == True:
+            if nested is True:
                 main_nested_schema.append(main_field)
                 nested_schema.append(record)
             else:
@@ -121,8 +119,8 @@ class Preprocessing:
                     recordField.append(cell)
             nested = True
             return recordField, nested, main_cell
-        else:
-            return field.name, nested, main_cell
+
+        return field.name, nested, main_cell
 
     def get_query(self, bq_schema, main_nested_schema, table_id):
         """Creates an SQL query as string.
@@ -140,9 +138,10 @@ class Preprocessing:
 
         unnest = f"""UNNEST ([{main_nested_schema[0]}]) as 
                     {main_nested_schema[0]}"""
+
         query = f"""SELECT {columns_selected} 
         FROM `{table_id}`, 
-        {unnest}""" 
+        {unnest}"""
         return query
 
     def get_query_array(self, bq_schema, main_nested_schema, table_id):
@@ -160,13 +159,14 @@ class Preprocessing:
         columns_selected = ', '.join(str(column) for column in bq_schema)
 
         unnest = f"""UNNEST ({main_nested_schema[0]})"""
+
         query = f"""SELECT {columns_selected} 
             FROM `{table_id}`, 
-            {unnest}""" 
-        print(query)
+            {unnest}"""
         return query
 
-    def get_rows_query(self, table_schema, nested_schema, main_nested_schema, table_id):
+    def get_rows_query(self, table_schema, nested_schema, main_nested_schema,
+                       table_id):
         """ Retrives the content of the table.
 
         Args:
@@ -180,7 +180,8 @@ class Preprocessing:
         nested_types = self.get_nested_types(table_id)
         if "REPEATED" in nested_types:
             bq_schema = table_schema + main_nested_schema
-            sql_query = self.get_query_array(bq_schema,main_nested_schema, table_id)
+            sql_query = self.get_query_array(bq_schema,main_nested_schema,
+                                             table_id)
             query_job = self.bq_client.query(sql_query)
             query_results = query_job.result()
 
