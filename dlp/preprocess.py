@@ -116,7 +116,6 @@ class Preprocessing:
                     field_names.append(self.get_field(subfield))
                 else:
                     field_names.append(cell)
-            nested = True
             return field_names, True, main_cell
 
         return field.name, False, False
