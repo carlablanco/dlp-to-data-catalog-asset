@@ -225,15 +225,20 @@ class Preprocessing:
             A list of Data Loss Prevention table objects.
         """
         if self.source == Database.BIGQUERY:
-
-            bigquery_tables = [self.bigquery.table] if self.bigquery.table \
+            # Data source is BigQuery
+            # Get the list of BigQuery tables
+            bigquery_tables = [self.bigquery.table] \
+                if self.bigquery.table \
                 else self.get_bigquery_tables(self.bigquery.dataset)
 
+            # Retrieve schema and content data for each BigQuery table
             schema_content_list = [self.get_bigquery_data(
                 f"{self.bigquery.dataset}.{table_name}")
                 for table_name in bigquery_tables]
 
         elif self.source == Database.CLOUDSQL:
+            # Data source is Cloud SQL
+            # Retrieve schema and content data for the Cloud SQL table
             schema_content_list = [self.get_cloudsql_data(self.cloudsql.table)]
 
         return [self.convert_to_dlp_table(
