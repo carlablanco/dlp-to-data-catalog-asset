@@ -3,11 +3,11 @@
 # agreement with Google.
 """Processes input data to fit to DLP inspection standards."""
 
-import subprocess
 import dataclasses
+import subprocess
 from enum import Enum
-
 from typing import List, Tuple, Dict
+
 from google.api_core.exceptions import NotFound
 from google.cloud import bigquery, dlp_v2
 from google.cloud.sql.connector import Connector
@@ -27,21 +27,22 @@ class CloudSQL:
     """Represents a connection to a Google CloudSQL."""
     connector: Connector
     connection_name: str
-    database: str
+    db_name: str
     table: str
+    driver: str
+    connection_type: str
 
 
-class Source(Enum):
+class Database(Enum):
     """Represents available sources for database connections."""
     BIGQUERY: str = "bigquery"
-    POSTGRES: str = "cloudsql-postgres"
-    MYSQL: str = "cloudsql-mysql"
+    CLOUDSQL: str = "cloudsql"
 
 
 class Preprocessing:
     """Converts input data into Data Loss Prevention tables."""
 
-    def __init__(self, source: Source, project: str,
+    def __init__(self, source: str, project: str,
                  bigquery_args: Dict = None, cloudsql_args: Dict = None):
         """Initializes `Preprocessing` class with arguments.
 
@@ -55,33 +56,41 @@ class Preprocessing:
             cloudsql_args(Dict):
                 instance (str): Name of the database instance.
                 zone(str): The name of the zone.
-                database(str): The name of the database.
+                db_name(str): The name of the database.
                 table (str): The name of the table.
+                db_type(str): The type of the database. e.g. postgres, mysql.
         """
-        self.source = source
+        self.source = Database(source)
 
-        if self.source == Source.BIGQUERY:
+        if self.source == Database.BIGQUERY:
             self.bigquery = Bigquery(bigquery.Client(
-                project=project), bigquery_args["dataset"],
+                project=project),
+                bigquery_args["dataset"],
                 bigquery_args["table"])
-        elif self.source in [Source.MYSQL, Source.POSTGRES]:
+        elif self.source == Database.CLOUDSQL:
             zone = cloudsql_args["zone"]
             instance = cloudsql_args["instance"]
+            if cloudsql_args["db_type"] == "mysql":
+                driver = "pymysql"
+                connection_name = f"mysql+{driver}"
+            elif cloudsql_args["db_type"] == "postgres":
+                driver = "pg8000"
+                connection_name = f"postgres+{driver}"
+
             self.cloudsql = CloudSQL(
                 Connector(),
                 f"{project}:{zone}:{instance}",
-                cloudsql_args["database"], cloudsql_args["table"])
+                cloudsql_args["db_type"],
+                cloudsql_args["table"],
+                driver,
+                connection_name)
 
     def get_connection(self):
-        """ReturnS a connection to the database.
+        """Returns a connection to the database.
 
         Returns:
             A connection object that can be used to execute queries.
         """
-        if self.source == Source.MYSQL:
-            driver = "pymysql"
-        if self.source == Source.POSTGRES:
-            driver = "pg8000"
 
         user_result = subprocess.run(
             ["gcloud", "config", "get-value", "account"],
@@ -89,10 +98,10 @@ class Preprocessing:
         gcloud_user = user_result.stdout.strip()
         conn = self.cloudsql.connector.connect(
             self.cloudsql.connection_name,
-            driver,
+            self.cloudsql.driver,
             user=gcloud_user,
             enable_iam_auth=True,
-            db=self.cloudsql.database
+            db=self.cloudsql.db_name
         )
         return conn
 
@@ -105,14 +114,10 @@ class Preprocessing:
         Returns:
             Tuple[List]: A tuple containing the schema and content as a List.
         """
-        if self.source == Source.MYSQL:
-            connection_type = "mysql+pymysql"
-        if self.source == Source.POSTGRES:
-            connection_type = "postgresql+pg8000"
 
        # Create a database engine instance.
-        engine = create_engine(f'{connection_type}://',
-                               creator=self.get_connection)
+        engine = create_engine(
+            f'{self.cloudsql.connection_type}://', creator=self.get_connection)
 
         # Create a Metadata and Table instance.
         metadata = MetaData()
@@ -219,7 +224,7 @@ class Preprocessing:
         Returns:
             A list of Data Loss Prevention table objects.
         """
-        if self.source == Source.BIGQUERY:
+        if self.source == Database.BIGQUERY:
 
             bigquery_tables = [self.bigquery.table] if self.bigquery.table \
                 else self.get_bigquery_tables(self.bigquery.dataset)
@@ -228,7 +233,7 @@ class Preprocessing:
                 f"{self.bigquery.dataset}.{table_name}")
                 for table_name in bigquery_tables]
 
-        elif self.source in [Source.MYSQL, Source.POSTGRES]:
+        elif self.source == Database.CLOUDSQL:
             schema_content_list = [self.get_cloudsql_data(self.cloudsql.table)]
 
         return [self.convert_to_dlp_table(

@@ -5,21 +5,60 @@
 
 import argparse
 from typing import Type
-from dlp.preprocess import Preprocessing, Source
+
+from dlp.preprocess import Preprocessing
 from dlp.inspection import DlpInspection
 
 
 def parse_arguments() -> Type[argparse.Namespace]:
     """Parses command line arguments."""
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--source",
-        type=Source,
-        choices=Source,
-        metavar="SOURCE[bigquery, cloudsql-postgres, cloudsql-mysql]",
+    subparsers = parser.add_subparsers(dest="source")
+
+    bigquery_parser = subparsers.add_parser(
+        "bigquery",
+        help="Use BigQuery as the data source.")
+    bigquery_parser.add_argument(
+        "--table",
+        type=str,
+        help="The BigQuery table to be scanned. Optional.")
+    bigquery_parser.add_argument(
+        "--dataset",
         required=True,
-        help="""The source of data used, e.g. 'cloudsql-postgres'
-                'cloudsql-mysql' 'bigquery'.""")
+        type=str,
+        help="The BigQuery dataset to be scanned.")
+
+    cloudsql_parser = subparsers.add_parser(
+        "cloudsql",
+        help="Use CloudSQL as the data source.")
+    cloudsql_parser.add_argument(
+        "--db_type",
+        required=True,
+        type=str,
+        choices=["postgres","mysql"],
+        help="""The CloudSQL type to be scanned.
+        e.g. postgres, mysql. Optional.""")
+    cloudsql_parser.add_argument(
+        "--table",
+        required=True,
+        type=str,
+        help="The CloudSQL table to be scanned.")
+    cloudsql_parser.add_argument(
+        "--instance",
+        required=True,
+        type=str,
+        help="The instance to be used. Optional.")
+    cloudsql_parser.add_argument(
+        "--zone",
+        required=True,
+        type=str,
+        help="The zone to use, e.g. us-central1-b. Optional.")
+    cloudsql_parser.add_argument(
+        "--db_name",
+        required=True,
+        type=str,
+        help="The database to use. e.g. Bigquery, CloudSQL. Optional.")
+
     parser.add_argument(
         "--project",
         type=str,
@@ -31,44 +70,6 @@ def parse_arguments() -> Type[argparse.Namespace]:
         required=True,
         help="The BCP-47 language code to use, e.g. 'en-US'.")
 
-    main_args, _ = parser.parse_known_args()
-
-    if main_args.source == Source.BIGQUERY:
-        bigquery_group = parser.add_argument_group("Bigquery Group")
-        bigquery_group.add_argument(
-            "--table",
-            type=str,
-            help="""The BigQuery table to be scanned. Optional.
-                    If None, the entire dataset will be scanned.""")
-        bigquery_group.add_argument(
-            "--dataset",
-            required=True,
-            type=str,
-            help="The BigQuery dataset to be scanned.")
-
-    if main_args.source in [Source.MYSQL, Source.POSTGRES]:
-        cloudsql_group = parser.add_argument_group("CloudSQL Group")
-        cloudsql_group.add_argument(
-            "--table",
-            required=True,
-            type=str,
-            help="The CloudSQL table to be scanned.")
-        cloudsql_group.add_argument(
-            "--instance",
-            required=True,
-            type=str,
-            help="The instance to be used. Optional.")
-        cloudsql_group.add_argument(
-            "--zone",
-            required=True,
-            type=str,
-            help="The zone to use, e.g. us-central1-b. Optional.")
-        cloudsql_group.add_argument(
-            "--database",
-            required=True,
-            type=str,
-            help="The database to use. Optional.")
-
     return parser.parse_args()
 
 
@@ -76,36 +77,36 @@ def run(args: Type[argparse.Namespace]):
     """Runs DLP inspection scan and tags the results to Data Catalog.
 
     Args:
-        args:
-                source: The source of data used.
-                project: Project ID for which the client acts on behalf of.
-                language_code: The BCP-47 language code to use, e.g. 'en-US'.
-                dataset: The BigQuery dataset to be scanned.
-                table (str): The name of the table.
-                instance (str): Name of the database instance.
-                zone(str): The name of the zone.
-                database(str): The name of the database.
+        source(str): The source of data used.
+        project: Project ID for which the client acts on behalf of.
+        language_code: The BCP-47 language code to use, e.g. 'en-US'.
+        dataset: The BigQuery dataset to be scanned. Optional.
+        table (str): The name of the table. Optional.
+        db_type (str): Type of the database. e.g. postgres, mysql. Optional.
+        instance (str): Name of the database instance. Optional.
+        zone(str): The name of the zone. Optional.
+        database(str): The name of the database. Optional.
     """
     source = args.source
     project = args.project
     language_code = args.language_code
-    dataset = args.dataset if hasattr(args, 'dataset') else None
-    table = args.table if hasattr(args, 'table') else None
-    instance = args.instance if hasattr(args, 'instance') else None
-    zone = args.zone if hasattr(args, 'zone') else None
-    database = args.database if hasattr(args, 'database') else None
+    dataset = getattr(args, 'dataset', None)
+    table = getattr(args, 'table', None)
+    db_type = getattr(args, 'db_type', None)
+    instance = getattr(args, 'instance', None)
+    zone = getattr(args, 'zone', None)
+    db_name = getattr(args, 'database', None)
 
     preprocess = Preprocessing(
         source=source, project=project,
         bigquery_args={"dataset": dataset, "table": table},
         cloudsql_args={"instance": instance, "zone": zone,
-                       "database": database, "table": table})
+                       "db_name": db_name, "table": table,
+                       "db_type":db_type})
     tables = preprocess.get_dlp_table_list()
-
     inspection = DlpInspection(project_id=project,
                                language_code=language_code, tables=tables)
     inspection.main()
-
 
 if __name__ == "__main__":
     arguments = parse_arguments()
