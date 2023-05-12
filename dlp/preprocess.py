@@ -13,7 +13,6 @@ from google.cloud import bigquery, dlp_v2
 from google.cloud.sql.connector import Connector
 from sqlalchemy import create_engine, MetaData, Table
 
-
 @dataclasses.dataclass
 class Bigquery:
     """Represents a connection to a Google BigQuery dataset and table."""
@@ -61,7 +60,7 @@ class Preprocessing:
                 db_type(str): The type of the database. e.g. postgres, mysql.
         """
         self.source = Database(source)
-
+        self.project = project
         if self.source == Database.BIGQUERY:
             self.bigquery = Bigquery(bigquery.Client(
                 project=project),
@@ -75,12 +74,12 @@ class Preprocessing:
                 connection_name = f"mysql+{driver}"
             elif cloudsql_args["db_type"] == "postgres":
                 driver = "pg8000"
-                connection_name = f"postgres+{driver}"
+                connection_name = f"postgresql+{driver}"
 
             self.cloudsql = CloudSQL(
                 Connector(),
                 f"{project}:{zone}:{instance}",
-                cloudsql_args["db_type"],
+                cloudsql_args["db_name"],
                 cloudsql_args["table"],
                 driver,
                 connection_name)
@@ -96,11 +95,12 @@ class Preprocessing:
             ["gcloud", "config", "get-value", "account"],
             capture_output=True, text=True, check=True)
         gcloud_user = user_result.stdout.strip()
+
         conn = self.cloudsql.connector.connect(
             self.cloudsql.connection_name,
             self.cloudsql.driver,
-            user=gcloud_user,
             enable_iam_auth=True,
+            user=gcloud_user,
             db=self.cloudsql.db_name
         )
         return conn
@@ -224,6 +224,7 @@ class Preprocessing:
         Returns:
             A list of Data Loss Prevention table objects.
         """
+
         if self.source == Database.BIGQUERY:
             # Data source is BigQuery
             # Get the list of BigQuery tables
