@@ -109,7 +109,8 @@ class Preprocessing:
             table (str): The name of the table.
 
         Returns:
-            Tuple(List, List): A tuple containing the schema and content as a List.
+            Tuple(List, List): A tuple containing the schema and content 
+            as a List.
         """
 
        # Create a database engine instance.
