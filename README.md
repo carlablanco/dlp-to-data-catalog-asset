@@ -57,7 +57,7 @@ To execute the project, use the following command:
 
 1. For BigQuery:
 ```
-pip install -r requirements.txt
+python3 dlp/run.py --project PROJECT --language_code LANGUAGE_CODE bigquery --dataset DATASET --table TABLE
 ```
 2. For CLoudSQL (MySQL)
 ```
