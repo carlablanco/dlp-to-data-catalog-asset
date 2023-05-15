@@ -64,6 +64,7 @@ def parse_arguments() -> Type[argparse.Namespace]:
         type=str,
         help="The database to use. e.g. Bigquery, CloudSQL.")
 
+    # Common arguments.
     parser.add_argument(
         "--project",
         type=str,
