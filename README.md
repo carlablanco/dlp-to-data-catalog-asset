@@ -34,14 +34,8 @@ python3 -m venv myenv
 ```
 2. Activate the virtual environment.
 
-For macOS/Linux:
-
 ```
 source myenv/bin/activate
-```
-For WIndows:
-```
-myenv\Scripts\activate
 ```
 3. Install the necessary packages.
 
@@ -53,19 +47,69 @@ To ensure proper execution and import handling, we recommend setting up your Pyt
 Consult the official Python documentation on Modules and Packages for an in-depth understanding of how Python imports work.
 
 ## Run
-To execute the project, use the following command:
+To use the program, you need to provide the following parameters:
+
+project: The ID or number of the Google Cloud Platform project.
+language_code: The language code specifying the localization of the inspection results.
+
+These parameters are common to both the BigQuery and CloudSQL execution methods.
+
+Source:
+You can choose one of the following options for the source:
+1. Bigquery
+2. CloudSQL
 
 1. For BigQuery:
 ```
-python3 dlp/run.py --project PROJECT --language_code LANGUAGE_CODE bigquery --dataset DATASET --table TABLE
+python3 -m dlp.run.py \
+--project PROJECT \
+--language_code LANGUAGE_CODE \
+bigquery \
+--dataset DATASET \
+--table TABLE
 ```
-2. For CLoudSQL (MySQL)
+BigQuery Parameters:
+
+dataset: The name of the BigQuery dataset to analyze.
+table: The BigQuery table to be scanned. If None, the entire dataset will be scanned. Optional.
+
+2. CloudSQL:
+CloudSQL Parameters:
+The following additional parameters are required for running the project with CloudSQL as the data source:
+
+instance: The name of the CloudSQL instance.
+zone: The zone where the CloudSQL instance is located.
+db_name: The name of the database within the CloudSQL instance.
+db_type: The type of the database (e.g., MySQL, PostgreSQL).
+table: The name of the table to inspect within the CloudSQL database.
+
+
+For CLoudSQL (MySQL):
+
 ```
-python3 dlp/run.py --project PROJECT --language_code LANGUAGE_CODE cloudsql --instance INSTANCE --zone ZONE --db_name DB_NAME --db_type mysql --table TABLE
+python3 -m dlp.run.py \
+--project PROJECT \
+--language_code LANGUAGE_CODE \
+cloudsql --instance INSTANCE \
+--zone ZONE \
+--db_name DB_NAME \
+--db_user DB_USER \
+--db_type mysql \
+--table TABLE
 ```
-3. For CloudSQL (Postgres)
+For CloudSQL (Postgres):
+
 ```
-python3 dlp/run.py --project PROJECT --language_code LANGUAGE_CODE cloudsql --instance INSTANCE --zone ZONE --db_name DB_NAME --db_type postgres --table TABLE
+python3 -m dlp.run.py \
+--project PROJECT \
+--language_code LANGUAGE_CODE \
+cloudsql \
+--instance INSTANCE \ 
+--zone ZONE \
+--db_name DB_NAME \
+--db_user DB_USER \
+--db_type postgres \
+--table TABLE
 ```
 
 Make sure to replace the placeholder values (PROJECT, LANGUAGE_CODE, DATASET, INSTANCE, ZONE, DB_NAME, and TABLE) with the appropriate values for your specific setup.
