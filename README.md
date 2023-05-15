@@ -24,3 +24,48 @@ Authenticate your Google Account and setup Application Default Credentials.
 gcloud auth login
 gcloud auth application-default login
 ```
+### Environment Setup and Package Installation
+To set up the environment and install the required packages, follow these steps:
+
+1. Create a virtual enviroment.
+
+```
+python3 -m venv myenv
+```
+2. Activate the virtual environment.
+
+For macOS/Linux:
+
+```
+source myenv/bin/activate
+```
+For WIndows:
+```
+myenv\Scripts\activate
+```
+3. Install the necessary packages.
+
+```
+pip install -r requirements.txt
+```
+4. Setting Up Python Project and PYTHONPATH.
+To ensure proper execution and import handling, we recommend setting up your Python project and configuring the PYTHONPATH environment variable. This allows the Python interpreter to locate and import the required modules and packages correctly.
+Consult the official Python documentation on Modules and Packages for an in-depth understanding of how Python imports work.
+
+## Run
+To execute the project, use the following command:
+
+1. For BigQuery:
+```
+pip install -r requirements.txt
+```
+2. For CLoudSQL (MySQL)
+```
+python3 dlp/run.py --project PROJECT --language_code LANGUAGE_CODE cloudsql --instance INSTANCE --zone ZONE --db_name DB_NAME --db_type mysql --table TABLE
+```
+3. For CloudSQL (Postgres)
+```
+python3 dlp/run.py --project PROJECT --language_code LANGUAGE_CODE cloudsql --instance INSTANCE --zone ZONE --db_name DB_NAME --db_type postgres --table TABLE
+```
+
+Make sure to replace the placeholder values (PROJECT, LANGUAGE_CODE, DATASET, INSTANCE, ZONE, DB_NAME, and TABLE) with the appropriate values for your specific setup.
