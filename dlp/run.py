@@ -47,12 +47,17 @@ def parse_arguments() -> Type[argparse.Namespace]:
         "--instance",
         required=True,
         type=str,
-        help="The instance to be used.")
+        help="The name of the database instance used.")
     cloudsql_parser.add_argument(
         "--zone",
         required=True,
         type=str,
         help="The zone to use, e.g. us-central1-b.")
+    cloudsql_parser.add_argument(
+        "--db_user",
+        required=True,
+        type=str,
+        help="The database user that matches the default gcloud user")
     cloudsql_parser.add_argument(
         "--db_name",
         required=True,
@@ -81,11 +86,12 @@ def run(args: Type[argparse.Namespace]):
         project(str): Project ID for which the client acts on behalf of.
         language_code(str): The BCP-47 language code to use, e.g. 'en-US'.
         dataset(str): The BigQuery dataset to be scanned. Optional.
-        table (str): The name of the table. Optional.
-        db_type (str): Type of the database. e.g. postgres, mysql. Optional.
-        instance (str): Name of the database instance. Optional.
+        table(str): The name of the table. Optional.
+        db_typestr): Type of the database. e.g. postgres, mysql. Optional.
+        db_user(str): Default gcloud user's matching database user. Optional.
+        instance(str): Name of the database instance. Optional.
         zone(str): The name of the zone. Optional.
-        database(str): The name of the database. Optional.
+        db_name(str): The name of the database. Optional.
     """
     source = args.source
     project = args.project
@@ -104,6 +110,7 @@ def run(args: Type[argparse.Namespace]):
             "cloudsql_args": {
                 "instance": args.instance,
                 "zone": args.zone,
+                "db_user": args.db_user,
                 "db_name": args.db_name,
                 "table": args.table,
                 "db_type": args.db_type
@@ -117,7 +124,8 @@ def run(args: Type[argparse.Namespace]):
         source=source, project=project, **preprocess_args)
     tables = preprocess.get_dlp_table_list()
     inspection = DlpInspection(project_id=project,
-                               language_code=language_code, tables=tables)
+                               language_code=language_code,
+                               tables=tables)
     inspection.main()
 
 if __name__ == "__main__":

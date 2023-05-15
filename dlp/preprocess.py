@@ -4,7 +4,6 @@
 """Processes input data to fit to DLP inspection standards."""
 
 import dataclasses
-import subprocess
 from enum import Enum
 from typing import List, Tuple, Dict
 
@@ -26,6 +25,7 @@ class CloudSQL:
     """Represents a connection to a Google CloudSQL."""
     connector: Connector
     connection_name: str
+    db_user: str
     db_name: str
     table: str
     driver: str
@@ -55,6 +55,7 @@ class Preprocessing:
             cloudsql_args(Dict):
                 instance (str): Name of the database instance.
                 zone(str): The name of the zone.
+                db_user(str): Default gcloud user's matching database user.
                 db_name(str): The name of the database.
                 table (str): The name of the table.
                 db_type(str): The type of the database. e.g. postgres, mysql.
@@ -79,6 +80,7 @@ class Preprocessing:
             self.cloudsql = CloudSQL(
                 Connector(),
                 f"{project}:{zone}:{instance}",
+                cloudsql_args["db_user"],
                 cloudsql_args["db_name"],
                 cloudsql_args["table"],
                 driver,
@@ -91,28 +93,23 @@ class Preprocessing:
             A connection object that can be used to execute queries.
         """
 
-        user_result = subprocess.run(
-            ["gcloud", "config", "get-value", "account"],
-            capture_output=True, text=True, check=True)
-        gcloud_user = user_result.stdout.strip()
-
-        conn = self.cloudsql.connector.connect(
+        connector = self.cloudsql.connector.connect(
             self.cloudsql.connection_name,
             self.cloudsql.driver,
             enable_iam_auth=True,
-            user=gcloud_user,
+            user=self.cloudsql.db_user,
             db=self.cloudsql.db_name
         )
-        return conn
+        return connector
 
-    def get_cloudsql_data(self, table: str) -> Tuple[List]:
+    def get_cloudsql_data(self, table: str) -> Tuple(List,List):
         """Retrieves the schema and content of a table from CloudSQL.
 
         Args:
             table (str): The name of the table.
 
         Returns:
-            Tuple[List]: A tuple containing the schema and content as a List.
+            Tuple(List, List): A tuple containing the schema and content as a List.
         """
 
        # Create a database engine instance.
