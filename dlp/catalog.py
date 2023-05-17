@@ -1,10 +1,10 @@
 # Copyright 2023 Google LLC. This software is provided as-is, without warranty
 # or representation for any use or purpose. Your use of it is subject to your
 # agreement with Google.
-"""A class that creates and attaches a tag template to a BigQuery table."""
+"A class that creates and attaches a tag template to a BigQuery table."
 
-from google.cloud import datacatalog_v1
 from typing import List, Dict
+from google.cloud import datacatalog_v1
 
 class Catalog:
     def __init__(self, data: List[Dict], tag_template_id: str,
@@ -20,6 +20,7 @@ class Catalog:
         self.tag_name = tag_name
         self.dataset = dataset
         self.table = table
+        self.tag_template = None
 
     def create_tag_template(self, parent: str) -> None:
         """Creates a tag template if it does not already exist.
@@ -43,10 +44,10 @@ class Catalog:
 
         # Create the request and send it to create the tag template.
         request = datacatalog_v1.CreateTagTemplateRequest(
-            parent=parent, tag_template_id=self.tag_template_id, tag_template=(
-                tag_template))
-        self.tag_template = self.data_catalog_client.create_tag_template(request)
-
+            parent=parent, tag_template_id=self.tag_template_id,
+            tag_template=tag_template)
+        self.tag_template =(
+        self.data_catalog_client.create_tag_template(request))
         print("Tag template created successfully")
 
     def attach_bq_table(self, table_entry: str) -> None:
@@ -63,12 +64,12 @@ class Catalog:
 
         for key, value in self.data[0].items():
             tag.fields[key] = datacatalog_v1.types.TagField()
-            tag.fields[key].string_value = ""
+            tag.fields[key].string_value = value
 
         tag = self.data_catalog_client.create_tag(parent=table_entry, tag=tag)
         print(f"Created tag: {tag.name}")
 
-    def main(self) -> str:
+    def main(self) -> None:
         """Creates a tag template and attaches it to a BigQuery table.
 
         Returns:
@@ -77,7 +78,7 @@ class Catalog:
         parent = f"projects/{self.project_id}/locations/{self.location}"
 
         # Create the tag template if it does not already exist.
-        dad = self.create_tag_template(parent)
+        self.create_tag_template(parent)
         # Attach the tag to the table.
 
         resource_name = (
@@ -90,4 +91,4 @@ class Catalog:
         table_entry = table_entry.name
         self.attach_bq_table(table_entry)
 
-        return "The job is finished"
+        print("The job is finished")
