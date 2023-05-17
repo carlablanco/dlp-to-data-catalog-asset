@@ -44,19 +44,19 @@ pip install -r requirements.txt
 ```
 4. Setting Up Python Project and PYTHONPATH.
 To ensure proper execution and import handling, we recommend setting up your Python project and configuring the PYTHONPATH environment variable. This allows the Python interpreter to locate and import the required modules and packages correctly.
-Consult the official Python documentation on Modules and Packages for an in-depth understanding of how Python imports work.
+Consult the official Python documentation on <a href= "https://docs.python.org/3/tutorial/modules.html"> Modules</a> and <a href="https://docs.python.org/3/tutorial/modules.html#packages"> Packages</a> for an in-depth understanding of how Python imports work.
 
 ## Run
 To use the program, you need to provide the following parameters:
 
-project: The ID or number of the Google Cloud Platform project.
+project: The name of the Google Cloud Platform project.
 language_code: The language code specifying the localization of the inspection results.
 
 These parameters are common to both the BigQuery and CloudSQL execution methods.
 
 Source:
 You can choose one of the following options for the source:
-1. Bigquery
+1. BigQuery
 2. CloudSQL
 
 1. For BigQuery:
@@ -79,8 +79,9 @@ The following additional parameters are required for running the project with Cl
 
 instance: The name of the CloudSQL instance.
 zone: The zone where the CloudSQL instance is located.
+db_user: The username of the logged-in user.
 db_name: The name of the database within the CloudSQL instance.
-db_type: The type of the database (e.g., MySQL, PostgreSQL).
+db_type: The type of the database (only accepts mysql or postgres).
 table: The name of the table to inspect within the CloudSQL database.
 
 
@@ -92,6 +93,7 @@ python3 -m dlp.run.py \
 --language_code LANGUAGE_CODE \
 cloudsql --instance INSTANCE \
 --zone ZONE \
+--db_user DB_USER \
 --db_name DB_NAME \
 --db_user DB_USER \
 --db_type mysql \
@@ -106,6 +108,7 @@ python3 -m dlp.run.py \
 cloudsql \
 --instance INSTANCE \ 
 --zone ZONE \
+--db_user DB_USER \
 --db_name DB_NAME \
 --db_user DB_USER \
 --db_type postgres \
