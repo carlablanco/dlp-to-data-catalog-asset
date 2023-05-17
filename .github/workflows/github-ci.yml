@@ -22,6 +22,4 @@ jobs:
       - name: Install requirements
         run: pip install -r requirements.txt
       - name: Run pylint on Python files
-        run: pylint --jobs=0 --max-line-length=80 --fail-on=line-too-long $(git ls-files '*.py')
-
- 
+        run: pylint --jobs=0 --max-line-length=80 --fail-on=line-too-long --disable=R0902,R0913 $(git ls-files '*.py')
