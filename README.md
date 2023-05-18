@@ -135,7 +135,6 @@ cloudsql --instance INSTANCE \
 --zone ZONE \
 --db_user DB_USER \
 --db_name DB_NAME \
---db_user DB_USER \
 --db_type mysql \
 --table TABLE
 ```
@@ -150,7 +149,6 @@ cloudsql \
 --zone ZONE \
 --db_user DB_USER \
 --db_name DB_NAME \
---db_user DB_USER \
 --db_type postgres \
 --table TABLE
 ```
