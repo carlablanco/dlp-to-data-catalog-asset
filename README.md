@@ -81,7 +81,7 @@ instance: The name of the CloudSQL instance.
 zone: The zone where the CloudSQL instance is located.
 db_user: The username of the logged-in user.
 db_name: The name of the database within the CloudSQL instance.
-db_type: The type of the database (only accepts mysql or postgres).
+db_type: The type of the database (only accepts `mysql` or `postgres`).
 table: The name of the table to inspect within the CloudSQL database.
 
 
