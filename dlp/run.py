@@ -71,7 +71,8 @@ def parse_arguments() -> Type[argparse.Namespace]:
         required=True,
         type=email_type,
         metavar="DB_USER",
-        help="The IAM user of the database. This should match the default gcloud user.")
+        help="""The IAM user of the database.
+        This should match the application default credentials.""")
     cloudsql_parser.add_argument(
         "--db_name",
         required=True,
