@@ -46,6 +46,46 @@ pip install -r requirements.txt
 To ensure proper execution and import handling, we recommend setting up your Python project and configuring the PYTHONPATH environment variable. This allows the Python interpreter to locate and import the required modules and packages correctly.
 Consult the official Python documentation on <a href= "https://docs.python.org/3/tutorial/modules.html"> Modules</a> and <a href="https://docs.python.org/3/tutorial/modules.html#packages"> Packages</a> for an in-depth understanding of how Python imports work.
 
+### Setup CloudSQL.
+The user logged will be used as the IAM principal and will be granted the Cloud SQL Client role.
+
+- roles/cloudsql.client
+
+To grant the Cloud SQL Client role to the logged-in user as the IAM principal, you can use the following command:
+```
+gcloud projects add-iam-policy-binding PROJECT_ID \
+  --member=user: IAM_USER \
+  --role="roles/cloudsql.client"
+```
+Make sure to replace PROJECT_ID  and IAM_USER with the appropriate information in the <a href="https://cloud.google.com/docs/authentication/application-default-credentials">application default credentials.</a>
+Let's add the Cloud SQL Instance User role to the IAM account logged.
+
+
+Let's add the Cloud SQL Instance User role to the IAM account logged.
+
+- roles/cloudsql.instanceUser
+
+To add the Cloud SQL Instance User role to the IAM account that is currently logged in, you can use the following command:
+
+```
+gcloud projects add-iam-policy-binding PROJECT_ID \
+  --member=user:IAM_USER \
+  --role="roles/cloudsql.instanceUser"
+```
+This command adds an IAM policy binding to the specified project PROJECT_ID and grants the roles/cloudsql.instanceUser role to the IAM user IAM_USER. The roles/cloudsql.instanceUser role provides the necessary permissions to manage Cloud SQL instances as an instance user.
+
+If you are using a pre-existing Cloud SQL instance you may need to configure Cloud SQL instance to allow IAM authentication by setting the cloudsql.iam_authentication database flag to On
+
+#### add current logged in IAM user to database
+```
+  gcloud sql users create IAM_USER \
+  --instance=INSTANCE \
+  --type=cloud_iam_user
+```
+
+By default new IAM database users have no permissions on a Cloud SQL instance. To connect to specific tables and perform more complex queries, permissions must be granted at the database level. <a href="https://cloud.google.com/sql/docs/mysql/add-manage-iam-users#grant-db-privileges">(Grant Database Privileges to the IAM user)</a>
+
+
 ## Run
 To use the program, you need to provide the following parameters:
 
@@ -68,22 +108,22 @@ bigquery \
 --dataset DATASET \
 --table TABLE
 ```
-BigQuery Parameters:
+### BigQuery Parameters:
 
 dataset: The name of the BigQuery dataset to analyze.
 table: The BigQuery table to be scanned. If None, the entire dataset will be scanned. Optional.
 
 2. CloudSQL:
+
 CloudSQL Parameters:
 The following additional parameters are required for running the project with CloudSQL as the data source:
 
 instance: The name of the CloudSQL instance.
 zone: The zone where the CloudSQL instance is located.
-db_user: The username of the logged-in user.
+db_user: The IAM user of the database. This should match the application default credentials.
 db_name: The name of the database within the CloudSQL instance.
 db_type: The type of the database (only accepts mysql or postgres).
 table: The name of the table to inspect within the CloudSQL database.
-
 
 For CLoudSQL (MySQL):
 
