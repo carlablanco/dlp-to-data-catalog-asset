@@ -12,6 +12,7 @@ from google.cloud import bigquery, dlp_v2
 from google.cloud.sql.connector import Connector
 from sqlalchemy import create_engine, MetaData, Table
 
+
 @dataclasses.dataclass
 class Bigquery:
     """Represents a connection to a Google BigQuery dataset and table."""
@@ -70,12 +71,15 @@ class Preprocessing:
         elif self.source == Database.CLOUDSQL:
             zone = cloudsql_args["zone"]
             instance = cloudsql_args["instance"]
-            if cloudsql_args["db_type"] == "mysql":
+            db_type = cloudsql_args["db_type"]
+            if db_type == "mysql":
                 driver = "pymysql"
                 connection_name = f"mysql+{driver}"
-            elif cloudsql_args["db_type"] == "postgres":
+            elif db_type == "postgres":
                 driver = "pg8000"
                 connection_name = f"postgresql+{driver}"
+            else:
+                raise ValueError(f"Unsupported database type: {db_type}")
 
             self.cloudsql = CloudSQL(
                 Connector(),
@@ -102,7 +106,7 @@ class Preprocessing:
         )
         return connector
 
-    def get_cloudsql_data(self, table: str) -> Tuple(List,List):
+    def get_cloudsql_data(self, table: str) -> Tuple[List, List]:
         """Retrieves the schema and content of a table from CloudSQL.
 
         Args:

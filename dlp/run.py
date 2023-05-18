@@ -4,11 +4,24 @@
 """Runs DLP inspection on a dataset and tags the results in Data Catalog."""
 
 import argparse
+import re
 from typing import Type
 
 from dlp.preprocess import Preprocessing
 from dlp.inspection import DlpInspection
 
+
+EMAIL_REGEX = re.compile(r'^[\w\.-]+@[\w\.-]+\.\w+$')
+
+def is_valid_email(email: str) -> bool:
+    """Checks if a string is a valid email."""
+    return bool(EMAIL_REGEX.match(email))
+
+def email_type(value) -> str:
+    """Validates and returns a valid email."""
+    if not is_valid_email(value):
+        raise argparse.ArgumentTypeError(f"Invalid IAM user: {value}")
+    return value
 
 def parse_arguments() -> Type[argparse.Namespace]:
     """Parses command line arguments."""
@@ -56,8 +69,9 @@ def parse_arguments() -> Type[argparse.Namespace]:
     cloudsql_parser.add_argument(
         "--db_user",
         required=True,
-        type=str,
-        help="The database user that matches the default gcloud user")
+        type=email_type,
+        metavar="DB_USER",
+        help="The IAM user of the database. This should match the default gcloud user.")
     cloudsql_parser.add_argument(
         "--db_name",
         required=True,
@@ -77,7 +91,6 @@ def parse_arguments() -> Type[argparse.Namespace]:
         help="The BCP-47 language code to use, e.g. 'en-US'.")
 
     return parser.parse_args()
-
 
 def run(args: Type[argparse.Namespace]):
     """Runs DLP inspection scan and tags the results to Data Catalog.
