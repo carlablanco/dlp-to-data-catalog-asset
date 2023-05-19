@@ -6,7 +6,7 @@
 import argparse
 import re
 from typing import Type
-from datetime import timestamp
+from datetime import datetime
 
 from dlp.preprocess import Preprocessing
 from dlp.inspection import DlpInspection

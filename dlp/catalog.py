@@ -10,8 +10,19 @@ class Catalog:
     def __init__(self, data: List[Dict], tag_template_id: str,
                  project_id: str, location: str,
                  dataset: Optional[str] = None, table: Optional[str] = None,
-                 instance_id: str = None):
+                 instance_id: str = Optional[str] = None):
+        """Initializes the class with the required data.
 
+        Args:
+            data(str): The data Previously inspected by the DLP API.
+            tag_template_id(str): The unique identifier of the tag template.
+            project(str): Project ID for which the client acts on behalf of.
+            location(str): The compute engine region.
+            dataset(str): The BigQuery dataset to be scanned. Optional.
+            table(str): The name of the table. Optional.
+            instance(str): Name of the database instance. Optional.
+                           Default value is None.
+        """
         self.data_catalog_client = datacatalog_v1.DataCatalogClient()
         self.data = data
         self.tag_template_id = tag_template_id
