@@ -9,7 +9,7 @@ from typing import Type
 
 from dlp.preprocess import Preprocessing
 from dlp.inspection import DlpInspection
-from dlp.catalog import Catalog
+from dlp.catalog import Ca
 
 
 EMAIL_REGEX = re.compile(r'^[\w\.-]+@[\w\.-]+\.\w+$')
@@ -160,9 +160,11 @@ def run(args: Type[argparse.Namespace]):
                                language_code=language_code,
                                tables=tables)
     table_inspected = inspection.main()
-    catalog = Catalog(data=table_inspected, tag_template_id=f'{tag_template_id}_{timestamp}',
+    catalog = Catalog(data=table_inspected,
+                      tag_template_id=f'{tag_template_id}_{timestamp}',
                       project_id = project, location = location,
-                      dataset = dataset, table = table, instance_id = instance_id)
+                      dataset = dataset, table = table,
+                      instance_id = instance_id)
     result = catalog.main()
     print(result)
 
