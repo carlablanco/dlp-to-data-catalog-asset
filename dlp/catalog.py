@@ -67,7 +67,7 @@ class Catalog:
         self.data_catalog_client.create_tag_template(request)
         )
 
-    def attach_to_table(self, table_entry: str) -> None:
+    def attach_tag_to_table(self, table_entry: str) -> None:
         """Attaches a tag to a BigQuery table.
 
         Args:
@@ -110,4 +110,4 @@ class Catalog:
             request={"linked_resource": resource_name}
          )
         table_entry = table_entry.name
-        self.attach_to_table(table_entry)
+        self.attach_tag_to_table(table_entry)
