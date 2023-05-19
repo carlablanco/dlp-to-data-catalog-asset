@@ -10,8 +10,7 @@ class Catalog:
     def __init__(self, data: List[Dict], tag_template_id: str,
                  project_id: str, location: str,
                  dataset: Optional[str] = None, table: Optional[str] = None,
-                 instance_id: 
-                 Optional[str] = None):
+                 instance_id: Optional[str] = None):
         """Initializes the class with the required data.
 
         Args:
@@ -32,6 +31,7 @@ class Catalog:
         self.dataset = dataset
         self.table = table
         self.instance_id = instance_id
+        self.tag_template = None
 
     def create_tag_template(self, parent: str) -> None:
         """Creates a tag template if it does not already exist.
@@ -41,8 +41,9 @@ class Catalog:
         """
         # Create the tag template.
         tag_template = datacatalog_v1.TagTemplate()
-        if instance is not None:
-            tag_template_name = f"DLP_columns_{self.project_id}_{self.dataset}_{self.table}"
+        if self.instance_id is not None:
+            tag_template_name = f"""DLP_columns_{self.project_id}_
+            {self.dataset}_{self.table}"""
         else:
             tag_template_name = f"DLP_columns_{self.instance_id}"
         tag_template.display_name = tag_template_name
@@ -111,3 +112,4 @@ class Catalog:
          )
         table_entry = table_entry.name
         self.attach_tag_to_table(table_entry)
+        return 'The job ended'
