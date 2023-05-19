@@ -6,9 +6,11 @@
 import argparse
 import re
 from typing import Type
+import datetime
 
 from dlp.preprocess import Preprocessing
 from dlp.inspection import DlpInspection
+from dlp.catalog import Catalog
 
 
 EMAIL_REGEX = re.compile(r'^[\w\.-]+@[\w\.-]+\.\w+$')
@@ -90,7 +92,16 @@ def parse_arguments() -> Type[argparse.Namespace]:
         type=str,
         required=True,
         help="The BCP-47 language code to use, e.g. 'en-US'.")
-
+    parser.add_argument(
+        "--location",
+        type=str,
+        help="""The compute engine region
+                """)
+    parser.add_argument(
+        "--tag_template_id",
+        type=str,
+        help=""" The tag template ID.
+                """)
     return parser.parse_args()
 
 def run(args: Type[argparse.Namespace]):
@@ -107,10 +118,16 @@ def run(args: Type[argparse.Namespace]):
         instance(str): Name of the database instance. Optional.
         zone(str): The name of the zone. Optional.
         db_name(str): The name of the database. Optional.
+        location(str): The compute engine region.
+        tag_template_id(str): The tag template id, followed by the timestamp.
     """
     source = args.source
     project = args.project
     language_code = args.language_code
+    location = args.location
+    dataset = args.dataset
+    table = args.table
+    tag_template_id = args.tag_template_id
 
     preprocess_args = {}
     if source == "bigquery":
@@ -141,7 +158,15 @@ def run(args: Type[argparse.Namespace]):
     inspection = DlpInspection(project_id=project,
                                language_code=language_code,
                                tables=tables)
-    inspection.main()
+    table_inspected = inspection.main()
+    timestamp = int(datetime.datetime.now().timestamp())
+    catalog = Catalog(data=table_inspected,
+                      tag_template_id=f'{tag_template_id}_{timestamp}',
+                      project_id = project, location = location,
+                      dataset = dataset, table = table,
+                      instance_id = args.instance)
+    result = catalog.main()
+    print(result)
 
 if __name__ == "__main__":
     arguments = parse_arguments()
