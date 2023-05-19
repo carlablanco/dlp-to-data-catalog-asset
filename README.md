@@ -56,10 +56,10 @@ These parameters are common to both the BigQuery and CloudSQL execution methods.
 
 Source:
 You can choose one of the following options for the source:
-1. BigQuery
-2. CloudSQL
+- BigQuery
+- CloudSQL
 
-1. For BigQuery:
+### BigQuery:
 ```
 python3 -m dlp.run.py \
 --project PROJECT \
@@ -68,12 +68,12 @@ bigquery \
 --dataset DATASET \
 --table TABLE
 ```
-### BigQuery Parameters:
+BigQuery Parameters:
 
 dataset: The name of the BigQuery dataset to analyze.
 table: The BigQuery table to be scanned. If None, the entire dataset will be scanned. Optional.
 
-2. CloudSQL:
+### CloudSQL:
 
 CloudSQL Parameters:
 The following additional parameters are required for running the project with CloudSQL as the data source:
@@ -85,7 +85,7 @@ db_name: The name of the database within the CloudSQL instance.
 db_type: The type of the database (only accepts `mysql` or `postgres`).
 table: The name of the table to inspect within the CloudSQL database.
 
-For CLoudSQL (MySQL):
+#### For CLoudSQL (MySQL):
 
 ```
 python3 -m dlp.run.py \
@@ -98,7 +98,8 @@ cloudsql --instance INSTANCE \
 --db_type mysql \
 --table TABLE
 ```
-For CloudSQL (Postgres):
+
+#### For CloudSQL (Postgres):
 
 ```
 python3 -m dlp.run.py \
