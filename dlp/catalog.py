@@ -36,7 +36,6 @@ class Catalog:
         tag_template.display_name = tag_template_name
         # Create a new source field for each field in the data.
         for key, value in self.data[0].items():
-             for key, value in self.data[0].items():
             new_source_field = datacatalog_v1.TagTemplateField(
                 name=key,
                 type=datacatalog_v1.FieldType(

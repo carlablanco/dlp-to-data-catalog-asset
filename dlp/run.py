@@ -6,10 +6,11 @@
 import argparse
 import re
 from typing import Type
+from datetime import timestamp
 
 from dlp.preprocess import Preprocessing
 from dlp.inspection import DlpInspection
-from dlp.catalog import Ca
+from dlp.catalog import Catalog
 
 
 EMAIL_REGEX = re.compile(r'^[\w\.-]+@[\w\.-]+\.\w+$')
@@ -94,12 +95,12 @@ def parse_arguments() -> Type[argparse.Namespace]:
     parser.add_argument(
         "--location",
         type=str,
-        help=""" 
+        help="""The compute engine region
                 """)
     parser.add_argument(
         "--tag_template_id",
         type=str,
-        help=""" The tag template ID. It should be unique.
+        help=""" The tag template ID.
                 """)
     return parser.parse_args()
 
@@ -127,8 +128,6 @@ def run(args: Type[argparse.Namespace]):
     dataset = args.dataset
     table = args.table
     tag_template_id = args.tag_template_id
-    instance_id = args.instance
-    
 
     preprocess_args = {}
     if source == "bigquery":
@@ -160,11 +159,12 @@ def run(args: Type[argparse.Namespace]):
                                language_code=language_code,
                                tables=tables)
     table_inspected = inspection.main()
+    timestamp = int(datetime.datetime.now().timestamp())
     catalog = Catalog(data=table_inspected,
                       tag_template_id=f'{tag_template_id}_{timestamp}',
                       project_id = project, location = location,
                       dataset = dataset, table = table,
-                      instance_id = instance_id)
+                      instance_id = args.instance)
     result = catalog.main()
     print(result)
 
