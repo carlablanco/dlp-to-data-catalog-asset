@@ -1,7 +1,7 @@
 # Copyright 2023 Google LLC. This software is provided as-is, without warranty
 # or representation for any use or purpose. Your use of it is subject to your
 # agreement with Google.
-"Creates and attaches a tag template to a BigQuery table."
+"""Creates and attaches a tag template to a BigQuery table."""
 
 from typing import List, Dict, Optional
 from google.cloud import datacatalog_v1
@@ -23,7 +23,7 @@ class Catalog:
             instance(str): Name of the database instance. Optional.
                            Default value is None.
         """
-        self.data_catalog_client = datacatalog_v1.DataCatalogClient()
+        self.client = datacatalog_v1.DataCatalogClient()
         self.data = data
         self.tag_template_id = tag_template_id
         self.project_id = project_id
@@ -41,13 +41,16 @@ class Catalog:
         """
         # Create the tag template.
         tag_template = datacatalog_v1.TagTemplate()
+
         if self.instance_id is not None:
             tag_template_name = f"""DLP_columns_{self.project_id}_
             {self.dataset}_{self.table}"""
         else:
             tag_template_name = f"DLP_columns_{self.instance_id}"
         tag_template.display_name = tag_template_name
+
         # Create a new source field for each field in the data.
+        fields = {}
         for key, value in self.data[0].items():
             new_source_field = datacatalog_v1.TagTemplateField(
                 name=key,
@@ -55,18 +58,22 @@ class Catalog:
                     primitive_type=datacatalog_v1.FieldType.PrimitiveType.STRING
                 ),
                 description=value
-             )
-            tag_template.fields.update(
-                {new_source_field.name:(new_source_field)})
+            )
+            fields[new_source_field.name] = new_source_field
+
+        tag_template.fields.update(fields)
 
         # Create the request and send it to create the tag template.
         request = datacatalog_v1.CreateTagTemplateRequest(
             parent=parent,
             tag_template_id=self.tag_template_id,
             tag_template=tag_template)
-        self.tag_template =(
-        self.data_catalog_client.create_tag_template(request)
-        )
+
+        try:
+            self.client.create_tag_template(request)
+        except Exception as e:
+            print("Error occured while creating tag template:", str(e))
+
 
     def attach_tag_to_table(self, table_entry: str) -> None:
         """Attaches a tag to a BigQuery table.
@@ -82,15 +89,13 @@ class Catalog:
         for key, value in self.data[0].items():
             tag.fields[key] = datacatalog_v1.types.TagField(string_value=value)
 
-        self.data_catalog_client.create_tag(parent=table_entry,
-                                                  tag=tag)
+        self.client.create_tag(
+            parent=table_entry,
+              tag=tag
+              )
 
     def main(self) -> None:
-        """Creates a tag template and attaches it to a BigQuery table.
-
-        Returns:
-            A string indicating that the job is finished.
-        """
+        "Creates a tag template and attaches it to a BigQuery table."
         parent = f"projects/{self.project_id}/locations/{self.location}"
 
         # Create the tag template.
@@ -107,9 +112,9 @@ class Catalog:
                 f"/instances/{self.instance_id}"
              )
 
-        table_entry = self.data_catalog_client.lookup_entry(
+        table_entry = self.client.lookup_entry(
             request={"linked_resource": resource_name}
          )
         table_entry = table_entry.name
+
         self.attach_tag_to_table(table_entry)
-        return 'The job ended'

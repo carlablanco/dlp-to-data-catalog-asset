@@ -95,12 +95,12 @@ def parse_arguments() -> Type[argparse.Namespace]:
     parser.add_argument(
         "--location",
         type=str,
-        help="""The compute engine region
-                """)
+        help="The compute engine region. e.g. us-central1.")
     parser.add_argument(
         "--tag_template_id",
         type=str,
-        help=""" The tag template ID.
+        help="""The tag template ID.
+                The tag template ID must be unique within the parent location.
                 """)
     return parser.parse_args()
 
@@ -161,12 +161,11 @@ def run(args: Type[argparse.Namespace]):
     table_inspected = inspection.main()
     timestamp = int(datetime.datetime.now().timestamp())
     catalog = Catalog(data=table_inspected,
-                      tag_template_id=f'{tag_template_id}_{timestamp}',
+                      tag_template_id=f"{tag_template_id}_{timestamp}",
                       project_id = project, location = location,
                       dataset = dataset, table = table,
                       instance_id = args.instance)
-    result = catalog.main()
-    print(result)
+    catalog.main()
 
 if __name__ == "__main__":
     arguments = parse_arguments()
