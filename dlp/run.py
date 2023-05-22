@@ -95,12 +95,7 @@ def parse_arguments() -> Type[argparse.Namespace]:
         "--location",
         type=str,
         help="The compute engine region. e.g. us-central1.")
-    parser.add_argument(
-        "--tag_template_id",
-        type=str,
-        help="""The tag template ID.
-                The tag template ID must be unique within the parent location.
-                """)
+    
     return parser.parse_args()
 
 def run(args: Type[argparse.Namespace]):

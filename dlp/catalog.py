@@ -82,7 +82,7 @@ class Catalog:
 
 
     def attach_tag_to_table(self, table_entry: str) -> None:
-        """Attaches a tag to a BigQuery table.
+        """Attaches a tag to a BigQuery or CloudSQL table.
 
         Args:
             table_entry: The table name for the tag to be attached.
@@ -107,6 +107,7 @@ class Catalog:
         # Create the tag template.
         self.create_tag_template(parent)
 
+        # Checks if it's BigQuery or CloudSQL.
         if self.instance_id is None:
             resource_name = (
                 f"//bigquery.googleapis.com/projects/{self.project_id}"
