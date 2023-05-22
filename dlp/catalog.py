@@ -7,7 +7,7 @@ from typing import List, Dict, Optional
 import datetime
 from google.cloud import datacatalog_v1
 
-class Catalog: 
+class Catalog:
     def __init__(self, data: List[Dict], project_id: str, location: str,
                  dataset: Optional[str] = None, table: Optional[str] = None,
                  instance_id: Optional[str] = None):

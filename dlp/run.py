@@ -6,7 +6,6 @@
 import argparse
 import re
 from typing import Type
-import datetime
 
 from dlp.preprocess import Preprocessing
 from dlp.inspection import DlpInspection
@@ -119,7 +118,6 @@ def run(args: Type[argparse.Namespace]):
         zone(str): The name of the zone. Optional.
         db_name(str): The name of the database. Optional.
         location(str): The compute engine region.
-        tag_template_id(str): The tag template id, followed by the timestamp.
     """
     source = args.source
     project = args.project
@@ -127,7 +125,6 @@ def run(args: Type[argparse.Namespace]):
     location = args.location
     dataset = args.dataset
     table = args.table
-    tag_template_id = args.tag_template_id
 
     preprocess_args = {}
     if source == "bigquery":
@@ -159,7 +156,6 @@ def run(args: Type[argparse.Namespace]):
                                language_code=language_code,
                                tables=tables)
     table_inspected = inspection.main()
-    timestamp = int(datetime.datetime.now().timestamp())
     catalog = Catalog(data=table_inspected,
                       project_id = project, location = location,
                       dataset = dataset, table = table,
