@@ -161,7 +161,6 @@ def run(args: Type[argparse.Namespace]):
     table_inspected = inspection.main()
     timestamp = int(datetime.datetime.now().timestamp())
     catalog = Catalog(data=table_inspected,
-                      tag_template_id=f"{tag_template_id}_{timestamp}",
                       project_id = project, location = location,
                       dataset = dataset, table = table,
                       instance_id = args.instance)

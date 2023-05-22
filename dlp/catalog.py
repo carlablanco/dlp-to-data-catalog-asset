@@ -4,34 +4,40 @@
 """Creates and attaches a tag template to a BigQuery table."""
 
 from typing import List, Dict, Optional
+import datetime
 from google.cloud import datacatalog_v1
 
 class Catalog: 
-    def __init__(self, data: List[Dict], tag_template_id: str,
-                 project_id: str, location: str,
+    def __init__(self, data: List[Dict], project_id: str, location: str,
                  dataset: Optional[str] = None, table: Optional[str] = None,
                  instance_id: Optional[str] = None):
         """Initializes the class with the required data.
 
         Args:
             data(str): The data Previously inspected by the DLP API.
-            tag_template_id(str): The unique identifier of the tag template.
             project(str): Project ID for which the client acts on behalf of.
             location(str): The compute engine region.
-            dataset(str): The BigQuery dataset to be scanned. Optional.
-            table(str): The name of the table. Optional.
-            instance(str): Name of the database instance. Optional.
-                           Default value is None.
+            dataset(str): The BigQuery dataset to be scanned if it's BigQuery.
+                        Optional. Default value is None.
+            table(str): The name of the table if it's BigQuery.
+                        Optional. Default value is None.
+            instance(str): Name of the database instance if it's CloudSQL.
+                           Optional. Default value is None.
         """
         self.client = datacatalog_v1.DataCatalogClient()
         self.data = data
-        self.tag_template_id = tag_template_id
         self.project_id = project_id
         self.location = location
         self.dataset = dataset
         self.table = table
         self.instance_id = instance_id
         self.tag_template = None
+
+        timestamp = int(datetime.datetime.now().timestamp())
+        if self.instance_id is not None:
+            self.tag_template_id = f"DLP_{self.instance_id}_{timestamp}"
+        else:
+            self.tag_template_id = f"DLP_{self.dataset}_{self.table}_{timestamp}"
 
     def create_tag_template(self, parent: str) -> None:
         """Creates a tag template if it does not already exist.
