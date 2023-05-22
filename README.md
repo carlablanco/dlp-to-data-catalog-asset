@@ -88,7 +88,7 @@ table: The name of the table to inspect within the CloudSQL database.
 #### For CLoudSQL (MySQL):
 
 ```
-python3 -m dlp.run.py \
+python3 -m dlp.run \
 --project PROJECT \
 --language_code LANGUAGE_CODE \
 cloudsql --instance INSTANCE \
@@ -102,7 +102,7 @@ cloudsql --instance INSTANCE \
 #### For CloudSQL (Postgres):
 
 ```
-python3 -m dlp.run.py \
+python3 -m dlp.run \
 --project PROJECT \
 --language_code LANGUAGE_CODE \
 cloudsql \
