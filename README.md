@@ -61,7 +61,7 @@ You can choose one of the following options for the source:
 
 ### BigQuery:
 ```
-python3 -m dlp.run.py \
+python3 -m dlp.run \
 --project PROJECT \
 --language_code LANGUAGE_CODE \
 bigquery \
