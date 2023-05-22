@@ -150,28 +150,179 @@ class Preprocessing:
         table_names = [table.table_id for table in dataset_tables]
         return table_names
 
-    def fetch_rows(self, table_id: str) -> List[Tuple]:
+    def fetch_rows(self, table_id: str) -> List[Dict]:
         """Fetches a batch of rows from a BigQuery table.
 
            Args:
               table_id (str) = The path of the table were the data is fetched.
 
            Returns:
-              List[Tuple]: A list of rows, where each row is a tuple
+              List[Dict]: A list of rows, where each row is a tuple
               containing the values for each field in the table schema.
          """
         content = []
-        rows_iter = self.bigquery.bq_client.list_rows(table_id)
+        fields = table_id.schema
+
+        rows_iter = self.bq_client.list_rows(table_id)
 
         if not rows_iter.total_rows:
             print(f"""The Table {table_id} is empty. Please populate the
                                                         table and try again.""")
         else:
             for row in rows_iter:
-                content.append(tuple(row))
+                row_dict = {}
+                for i, field in enumerate(fields):
+                    row_dict[field.name] = row[i]
+                content.append(row_dict)
+
         return content
 
-    def get_bigquery_data(self, table_id: str) -> Tuple[List[str], List[Tuple]]:
+    def get_table_schema(self, table_id: str) -> Tuple[List, List, List]:
+        """Generates a schema for a given table ID.
+
+            Args:
+                table_id (str): The ID of the table for which the schema needs
+                to be generated.
+
+            Returns:
+                tuple: A tuple containing three lists - schema, nested_schema,
+                and main_nested_schema.
+                - schema (list): The list of fields in the schema.
+                - nested_schema (list): The list of nested fields in the schema.
+                - main_nested_schema (list): The list of main fields
+                  associated with the nested fields.
+            """
+        schema = []
+        nested_schema = []
+        main_nested_schema = []
+        fields = table_id.schema
+        for field in fields:
+            record, nested, main_field = self.get_field(field)
+            if nested:
+                main_nested_schema.append(main_field)
+                nested_schema.append(record)
+            else:
+                schema.append(record)
+
+        return schema, nested_schema, main_nested_schema
+
+    def get_field(self, field):
+        """Generates a field for the given field object.
+
+        Args:
+            field: The field object for which the field needs to be generated.
+
+        Returns:
+            tuple: A tuple containing three values - record, nested, and
+            main_cell.
+            - record: The generated field or list of nested fields.
+            - nested (bool): Indicates if the field is nested or not.
+            - main_cell: The main field associated with the nested fields.
+        """
+        # Checks if the field has nested fields
+        if field.field_type == "RECORD":
+            field_names = []
+            for subfield in field.fields:
+                main_cell = field.name
+                cell = field.name+"."+subfield.name
+                # Checks if the field of the nested field has nested fields
+                if subfield.field_type == "RECORD":
+                    field_names.append(self.get_field(subfield))
+                else:
+                    field_names.append(cell)
+            nested = True
+            return field_names, True, main_cell
+
+        return field.name, False, False
+
+    def get_query(self, columns_selected: str, table_id: str, unnest: str) ->(
+                  str):
+        """Creates a SQL query as string.
+
+        Args:
+           columns_select (str): The string with the selected columns.
+           table_id (str): The fully qualified name of the BigQuery table.
+           unnest (str): The unnest string for the 
+            
+        Returns:
+            str: SQL query as string. 
+        """
+        query = f"""SELECT {columns_selected}
+                    FROM `{table_id}`, 
+                    {unnest}"""
+        return query
+
+    def get_rows_query(self, table_schema: List, nested_schema: List,
+                       main_nested_schema: List, table_id: str) -> (List[Dict]):
+        """ Retrives the content of the table.
+
+        Args:
+            table_schema (List): The schema of a BigQuery table.
+            nested_schema (List): A list with the columns of the nested columns
+            main_nested_schema(List) : The columns with record type.
+            table_id (str): The fully qualified name of the BigQuery table.
+
+       Returns:
+            List[Dict]: The content of the BigQuery table.
+        """
+        nested_types = self.get_nested_types(table_id)
+        if "REPEATED" in nested_types:
+            bq_schema = table_schema + main_nested_schema
+            columns_selected = ', '.join(str(column) for column in bq_schema)
+            unnest = f"""UNNEST ({main_nested_schema[0]})"""
+            sql_query = self.get_query(columns_selected, table_id,
+                                             unnest)
+
+        else:
+            bq_schema = table_schema + nested_schema
+            columns_selected = ', '.join(str(column) for column in bq_schema)
+            unnest = f"""UNNEST ([{main_nested_schema[0]}]) as
+                    {main_nested_schema[0]}"""
+            sql_query = self.get_query(columns_selected, table_id, unnest)
+
+
+        query_job = self.bq_client.query(sql_query)
+        query_results = query_job.result()
+        bq_rows_content = [dict(row) for row in query_results]
+
+        return bq_rows_content
+
+    def get_nested_types(self, table_id: str) -> List:
+        """ Gets the field modes of the selected table.
+
+        Args:
+            table_id (str): The fully qualified name of the BigQuery table.
+
+        Returns:
+            List: A complete list with the field modes of the columns.
+        """
+        nested_types = []
+
+        fields = table_id.schema
+        for field in fields:
+            nested_types.append(field.mode)
+
+        return nested_types
+
+    def get_data_types(self, table_id: str) -> List:
+        """ Gets the data types of the selected table.
+
+        Args:
+            table_id (str): The fully qualified name of the BigQuery table.
+
+        Returns:
+            List: A complete list with the data types of the columns.
+        """
+        dtypes = []
+
+        fields = table_id.schema
+        for field in fields:
+            dtypes.append(field.field_type)
+
+        return dtypes
+
+    def get_bigquery_data(self, table_id: str) -> Tuple[List[Dict],
+                                                        List[Dict]]:
         """Retrieves the schema and content of a BigQuery table.
 
         Args:
@@ -182,15 +333,53 @@ class Preprocessing:
             of Dictionaries.
         """
         try:
-            table_bq = self.bigquery.bq_client.get_table(table_id)
+            table_bq = self.bq_client.get_table(table_id)
         except NotFound as exc:
             raise ValueError(f"Error retrieving table {table_id}.") from exc
 
-        table_schema = table_bq.schema
-        bq_schema = [schema_field.to_api_repr()["name"]
-                     for schema_field in table_schema]
-        bq_rows_content = self.fetch_rows(table_bq)
+        dtypes = self.get_data_types(table_bq)
+
+        if "RECORD" in dtypes:
+            table_schema, nested_schema, main_nested_schema = (
+                self.get_table_schema(table_bq))
+            table_schema = self.flatten_list(table_schema)
+            nested_schema = self.flatten_list(nested_schema)
+            bq_schema = table_schema + nested_schema
+
+            bq_rows_content = self.get_rows_query(table_schema, nested_schema,
+                                                  main_nested_schema, table_bq)
+        else:
+            table_schema = table_bq.schema
+            bq_schema = [schema_field.to_api_repr()
+                         for schema_field in table_schema]
+            bq_rows_content = self.fetch_rows(table_bq)
+        print(bq_rows_content)
         return bq_schema, bq_rows_content
+
+    def flatten_list(self, unflattened_list: List) -> List:
+        """
+        Recursively flattens a nested list and returns a flattened list.
+
+        Args:
+            lista (list): The input list that needs to be flattened.
+
+        Returns:
+            list: The flattened list.
+        """
+        # Create an empty list to store the flattened elements.
+        flattened = []
+
+        # Iterate through each element in the list.
+        for element in unflattened_list:
+            # If the element is a list, recursively flatten the list.
+            if isinstance(element, list):
+                flattened.extend(self.flatten_list(element))
+            else:
+                # If the element is not a list, add it to the flattened list.
+                flattened.append(element)
+
+        # Return the flattened list.
+        return flattened
 
     def convert_to_dlp_table(self, schema: List[List],
                              content: List[List]) -> dlp_v2.Table:
