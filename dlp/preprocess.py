@@ -381,8 +381,8 @@ class Preprocessing:
         # Return the flattened list.
         return flattened
 
-    def convert_to_dlp_table(self, bq_schema: List[Dict],
-                             bq_content: List[Dict], table_id: str = None) ->(
+    def convert_to_dlp_table(self, schema: List[Dict],
+                             content: List[Dict], table_id: str = None) ->(
                              dlp_v2.Table):
         """Converts a BigQuery table into a DLP table.
 
@@ -397,34 +397,42 @@ class Preprocessing:
         Returns:
             A table object that can be inspected by Data Loss Prevention.
         """
-        table_bq = self.bigquery.bq_client.get_table(table_id)
-        dtypes = self.get_data_types(table_bq)
-
+        #table_bq = self.bigquery.bq_client.get_table(table_id)
+        #dtypes = self.get_data_types(table_bq)
+        dtypes = []
         table_dlp = dlp_v2.Table()
 
-        if "RECORD" in dtypes:
-            table_dlp.headers = [
-                {"name": name} for name in bq_schema
-            ]
-            rows = []
-            for row in bq_content:
-                rows.append(dlp_v2.Table.Row(
-                    values=[dlp_v2.Value(
-                        string_value=str(cell_val)) for cell_val
-                        in row.values()]))
-            table_dlp.rows = rows
+        if self.source == Database.BIGQUERY:
+            if "RECORD" in dtypes:
+                table_dlp.headers = [
+                    {"name": name} for name in schema
+                ]
 
-        else:
-            table_dlp.headers = [
-                {"name": schema_object['name']} for schema_object in bq_schema
-            ]
+            else:
+                table_dlp.headers = [
+                    {"name": schema_object['name']} for schema_object in schema
+                ]
+                
             rows = []
-            for row in bq_content:
+            for row in content:
+                rows.append(dlp_v2.Table.Row(
+                   values=[dlp_v2.Value(
+                      string_value=str(cell_val)) for cell_val in
+                           row.values()]))
+                
+        else:
+            table_dlp = dlp_v2.Table()
+            table_dlp.headers = [
+                {"name": schema_object} for schema_object in schema
+            ]
+
+            rows = []
+            for row in content:
                 rows.append(dlp_v2.Table.Row(
                     values=[dlp_v2.Value(
-                        string_value=str(cell_val)) for cell_val in
-                        row.values()]))
-            table_dlp.rows = rows
+                        string_value=str(cell_val)) for cell_val in row]))
+
+        table_dlp.rows = rows
 
         return table_dlp
 
