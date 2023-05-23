@@ -7,8 +7,8 @@ import argparse
 import re
 from typing import Type
 
-from dlp.preprocess import Preprocessing
-from dlp.inspection import DlpInspection
+from preproces import Preprocessing
+from inspection import DlpInspection
 
 
 EMAIL_REGEX = re.compile(r'^[\w\.-]+@[\w\.-]+\.\w+$')
@@ -144,7 +144,6 @@ def run(args: Type[argparse.Namespace]):
     inspection = DlpInspection(project_id=project,
                                language_code=language_code,
                                tables=tables)
-    inspection.main()
 
 if __name__ == "__main__":
     arguments = parse_arguments()
