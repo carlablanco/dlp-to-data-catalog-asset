@@ -100,7 +100,7 @@ The following additional parameters are required for running the project with Cl
 
 - instance: The name of the CloudSQL instance.
 - zone: The zone where the CloudSQL instance is located.
-- service_account: The IAM user of the database. This should match the application default credentials.
+- service_account: Secure identity for GCP access.
 - db_name: The name of the database within the CloudSQL instance.
 - db_type: The type of the database (only accepts `mysql` or `postgres`).
 - table: The name of the table to inspect within the CloudSQL database.
