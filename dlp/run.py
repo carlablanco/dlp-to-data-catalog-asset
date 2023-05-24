@@ -7,7 +7,7 @@ import argparse
 import re
 from typing import Type
 
-from dlp.preproces import Preprocessing
+from dlp.preprocess import Preprocessing
 from dlp.inspection import DlpInspection
 
 
@@ -141,7 +141,7 @@ def run(args: Type[argparse.Namespace]):
     preprocess = Preprocessing(
         source=source, project=project, **preprocess_args)
     tables = preprocess.get_dlp_table_list()
-    inspection = DlpInspection(project_id=project,
+    DlpInspection(project_id=project,
                                language_code=language_code,
                                tables=tables)
 

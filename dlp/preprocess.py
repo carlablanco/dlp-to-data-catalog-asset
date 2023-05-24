@@ -230,7 +230,6 @@ class Preprocessing:
                     field_names.append(self.get_field(subfield))
                 else:
                     field_names.append(cell)
-            nested = True
             return field_names, True, main_cell
 
         return field.name, False, False
@@ -353,7 +352,6 @@ class Preprocessing:
             bq_schema = [schema_field.to_api_repr()
                          for schema_field in table_schema]
             bq_rows_content = self.fetch_rows(table_bq)
-        print(bq_rows_content)
         return bq_schema, bq_rows_content
 
     def flatten_list(self, unflattened_list: List) -> List:
@@ -397,12 +395,13 @@ class Preprocessing:
         Returns:
             A table object that can be inspected by Data Loss Prevention.
         """
-        #table_bq = self.bigquery.bq_client.get_table(table_id)
-        #dtypes = self.get_data_types(table_bq)
-        dtypes = []
+        table_bq = self.bigquery.bq_client.get_table(table_id)
+        dtypes = self.get_data_types(table_bq)
         table_dlp = dlp_v2.Table()
 
+        # Checks if the Database is BigQuery or a CloudSQL.
         if self.source == Database.BIGQUERY:
+            # Checks if it is a Nested table or a regular one.
             if "RECORD" in dtypes:
                 table_dlp.headers = [
                     {"name": name} for name in schema
