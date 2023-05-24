@@ -412,14 +412,14 @@ class Preprocessing:
                 table_dlp.headers = [
                     {"name": schema_object['name']} for schema_object in schema
                 ]
-                
+
             rows = []
             for row in content:
                 rows.append(dlp_v2.Table.Row(
                    values=[dlp_v2.Value(
                       string_value=str(cell_val)) for cell_val in
                            row.values()]))
-                
+
         else:
             table_dlp = dlp_v2.Table()
             table_dlp.headers = [
@@ -450,11 +450,13 @@ class Preprocessing:
             if self.bigquery.table:
                 bigquery_tables = [self.bigquery.table]
             else:
-                bigquery_tables = self.get_bigquery_tables(self.bigquery.dataset)
+                bigquery_tables = [
+                    self.get_bigquery_tables(self.bigquery.dataset)]
 
             if bigquery_tables:
                 for table_name in bigquery_tables:
-                    table_id = f'{self.project}.{self.bigquery.dataset}.{table_name}'
+                    table_id = f"""{self.project}.{self.bigquery.dataset}.{
+                        table_name}"""
                     schema, content = self.get_bigquery_data(
                         table_id)
 

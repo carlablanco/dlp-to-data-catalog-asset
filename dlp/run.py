@@ -7,8 +7,8 @@ import argparse
 import re
 from typing import Type
 
-from preproces import Preprocessing
-from inspection import DlpInspection
+from dlp.preproces import Preprocessing
+from dlp.inspection import DlpInspection
 
 
 EMAIL_REGEX = re.compile(r'^[\w\.-]+@[\w\.-]+\.\w+$')
