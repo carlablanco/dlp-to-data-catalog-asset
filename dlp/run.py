@@ -7,9 +7,9 @@ import argparse
 import re
 from typing import Type
 
-from dlp.preprocess import Preprocessing
-from dlp.inspection import DlpInspection
-from dlp.catalog import Catalog
+from preproces import Preprocessing
+from inspection import DlpInspection
+from catalog import Catalog
 
 
 EMAIL_REGEX = re.compile(r'^[\w\.-]+@[\w\.-]+\.\w+$')
@@ -91,11 +91,7 @@ def parse_arguments() -> Type[argparse.Namespace]:
         type=str,
         required=True,
         help="The BCP-47 language code to use, e.g. 'en-US'.")
-    parser.add_argument(
-        "--location",
-        type=str,
-        help="The compute engine region. e.g. us-central1.")
-    
+
     return parser.parse_args()
 
 def run(args: Type[argparse.Namespace]):
@@ -112,14 +108,10 @@ def run(args: Type[argparse.Namespace]):
         instance(str): Name of the database instance. Optional.
         zone(str): The name of the zone. Optional.
         db_name(str): The name of the database. Optional.
-        location(str): The compute engine region.
     """
     source = args.source
     project = args.project
     language_code = args.language_code
-    location = args.location
-    dataset = args.dataset
-    table = args.table
 
     preprocess_args = {}
     if source == "bigquery":
@@ -150,12 +142,13 @@ def run(args: Type[argparse.Namespace]):
     inspection = DlpInspection(project_id=project,
                                language_code=language_code,
                                tables=tables)
-    table_inspected = inspection.main()
-    catalog = Catalog(data=table_inspected,
-                      project_id = project, location = location,
-                      dataset = dataset, table = table,
-                      instance_id = args.instance)
-    catalog.main()
+    data = inspection.main()
+    if source == "bigquery":
+        catalog = Catalog(data = data, project = project_id,
+                          location = location, **preprocess_args)
+    else:
+        catalog = Catalog(data = data, project = project_id,
+                          location = location, **preprocess_args)
 
 if __name__ == "__main__":
     arguments = parse_arguments()

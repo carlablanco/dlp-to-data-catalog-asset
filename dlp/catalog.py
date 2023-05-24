@@ -99,29 +99,57 @@ class Catalog:
             parent=table_entry,
               tag=tag
               )
+    
+    def get_data_types(self, table_id: str) -> List:
+        """ Gets the data types of the selected table.
+
+        Args:
+            table_id (str): The fully qualified name of the BigQuery table.
+
+        Returns:
+            List: A complete list with the data types of the columns.
+        """
+        dtypes = []
+
+        fields = table_id.schema
+        for field in fields:
+            dtypes.append(field.field_type)
+
+        return dtypes
 
     def main(self) -> None:
         "Creates a tag template and attaches it to a BigQuery table."
         parent = f"projects/{self.project_id}/locations/{self.location}"
-
-        # Create the tag template.
-        self.create_tag_template(parent)
-
+        table_id = f"{self.project_id}.{self.dataset}.{self.table}"
+        dtypes = self.get_data_types(table_id)
         # Checks if it's BigQuery or CloudSQL.
         if self.instance_id is None:
+            if "RECORD" not in dtypes:
+                # Create the tag template.
+                self.create_tag_template(parent)
+                
+                table_entry = table_entry.name
+            else:
+                raise NotImplementedError
+
+            # Creates the BigQuery table entry.
             resource_name = (
                 f"//bigquery.googleapis.com/projects/{self.project_id}"
                 f"/datasets/{self.dataset}/tables/{self.table}"
-             )
-        else:
-            resource_name = (
-                f"//sqladmin.googleapis.com/projects/{self.project_id}"
-                f"/instances/{self.instance_id}"
-             )
+                )
 
+        else:
+             # Create the tag template.
+            self.create_tag_template(parent)
+            
+            # Creates the CloudSQL table entry.
+            resource_name = (
+                    f"//sqladmin.googleapis.com/projects/{self.project_id}"
+                    f"/instances/{self.instance_id}"
+                )
+            
         table_entry = self.client.lookup_entry(
             request={"linked_resource": resource_name}
-         )
+        )
         table_entry = table_entry.name
-
         self.attach_tag_to_table(table_entry)
