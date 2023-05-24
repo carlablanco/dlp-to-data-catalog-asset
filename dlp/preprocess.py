@@ -26,7 +26,7 @@ class CloudSQL:
     """Represents a connection to a Google CloudSQL."""
     connector: Connector
     connection_name: str
-    db_user: str
+    service_account: str
     db_name: str
     table: str
     driver: str
@@ -56,7 +56,7 @@ class Preprocessing:
             cloudsql_args(Dict):
                 instance (str): Name of the database instance.
                 zone(str): The name of the zone.
-                db_user(str): Default gcloud user's matching database user.
+                service_account(str): Secure identity for GCP access.
                 db_name(str): The name of the database.
                 table (str): The name of the table.
                 db_type(str): The type of the database. e.g. postgres, mysql.
@@ -84,7 +84,7 @@ class Preprocessing:
             self.cloudsql = CloudSQL(
                 Connector(),
                 f"{project}:{zone}:{instance}",
-                cloudsql_args["db_user"],
+                cloudsql_args["service_account"],
                 cloudsql_args["db_name"],
                 cloudsql_args["table"],
                 driver,
@@ -101,7 +101,7 @@ class Preprocessing:
             self.cloudsql.connection_name,
             self.cloudsql.driver,
             enable_iam_auth=True,
-            user=self.cloudsql.db_user,
+            user=self.cloudsql.service_account,
             db=self.cloudsql.db_name
         )
         return connector
