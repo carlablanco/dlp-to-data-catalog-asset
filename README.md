@@ -14,10 +14,7 @@ In short, our program is a comprehensive and effective tool for protecting the p
 
 #### Support for nested tables.
 
-This code supports BigQuery nested tables up to level 1 of nesting. This means that you can:
-
-* Inspect tables with nested columns
-* Create and attach a data catalog
+We support nested tables up to 1 level. This means that you can access and query data within a nested structure that has a single level of nesting. Deeper levels of nesting may not be fully supported.
 
 ## Technical Requirements ##
 These are the Google Cloud Platform services leveraged for the solution:
