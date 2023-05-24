@@ -17,7 +17,7 @@ These are the Google Cloud Platform services leveraged for the solution:
 2. <a href= "https://cloud.google.com/products?hl=es-419"> Data Catalog</a>
 
 ## Setup ##
-### Google Cloud Platform Credentials
+### Setup Permissions
 Authenticate your Google Account and setup Application Default Credentials.
 
 ```
@@ -27,10 +27,10 @@ gcloud auth application-default login --impersonate-service-account=SERVICE_ACCO
 A service account is a special type of Google Account that represents a non-human user. It is used to authenticate and authorize applications and services to access Google Cloud Platform resources securely. For more information on service accounts, refer to the <a href="https://cloud.google.com/iam/docs/service-account-overview">official documentation.</a>
 
 ### Creating and Configuring Service Account
-To create a service account and assign the required roles, execute the following commands using gcloud:
+To create a service account and assign the required roles, execute the following commands using the gcloud command-line tool:
 
 ```
-gcloud iam service-accounts create my-service-account --display-name "My Service Account"
+gcloud iam service-accounts create my-service-account --display-name "Dlp to Data Catalog Service Account"
 gcloud projects add-iam-policy-binding PROJECT_ID --member=serviceAccount:my-service-account@PROJECT_ID.iam.gserviceaccount.com --role=roles/bigquery.dataViewer
 gcloud projects add-iam-policy-binding PROJECT_ID --member=serviceAccount:my-service-account@PROJECT_ID.iam.gserviceaccount.com --role=roles/cloudsql.instanceUser
 gcloud projects add-iam-policy-binding PROJECT_ID --member=serviceAccount:my-service-account@PROJECT_ID.iam.gserviceaccount.com --role=roles/cloudsql.client
@@ -43,6 +43,9 @@ Additionally, grant the user account the roles/iam.serviceAccountTokenCreator ro
 gcloud projects add-iam-policy-binding PROJECT_ID --member=user:YOUR_USER_ACCOUNT --role=roles/iam.serviceAccountTokenCreator
 ```
 Replace YOUR_USER_ACCOUNT with your user account email.
+
+Once authenticated, you will have the necessary permissions to access Google Cloud Platform resources securely using the service account.
+If you have any questions or need further assistance, please consult the [official documentation](https://cloud.google.com/docs/authentication/getting-started) or reach out to our support team.
 
 ### Environment Setup and Package Installation
 To set up the environment and install the required packages, follow these steps:
@@ -100,7 +103,7 @@ The following additional parameters are required for running the project with Cl
 
 - instance: The name of the CloudSQL instance.
 - zone: The zone where the CloudSQL instance is located.
-- service_account: Secure identity for GCP access.
+- service_account: Email address of the service account to be used.
 - db_name: The name of the database within the CloudSQL instance.
 - db_type: The type of the database (only accepts `mysql` or `postgres`).
 - table: The name of the table to inspect within the CloudSQL database.

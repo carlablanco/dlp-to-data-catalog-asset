@@ -71,7 +71,7 @@ def parse_arguments() -> Type[argparse.Namespace]:
         required=True,
         type=email_type,
         metavar="service_account",
-        help="Secure identity for GCP access.")
+        help="Email address of the service account to be used.")
     cloudsql_parser.add_argument(
         "--db_name",
         required=True,
@@ -102,7 +102,7 @@ def run(args: Type[argparse.Namespace]):
         dataset(str): The BigQuery dataset to be scanned. Optional.
         table(str): The name of the table. Optional.
         db_typestr): Type of the database. e.g. postgres, mysql. Optional.
-        service_account(str): Secure identity for GCP access. Optional.
+        service_account(str): Service account email to be used.
         instance(str): Name of the database instance. Optional.
         zone(str): The name of the zone. Optional.
         db_name(str): The name of the database. Optional.

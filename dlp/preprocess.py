@@ -56,7 +56,7 @@ class Preprocessing:
             cloudsql_args(Dict):
                 instance (str): Name of the database instance.
                 zone(str): The name of the zone.
-                service_account(str): Secure identity for GCP access.
+                service_account(str): Service account email to be used.
                 db_name(str): The name of the database.
                 table (str): The name of the table.
                 db_type(str): The type of the database. e.g. postgres, mysql.
