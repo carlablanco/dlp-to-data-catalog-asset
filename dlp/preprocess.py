@@ -444,7 +444,7 @@ class Preprocessing:
         """
 
         if self.source == Database.BIGQUERY:
-            
+
             dlp_tables_list = []
 
             if self.bigquery.table:
