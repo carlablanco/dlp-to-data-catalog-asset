@@ -184,9 +184,9 @@ class Preprocessing:
                 tuple: A tuple containing three lists - schema, nested_columns,
                 and record_columns.
                 - schema (list): The list of fields in the schema.
-                - nested_columns (list): The list of nested fields in the schema.
-                - record_columns (list): The list of main fields
-                  associated with the nested fields.
+                - nested_columns (list): A list with the columns of the
+                    nested columns.
+                - record_columns (list): The columns with the record type.
             """
         schema = []
         nested_columns = []
@@ -268,7 +268,8 @@ class Preprocessing:
 
         Args:
             table_schema (List[Dict]): The schema of a BigQuery table.
-            nested_columns (List[Dict]): A list with the columns of the nested columns.
+            nested_columns (List[Dict]): A list with the columns
+                of the nested columns.
             record_columns (List[Dict]): The columns with the record type.
             table_id (str): The fully qualified name of the BigQuery table.
 
