@@ -163,7 +163,9 @@ def run(args: Type[argparse.Namespace]):
         catalog = Catalog(data = data, project_id = project,
                           location = location,
                           dataset = preprocess_args['cloudsql_args']['db_name'],
-                          instance_id = preprocess_args['cloudsql_args']['instance'])
+                          instance_id = (
+            preprocess_args['cloudsql_args']['instance']
+            ))
     catalog.main()
 
 

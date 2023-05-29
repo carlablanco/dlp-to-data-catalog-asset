@@ -101,7 +101,7 @@ class Catalog:
             parent=table_entry,
               tag=tag
               )
-        
+
     def create_custom_entry_group(self) -> str:
         """ Creates a new Custom entry group.
         
@@ -133,9 +133,9 @@ class Catalog:
         # Create an entry
         for data_row in self.data:
             entry = datacatalog_v1.types.Entry()
-            entry.user_specified_system = "Cloud_SQL" 
+            entry.user_specified_system = "Cloud_SQL"
             entry.user_specified_type = "SQL"
-            entry.display_name = f"DLP_inspection_{self.instance_id}" 
+            entry.display_name = f"DLP_inspection_{self.instance_id}"
             entry.description = ""
             entry.linked_resource =(
                     f"//sqladmin.googleapis.com/projects/{self.project_id}"
@@ -162,7 +162,7 @@ class Catalog:
         """
 
         parent = f"projects/{self.project_id}/locations/{self.location}"
-        
+
         #should be change after nested tables functinoallity is added
         record_type = None
 
