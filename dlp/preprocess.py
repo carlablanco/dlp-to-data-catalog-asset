@@ -280,13 +280,12 @@ class Preprocessing:
         if "REPEATED" in nested_types:
             bq_schema = table_schema + record_columns
             columns_selected = ", ".join(str(column) for column in bq_schema)
-            unnest = f"UNNEST ({record_columns[0]['name']})"
+            unnest = f"UNNEST ({record_columns[0]})"
         else:
             bq_schema = table_schema + nested_columns
             columns_selected = ", ".join(str(column) for column in bq_schema)
             unnest = (
-                f"UNNEST ([{record_columns[0]['name']}]) as "
-                f"{record_columns[0]['name']}"
+                f"UNNEST ([{record_columns[0]}]) as {record_columns[0]} "
             )
 
         sql_query = self.get_query(columns_selected, table_id, unnest)
@@ -382,20 +381,19 @@ class Preprocessing:
         Returns:
             A table object that can be inspected by Data Loss Prevention.
         """
-        table_bq = self.bigquery.bq_client.get_table(table_id)
-        dtypes = self.get_data_types(table_bq)
         table_dlp = dlp_v2.Table()
 
         # Determine the column names based on the source
         if self.source == Database.BIGQUERY:
+            table_bq = self.bigquery.bq_client.get_table(table_id)
+            dtypes = self.get_data_types(table_bq)
             if "RECORD" in dtypes:
                 table_dlp.headers = [{"name": name} for name in schema]
             else:
                 table_dlp.headers = [{"name": item['name']} for item in schema]
         else:
             column_names = schema
-
-        table_dlp.headers = [{"name": name} for name in column_names]
+            table_dlp.headers = [{"name": name} for name in column_names]
 
         rows = []
         for row in content:
