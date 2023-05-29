@@ -18,34 +18,34 @@ These are the Google Cloud Platform services leveraged for the solution:
 
 ## Setup ##
 ### Setup Permissions
-Authenticate your Google Account and setup Application Default Credentials.
 
-```
-gcloud auth login
-gcloud auth application-default login --impersonate-service-account=SERVICE_ACCOUNT
-```
-A service account is a special type of Google Account that represents a non-human user. It is used to authenticate and authorize applications and services to access Google Cloud Platform resources securely. For more information on service accounts, refer to the <a href="https://cloud.google.com/iam/docs/service-account-overview">official documentation.</a>
+Google recommends the use of service accounts. A service account is a special type of Google Account that represents a non-human user. It is used to authenticate and authorize applications and services to access Google Cloud Platform resources securely. For more information on service accounts, refer to the <a href="https://cloud.google.com/iam/docs/service-account-overview">official documentation.</a>
 
 ### Creating and Configuring Service Account
 To create a service account and assign the required roles, execute the following commands using the gcloud command-line tool:
 
+sandbox-att-in-spanish-sa@carlita-sandbox.iam.gserviceaccount.com
 ```
-gcloud iam service-accounts create my-service-account --display-name "Dlp to Data Catalog Service Account"
-gcloud projects add-iam-policy-binding PROJECT_ID --member=serviceAccount:my-service-account@PROJECT_ID.iam.gserviceaccount.com --role=roles/bigquery.dataViewer
-gcloud projects add-iam-policy-binding PROJECT_ID --member=serviceAccount:my-service-account@PROJECT_ID.iam.gserviceaccount.com --role=roles/cloudsql.instanceUser
-gcloud projects add-iam-policy-binding PROJECT_ID --member=serviceAccount:my-service-account@PROJECT_ID.iam.gserviceaccount.com --role=roles/cloudsql.client
-gcloud projects add-iam-policy-binding PROJECT_ID --member=serviceAccount:my-service-account@PROJECT_ID.iam.gserviceaccount.com --role=roles/dlp.user
+export SERVICE_ACCOUNT_NAME=service-account-name
+export PROJECT_ID=project-id
+gcloud iam service-accounts create $SERVICE_ACCOUNT_NAME --display-name "Dlp to Data Catalog Service Account"
+gcloud projects add-iam-policy-binding $PROJECT_ID --member=serviceAccount:$SERVICE_ACCOUNT_NAME@$PROJECT_ID.iam.gserviceaccount.com --role=roles/bigquery.dataViewer
+gcloud projects add-iam-policy-binding $PROJECT_ID --member=serviceAccount:$SERVICE_ACCOUNT_NAME@$PROJECT_ID.iam.gserviceaccount.com --role=roles/cloudsql.instanceUser
+gcloud projects add-iam-policy-binding $PROJECT_ID --member=serviceAccount:$SERVICE_ACCOUNT_NAME@$PROJECT_ID.iam.gserviceaccount.com --role=roles/cloudsql.client
+gcloud projects add-iam-policy-binding $PROJECT_ID --member=serviceAccount:$SERVICE_ACCOUNT_NAME@$PROJECT_ID.iam.gserviceaccount.com --role=roles/dlp.user
 ```
-Replace my-service-account with your desired service account name, and PROJECT_ID with your Google Cloud Platform project ID.
+Make sure to replace `service-account-name` with your desired service account name, and `project-id` with your Google Cloud Platform project ID on the export clauses.
 
-Additionally, grant the user account the roles/iam.serviceAccountTokenCreator role to obtain access tokens for service accounts:
-```
-gcloud projects add-iam-policy-binding PROJECT_ID --member=user:YOUR_USER_ACCOUNT --role=roles/iam.serviceAccountTokenCreator
-```
-Replace YOUR_USER_ACCOUNT with your user account email.
+### Running locally with your own credentials
 
-Once authenticated, you will have the necessary permissions to access Google Cloud Platform resources securely using the service account.
-If you have any questions or need further assistance, please consult the [official documentation](https://cloud.google.com/docs/authentication/getting-started) or reach out to our support team.
+Authenticate your Google Account and setup Application Default Credentials.
+
+```
+gcloud auth login
+gcloud auth application-default login
+```
+
+Once authenticated, you will need to make sure you have the necessary permissions to access Google Cloud Platform resources securely using your account.
 
 ### Environment Setup and Package Installation
 To set up the environment and install the required packages, follow these steps:
