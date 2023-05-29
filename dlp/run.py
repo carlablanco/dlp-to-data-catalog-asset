@@ -9,6 +9,7 @@ from typing import Type
 
 from dlp.preprocess import Preprocessing
 from dlp.inspection import DlpInspection
+from dlp.catalog import Catalog
 
 
 EMAIL_REGEX = re.compile(r'^[\w\.-]+@[\w\.-]+\.\w+$')
@@ -89,6 +90,11 @@ def parse_arguments() -> Type[argparse.Namespace]:
         type=str,
         required=True,
         help="The BCP-47 language code to use, e.g. 'en-US'.")
+    parser.add_argument(
+        "--location",
+        type=str,
+        required=True,
+        help="The location of the engine'.")
 
     return parser.parse_args()
 
@@ -98,6 +104,8 @@ def run(args: Type[argparse.Namespace]):
     Args:
         source (str): The name of the source of data used.
         project (str): The name of the Google Cloud Platform project.
+        language_code (str): The BCP-47 language code to use, e.g. "en-US".
+        location(str): The compute engine region. 
         bigquery_args(Dict):
             dataset (str): The name of the BigQuery dataset.
             table (str, optional): The name of the BigQuery table. If not
@@ -114,6 +122,7 @@ def run(args: Type[argparse.Namespace]):
     source = args.source
     project = args.project
     language_code = args.language_code
+    location = args.location
 
     preprocess_args = {}
     if source == "bigquery":
@@ -141,9 +150,22 @@ def run(args: Type[argparse.Namespace]):
     preprocess = Preprocessing(
         source=source, project=project, **preprocess_args)
     tables = preprocess.get_dlp_table_list()
-    DlpInspection(project_id=project,
+    inspection = DlpInspection(project_id=project,
                 language_code=language_code,
                 tables=tables)
+    data = inspection.main()
+    if source == "bigquery":
+        catalog = Catalog(data = data, project_id = project,
+                          location = location,
+                          dataset = preprocess_args['bigquery_args']['dataset'],
+                          table = preprocess_args['bigquery_args']['table'])
+    else:
+        catalog = Catalog(data = data, project_id = project,
+                          location = location,
+                          dataset = preprocess_args['cloudsql_args']['db_name'],
+                          instance_id = preprocess_args['cloudsql_args']['instance'])
+    catalog.main()
+
 
 if __name__ == "__main__":
     arguments = parse_arguments()
