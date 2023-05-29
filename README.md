@@ -10,6 +10,12 @@ To create the Data Catalog template, our program uses the Cloud Data Catalog API
 
 In short, our program is a comprehensive and effective tool for protecting the privacy of an organization's data. By using the Google Cloud DLP and Data Catalog API, our program can automatically detect any sensitive data and effectively tag it in a data catalog linked to the BigQuery table. This provides greater transparency and control over sensitive data in an organization, which can help improve overall data privacy and security.
 
+## Nested Tables Support ##
+
+#### Support for nested tables.
+
+We support nested tables up to 1 level. This means that you can access and query data within a nested structure that has a single level of nesting. Deeper levels of nesting may not be fully supported.
+
 ## Technical Requirements ##
 These are the Google Cloud Platform services leveraged for the solution:
 
