@@ -49,10 +49,11 @@ class Preprocessing:
         Args:
             source (str): The name of the source of data used.
             project (str): The name of the Google Cloud Platform project.
-            bigquery_args(Dict): 
+            bigquery_args(Dict):
                 dataset (str): The name of the BigQuery dataset.
-                table (str, optional): The name of the BigQuery table. Optional.
-                    Defaults to None.
+            table (str, optional): The name of the BigQuery table. If not
+              provided, the entire dataset is scanned. Optional.
+              Defaults to None.
             cloudsql_args(Dict):
                 instance (str): Name of the database instance.
                 zone(str): The name of the zone.
@@ -113,7 +114,7 @@ class Preprocessing:
             table (str): The name of the table.
 
         Returns:
-            Tuple(List, List): A tuple containing the schema and content 
+            Tuple(List, List): A tuple containing the schema and content
             as a List.
         """
 
