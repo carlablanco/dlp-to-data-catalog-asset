@@ -28,7 +28,7 @@ class DlpInspection:
 
     def get_inspection_parameters(self):
         """Gets the table to be inspected with an API call.
-            
+
             Returns:
                 parent (str): The project route in GCP.
                 inspect_config (Dict): The configuration for the inspection.
@@ -47,7 +47,7 @@ class DlpInspection:
 
     def analyze_inspection_result(self, results: List[Dict] ) -> Dict:
         """Processes the results of the inspection.
-        
+
             This code iterates through a list of API responses and constructs a
             dictionary.
             Each entry in the dictionary is associated with a column and
@@ -138,15 +138,15 @@ class DlpInspection:
 
             Args:
                parent (str): The project route in GCP.
-               table: The particular table to be inspected in the correct 
+               table: The particular table to be inspected in the correct
                         format.
                inspect_config (Dict): Parameters for the ispection. InfoTypes
                                and the minimum likelihood.
-               
+
             Returns:
                 List[Dict]: The response from the API. Each varibale is
                 inspected and returns findings for each record.
-            
+
         """
         # The Block size adecuate to the DLP scan.
         block_size = 10000
