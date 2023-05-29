@@ -67,12 +67,11 @@ def parse_arguments() -> Type[argparse.Namespace]:
         type=str,
         help="The zone to use, e.g. us-central1-b.")
     cloudsql_parser.add_argument(
-        "--db_user",
+        "--service_account",
         required=True,
         type=email_type,
-        metavar="DB_USER",
-        help="""The IAM user of the database.
-        This should match the application default credentials.""")
+        metavar="service_account",
+        help="Email address of the service account to be used.")
     cloudsql_parser.add_argument(
         "--db_name",
         required=True,
@@ -97,16 +96,20 @@ def run(args: Type[argparse.Namespace]):
     """Runs DLP inspection scan and tags the results to Data Catalog.
 
     Args:
-        source(str): The source of data used.
-        project(str): Project ID for which the client acts on behalf of.
-        language_code(str): The BCP-47 language code to use, e.g. 'en-US'.
-        dataset(str): The BigQuery dataset to be scanned. Optional.
-        table(str): The name of the table. Optional.
-        db_typestr): Type of the database. e.g. postgres, mysql. Optional.
-        db_user(str): Default gcloud user's matching database user. Optional.
-        instance(str): Name of the database instance. Optional.
-        zone(str): The name of the zone. Optional.
-        db_name(str): The name of the database. Optional.
+        source (str): The name of the source of data used.
+        project (str): The name of the Google Cloud Platform project.
+        bigquery_args(Dict):
+            dataset (str): The name of the BigQuery dataset.
+            table (str, optional): The name of the BigQuery table. If not
+              provided, the entire dataset is scanned. Optional.
+              Defaults to None.
+        cloudsql_args(Dict):
+            instance (str): Name of the database instance.
+            zone(str): The name of the zone.
+            service_account(str): Service account email to be used.
+            db_name(str): The name of the database.
+            table (str): The name of the table.
+            db_type(str): The type of the database. e.g. postgres, mysql.
     """
     source = args.source
     project = args.project
@@ -125,7 +128,7 @@ def run(args: Type[argparse.Namespace]):
             "cloudsql_args": {
                 "instance": args.instance,
                 "zone": args.zone,
-                "db_user": args.db_user,
+                "service_account": args.service_account,
                 "db_name": args.db_name,
                 "table": args.table,
                 "db_type": args.db_type

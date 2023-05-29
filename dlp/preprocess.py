@@ -26,7 +26,7 @@ class CloudSQL:
     """Represents a connection to a Google CloudSQL."""
     connector: Connector
     connection_name: str
-    db_user: str
+    service_account: str
     db_name: str
     table: str
     driver: str
@@ -49,14 +49,15 @@ class Preprocessing:
         Args:
             source (str): The name of the source of data used.
             project (str): The name of the Google Cloud Platform project.
-            bigquery_args(Dict): 
+            bigquery_args(Dict):
                 dataset (str): The name of the BigQuery dataset.
-                table (str, optional): The name of the BigQuery table. Optional.
-                    Defaults to None.
+            table (str, optional): The name of the BigQuery table. If not
+              provided, the entire dataset is scanned. Optional.
+              Defaults to None.
             cloudsql_args(Dict):
                 instance (str): Name of the database instance.
                 zone(str): The name of the zone.
-                db_user(str): Default gcloud user's matching database user.
+                service_account(str): Service account email to be used.
                 db_name(str): The name of the database.
                 table (str): The name of the table.
                 db_type(str): The type of the database. e.g. postgres, mysql.
@@ -84,7 +85,7 @@ class Preprocessing:
             self.cloudsql = CloudSQL(
                 Connector(),
                 f"{project}:{zone}:{instance}",
-                cloudsql_args["db_user"],
+                cloudsql_args["service_account"],
                 cloudsql_args["db_name"],
                 cloudsql_args["table"],
                 driver,
@@ -101,7 +102,7 @@ class Preprocessing:
             self.cloudsql.connection_name,
             self.cloudsql.driver,
             enable_iam_auth=True,
-            user=self.cloudsql.db_user,
+            user=self.cloudsql.service_account,
             db=self.cloudsql.db_name
         )
         return connector
@@ -113,7 +114,7 @@ class Preprocessing:
             table (str): The name of the table.
 
         Returns:
-            Tuple(List, List): A tuple containing the schema and content 
+            Tuple(List, List): A tuple containing the schema and content
             as a List.
         """
 

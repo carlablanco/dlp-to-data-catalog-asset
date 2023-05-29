@@ -17,13 +17,36 @@ These are the Google Cloud Platform services leveraged for the solution:
 2. <a href= "https://cloud.google.com/products?hl=es-419"> Data Catalog</a>
 
 ## Setup ##
-### Google Cloud Platform Credentials
+### Setup Permissions
+
+Google recommends the use of service accounts. A service account is a special type of Google Account that represents a non-human user. It is used to authenticate and authorize applications and services to access Google Cloud Platform resources securely. For more information on service accounts, refer to the <a href="https://cloud.google.com/iam/docs/service-account-overview">official documentation.</a>
+
+### Creating and Configuring Service Account
+To create a service account and assign the required roles, execute the following commands using the gcloud command-line tool:
+
+sandbox-att-in-spanish-sa@carlita-sandbox.iam.gserviceaccount.com
+```
+export SERVICE_ACCOUNT_NAME=service-account-name
+export PROJECT_ID=project-id
+gcloud iam service-accounts create $SERVICE_ACCOUNT_NAME --display-name "Dlp to Data Catalog Service Account"
+gcloud projects add-iam-policy-binding $PROJECT_ID --member=serviceAccount:$SERVICE_ACCOUNT_NAME@$PROJECT_ID.iam.gserviceaccount.com --role=roles/bigquery.dataViewer
+gcloud projects add-iam-policy-binding $PROJECT_ID --member=serviceAccount:$SERVICE_ACCOUNT_NAME@$PROJECT_ID.iam.gserviceaccount.com --role=roles/cloudsql.instanceUser
+gcloud projects add-iam-policy-binding $PROJECT_ID --member=serviceAccount:$SERVICE_ACCOUNT_NAME@$PROJECT_ID.iam.gserviceaccount.com --role=roles/cloudsql.client
+gcloud projects add-iam-policy-binding $PROJECT_ID --member=serviceAccount:$SERVICE_ACCOUNT_NAME@$PROJECT_ID.iam.gserviceaccount.com --role=roles/dlp.user
+```
+Make sure to replace `service-account-name` with your desired service account name, and `project-id` with your Google Cloud Platform project ID on the export clauses.
+
+### Running locally with your own credentials
+
 Authenticate your Google Account and setup Application Default Credentials.
 
 ```
 gcloud auth login
 gcloud auth application-default login
 ```
+
+Once authenticated, you will need to make sure you have the necessary permissions to access Google Cloud Platform resources securely using your account.
+
 ### Environment Setup and Package Installation
 To set up the environment and install the required packages, follow these steps:
 
@@ -70,20 +93,20 @@ bigquery \
 ```
 BigQuery Parameters:
 
-dataset: The name of the BigQuery dataset to analyze.
-table: The BigQuery table to be scanned. If None, the entire dataset will be scanned. Optional.
+- dataset: The name of the BigQuery dataset to analyze.
+- table: The BigQuery table to be scanned. If None, the entire dataset will be scanned. Optional.
 
 ### CloudSQL:
 
 CloudSQL Parameters:
 The following additional parameters are required for running the project with CloudSQL as the data source:
 
-instance: The name of the CloudSQL instance.
-zone: The zone where the CloudSQL instance is located.
-db_user: The IAM user of the database. This should match the application default credentials.
-db_name: The name of the database within the CloudSQL instance.
-db_type: The type of the database (only accepts `mysql` or `postgres`).
-table: The name of the table to inspect within the CloudSQL database.
+- instance: The name of the CloudSQL instance.
+- zone: The zone where the CloudSQL instance is located.
+- service_account: Email address of the service account to be used.
+- db_name: The name of the database within the CloudSQL instance.
+- db_type: The type of the database (only accepts `mysql` or `postgres`).
+- table: The name of the table to inspect within the CloudSQL database.
 
 #### For CLoudSQL (MySQL):
 
@@ -91,9 +114,10 @@ table: The name of the table to inspect within the CloudSQL database.
 python3 -m dlp.run \
 --project PROJECT \
 --language_code LANGUAGE_CODE \
-cloudsql --instance INSTANCE \
+cloudsql \
+--instance INSTANCE \
 --zone ZONE \
---db_user DB_USER \
+--service_account SERVICE_ACCOUNT \
 --db_name DB_NAME \
 --db_type mysql \
 --table TABLE
@@ -108,7 +132,7 @@ python3 -m dlp.run \
 cloudsql \
 --instance INSTANCE \ 
 --zone ZONE \
---db_user DB_USER \
+--service_account SERVICE_ACCOUNT \
 --db_name DB_NAME \
 --db_type postgres \
 --table TABLE
