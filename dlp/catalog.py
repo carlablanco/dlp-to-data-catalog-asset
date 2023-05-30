@@ -47,9 +47,7 @@ class Catalog:
             self.entry_group_id = f"dlp_{self.instance_id}_{self.ts}"
             self.entry_id = f"dlp_{self.ts}"
         else:
-            self.tag_template_id = (
-                f"dlp_{self.dataset.lower()}_{self.table.lower()}_{self.ts}"
-                )
+            self.tag_template_id = f"""dlp_{self.dataset.lower()}_{self.table.lower()}_{self.ts}"""
 
     def create_tag_template(self, parent: str) -> None:
         """Creates a tag template if it does not already exist.
@@ -167,15 +165,17 @@ class Catalog:
         entries for Cloud SQL."""
         parent = f"projects/{self.project_id}/locations/{self.location}"
 
-        record_type = 1
+        nested_type = False
+        if any('.' in key for key in self.data[0].keys()) == True:
+            nested_type = True
 
         # Checks if it's BigQuery or CloudSQL.
         if self.instance_id is None:
-            if record_type is None:
+            if nested_type is False:
                 # Create the tag template.
                 self.create_tag_template(parent)
             else:
-                nested_data =(
+                nested_data = (
                     [{key.replace(".", "_"): value for key, value in self.data[0].items()}]
                     )
                 self.data = nested_data
