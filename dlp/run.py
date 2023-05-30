@@ -141,6 +141,7 @@ def run(args: Type[argparse.Namespace]):
     preprocess = Preprocessing(
         source=source, project=project, **preprocess_args)
     tables = preprocess.get_dlp_table_list()
+    print(tables)
     DlpInspection(project_id=project,
                 language_code=language_code,
                 tables=tables)
