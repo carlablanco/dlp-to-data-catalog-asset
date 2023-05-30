@@ -146,7 +146,7 @@ class Preprocessing:
         table_names = [table.table_id for table in dataset_tables]
         return table_names
 
-    def fetch_rows(self, table_id: str) -> List[Dict]:
+    def fetch_rows(self, table_id: str,index,bloque) -> List[Dict]:
         """Fetches a batch of rows from a BigQuery table.
 
            Args:
@@ -158,7 +158,7 @@ class Preprocessing:
          """
         content = []
 
-        rows_iter = self.bigquery.bq_client.list_rows(table_id)
+        rows_iter = self.bigquery.bq_client.list_rows(table=table_id,start_index=index,max_results=bloque)
 
         if not rows_iter.total_rows:
             print(f"""The Table {table_id} is empty. Please populate the
@@ -328,7 +328,7 @@ class Preprocessing:
         # Return the flattened list.
         return flattened
 
-    def get_bigquery_data(self, table_id: str) -> Tuple[List[Dict], List[Dict]]:
+    def get_bigquery_data(self, table_id: str,index=None,bloque=None) -> Tuple[List[Dict], List[Dict]]:
         """Retrieves the schema and content of a BigQuery table.
 
         Args:
@@ -357,7 +357,7 @@ class Preprocessing:
         else:
             table_schema = table_bq.schema
             bq_schema = [field.to_api_repr()["name"] for field in table_schema]
-            bq_rows_content = self.fetch_rows(table_bq)
+            bq_rows_content = self.fetch_rows(table_bq,index,bloque)
 
         return bq_schema, bq_rows_content
 
@@ -416,3 +416,34 @@ class Preprocessing:
 
         return [self.convert_to_dlp_table(
             schema, content) for schema, content in schema_content_list ]
+
+    def get_info_tables(self):
+        response = []
+        if self.source == Database.BIGQUERY:
+            bigquery_tables = [self.bigquery.table] \
+                if self.bigquery.table \
+                else self.get_bigquery_tables(self.bigquery.dataset)           
+            for table_name in bigquery_tables:
+                table_bq = self.bigquery.bq_client.get_table(
+                    f"{self.bigquery.dataset}.{table_name}")
+                num_rows = table_bq.num_rows
+                response.append((table_name,num_rows))
+        elif self.source == Database.CLOUDSQL:
+            pass
+
+        return response
+    
+    def get_dlp_table_per_block(self, bloque, table, index) -> dlp_v2.Table:
+        """Constructs a list of DLP Table objects
+
+        Returns:
+            A list of Data Loss Prevention table objects.
+        """
+        if self.source == Database.BIGQUERY:
+            # Retrieve schema and content data for each BigQuery table
+            schema,content = self.get_bigquery_data(
+                f"{self.bigquery.dataset}.{table}",index,bloque)
+            return self.convert_to_dlp_table(schema,content)
+
+        elif self.source == Database.CLOUDSQL:
+            pass
