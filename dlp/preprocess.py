@@ -494,4 +494,36 @@ class Preprocessing:
                                                     cells_to_analyze,
                                                     start_index)
 
-        return self.convert_to_dlp_table(schema,content)
+        return [self.convert_to_dlp_table(
+            schema, content) for schema, content in schema_content_list ]
+
+    def get_info_tables(self):
+        response = []
+        if self.source == Database.BIGQUERY:
+            bigquery_tables = [self.bigquery.table] \
+                if self.bigquery.table \
+                else self.get_bigquery_tables(self.bigquery.dataset)           
+            for table_name in bigquery_tables:
+                table_bq = self.bigquery.bq_client.get_table(
+                    f"{self.bigquery.dataset}.{table_name}")
+                num_rows = table_bq.num_rows
+                response.append((table_name,num_rows))
+        elif self.source == Database.CLOUDSQL:
+            pass
+
+        return response
+    
+    def get_dlp_table_per_block(self, bloque, table, index) -> dlp_v2.Table:
+        """Constructs a list of DLP Table objects
+
+        Returns:
+            A list of Data Loss Prevention table objects.
+        """
+        if self.source == Database.BIGQUERY:
+            # Retrieve schema and content data for each BigQuery table
+            schema,content = self.get_bigquery_data(
+                f"{self.bigquery.dataset}.{table}",index,bloque)
+            return self.convert_to_dlp_table(schema,content)
+
+        elif self.source == Database.CLOUDSQL:
+            pass
