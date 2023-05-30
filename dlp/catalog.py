@@ -42,13 +42,14 @@ class Catalog:
         self.table = table
         self.instance_id = instance_id
 
-        self.timestamp = int(datetime.datetime.now().timestamp())
+        self.ts = int(datetime.datetime.now().timestamp())
         if self.instance_id is not None:
-            self.entry_group_id = f"dlp_{self.instance_id}_{self.timestamp}"
-            self.entry_id = f"dlp_{self.timestamp}"
+            self.entry_group_id = f"dlp_{self.instance_id}_{self.ts}"
+            self.entry_id = f"dlp_{self.ts}"
         else:
-            self.tag_template_id = f"""dlp_{self.dataset.lower()}_
-            {self.table.lower()}_{self.timestamp}"""
+            self.tag_template_id = (
+                f"dlp_{self.dataset.lower()}_{self.table.lower()}_{self.ts}"
+                )
 
     def create_tag_template(self, parent: str) -> None:
         """Creates a tag template if it does not already exist.
@@ -166,8 +167,7 @@ class Catalog:
         entries for Cloud SQL."""
         parent = f"projects/{self.project_id}/locations/{self.location}"
 
-        # TODO(jiimedina): Change after nested table functionality is added.
-        record_type = None
+        record_type = 1
 
         # Checks if it's BigQuery or CloudSQL.
         if self.instance_id is None:
@@ -175,7 +175,11 @@ class Catalog:
                 # Create the tag template.
                 self.create_tag_template(parent)
             else:
-                raise NotImplementedError
+                nested_data =(
+                    [{key.replace(".", "_"): value for key, value in self.data[0].items()}]
+                    )
+                self.data = nested_data
+                self.create_tag_template(parent)
 
             # Creates the BigQuery table entry.
             resource_name = (
