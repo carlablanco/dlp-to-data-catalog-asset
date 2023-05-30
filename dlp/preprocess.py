@@ -157,7 +157,6 @@ class Preprocessing:
               containing the values for each field in the table schema.
          """
         content = []
-        fields = table_id.schema
 
         rows_iter = self.bigquery.bq_client.list_rows(table_id)
 
@@ -166,10 +165,7 @@ class Preprocessing:
                                                         table and try again.""")
         else:
             for row in rows_iter:
-                row_dict = {}
-                for i, field in enumerate(fields):
-                    row_dict[field.name] = row[i]
-                content.append(row_dict)
+                content.append(tuple(row))
 
         return content
 
@@ -292,7 +288,7 @@ class Preprocessing:
 
         query_job = self.bigquery.bq_client.query(sql_query)
         query_results = query_job.result()
-        bq_rows_content = [dict(row) for row in query_results]
+        bq_rows_content = [tuple(dict(row).values()) for row in query_results]
 
         return bq_rows_content
 
@@ -360,14 +356,13 @@ class Preprocessing:
                 table_schema, nested_columns, record_columns, table_bq)
         else:
             table_schema = table_bq.schema
-            bq_schema = [field.to_api_repr() for field in table_schema]
+            bq_schema = [field.to_api_repr()["name"] for field in table_schema]
             bq_rows_content = self.fetch_rows(table_bq)
 
         return bq_schema, bq_rows_content
 
     def convert_to_dlp_table(self, schema: List[Dict],
-                             content: List[Dict], table_id: str = None) ->(
-                             dlp_v2.Table):
+                             content: List[Dict]) -> dlp_v2.Table:
         """Converts a BigQuery table into a DLP table.
 
         Converts a BigQuery table into a Data Loss Prevention table,
@@ -376,34 +371,20 @@ class Preprocessing:
         Args:
             bq_schema (List[Dict]): The schema of a BigQuery table.
             bq_content (List[Dict]): The content of a BigQuery table.
-            table_id (str): The fully qualified name of the BigQuery table.
 
         Returns:
             A table object that can be inspected by Data Loss Prevention.
         """
         table_dlp = dlp_v2.Table()
-
-        # Determine the column names based on the source
-        if self.source == Database.BIGQUERY:
-            table_bq = self.bigquery.bq_client.get_table(table_id)
-            dtypes = self.get_data_types(table_bq)
-            if "RECORD" in dtypes:
-                table_dlp.headers = [{"name": name} for name in schema]
-            else:
-                table_dlp.headers = [{"name": item['name']} for item in schema]
-        else:
-            column_names = schema
-            table_dlp.headers = [{"name": name} for name in column_names]
+        table_dlp.headers = [
+            {"name": schema_object} for schema_object in schema
+        ]
 
         rows = []
         for row in content:
-            values = [dlp_v2.Value(string_value=str(cell_val))
-                    for cell_val in row.values()] \
-                    if self.source == Database.BIGQUERY \
-                    else [dlp_v2.Value(string_value=str(cell_val))
-                        for cell_val in row]
-
-            rows.append(dlp_v2.Table.Row(values=values))
+            rows.append(dlp_v2.Table.Row(
+                values=[dlp_v2.Value(
+                    string_value=str(cell_val)) for cell_val in row]))
 
         table_dlp.rows = rows
 
@@ -416,29 +397,22 @@ class Preprocessing:
             A list of Data Loss Prevention table objects.
         """
 
-        dlp_tables_list = []
-
         if self.source == Database.BIGQUERY:
-            if self.bigquery.table:
-                bigquery_tables = [self.bigquery.table]
-            else:
-                bigquery_tables = (
-                    self.get_bigquery_tables(self.bigquery.dataset)
-                )
+            # Data source is BigQuery
+            # Get the list of BigQuery tables
+            bigquery_tables = [self.bigquery.table] \
+                if self.bigquery.table \
+                else self.get_bigquery_tables(self.bigquery.dataset)
 
-            for table_name in bigquery_tables:
-                table_id = (
-                    f"{self.project}.{self.bigquery.dataset}.{table_name}")
-                schema, content = self.get_bigquery_data(table_id)
-                table_dlp = self.convert_to_dlp_table(
-                    schema, content, table_id)
-                dlp_tables_list.append(table_dlp)
+            # Retrieve schema and content data for each BigQuery table
+            schema_content_list = [self.get_bigquery_data(
+                f"{self.bigquery.dataset}.{table_name}")
+                for table_name in bigquery_tables]
 
         elif self.source == Database.CLOUDSQL:
+            # Data source is Cloud SQL
+            # Retrieve schema and content data for the Cloud SQL table
             schema_content_list = [self.get_cloudsql_data(self.cloudsql.table)]
-            dlp_tables_list = [
-                self.convert_to_dlp_table(schema, content)
-                for schema, content in schema_content_list
-            ]
 
-        return dlp_tables_list
+        return [self.convert_to_dlp_table(
+            schema, content) for schema, content in schema_content_list ]
