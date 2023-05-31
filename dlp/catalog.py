@@ -62,25 +62,29 @@ class Catalog:
 
         # Checks if the a specific table or a whole dataset was inspected.
         if self.table is not None:
-
+            # Creates a unique display name for each tag template
             tag_template_name = (
                 f"DLP_columns_{self.project_id}_{self.dataset}_{self.table}"
                 )
             self.tag_template.display_name = tag_template_name
 
+            # Creates a dictionary with the fields of the Tag Templates
             fields = self.create_fields(self.data[0])
             self.tag_template.fields.update(fields)
-
+            # Makes the request for the Tag Template creation.
             self.tag_template_request(parent)
 
         else:
             for i in enumerate(self.data):
+                # Creates a unique display name for each tag template
                 self.tag_template_id = f"{self.tag_template_id}_{i}"
-                fields = self.create_fields(self.data[i])
                 self.tag_template.display_name = tag_template_name
 
-                self.tag_template.fields.update(fields)
+                # Creates a dictionary with the fields of the Tag Templates
+                fields = self.create_fields(self.data[i])
 
+                self.tag_template.fields.update(fields)
+                # Makes the request for the Tag Template creation.
                 self.tag_template_request(parent)
 
 
@@ -220,11 +224,18 @@ class Catalog:
                 self.data = nested_data
                 self.create_tag_template(parent)
 
+            if self.table is not None:
+                resource_name = (
+                    f"//bigquery.googleapis.com/projects/{self.project_id}"
+                    f"/datasets/{self.dataset}/tables/{self.table}"
+                )
+            else:
+                resource_name = (
+                    f"//bigquery.googleapis.com/projects/{self.project_id}"
+                    f"/datasets/{self.dataset}"
+                )
+
             # Creates the BigQuery table entry.
-            resource_name = (
-                f"//bigquery.googleapis.com/projects/{self.project_id}"
-                f"/datasets/{self.dataset}/tables/{self.table}"
-            )
             table_entry = self.client.lookup_entry(
                 request={"linked_resource": resource_name}
             )
