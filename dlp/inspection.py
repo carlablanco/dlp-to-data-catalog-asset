@@ -49,7 +49,8 @@ class DlpInspection:
         inspect_config = {
             "info_types": [
                 {"name": name} for name in filtered_infotypes
-            ]
+            ],
+            "min_likelihood": "LIKELY"
         }
 
         parent = f"projects/{self.project_id}"
@@ -101,12 +102,12 @@ class DlpInspection:
                         if finding.info_type.name in infotypes:
                             infotypes[finding.info_type.name] += likelihood
                         else:
-                            # If the infotype is not in the dictionary,
-                            # add it with the likelihood value.
+                            # If the infotype is not in the dictionary, add it with
+                            # the likelihood value.
                             infotypes[finding.info_type.name] = likelihood
                     except AttributeError as err:
-                        raise ValueError("""AttributeError:No
-                        findings returned from API call.""") from err
+                        raise ValueError("""AttributeError:
+                        No findings returned from API call.""") from err
 
         return finding_results
 
