@@ -74,7 +74,9 @@ class Catalog:
             new_source_field = datacatalog_v1.TagTemplateField(
                 name=key,
                 type=datacatalog_v1.FieldType(
-                    primitive_type=datacatalog_v1.FieldType.PrimitiveType.STRING
+                    primitive_type = (
+                datacatalog_v1.FieldType.PrimitiveType.STRING
+                    )
                 ),
                 description=value,
             )
@@ -91,7 +93,7 @@ class Catalog:
 
         try:
             self.tag_template = self.client.create_tag_template(request)
-        except Exception as error:
+        except ValueError as error:
             print("Error occured while creating tag template:", str(error))
 
     def attach_tag_to_table(self, table_entry: str) -> None:
