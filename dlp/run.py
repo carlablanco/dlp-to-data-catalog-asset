@@ -141,11 +141,10 @@ def run(args: Type[argparse.Namespace]):
     preprocess = Preprocessing(
         source=source, project=project, **preprocess_args)
     tables = preprocess.get_dlp_table_list()
-    print(tables)
     dlpinspection = DlpInspection(project_id=project,
                 language_code=language_code,
                 tables=tables)
-    print(dlpinspection.main())
+    dlpinspection.main()
 
 if __name__ == "__main__":
     arguments = parse_arguments()
