@@ -52,7 +52,7 @@ class Catalog:
                 )
 
     def create_tag_template(self, parent: str) -> None:
-        """Creates a tag template if it does not already exist.
+        """Creates a tag template.
 
         Args:
             parent: The parent resource for the tag template.
@@ -71,17 +71,7 @@ class Catalog:
             fields = self.create_fields(self.data[0])
             self.tag_template.fields.update(fields)
 
-            # Create the request and send it to create the tag template.
-            request = datacatalog_v1.CreateTagTemplateRequest(
-                parent=parent,
-                tag_template_id=self.tag_template_id,
-                tag_template=self.tag_template,
-            )
-
-            try:
-                self.tag_template = self.client.create_tag_template(request)
-            except ValueError as error:
-                print("Error occured while creating tag template:", str(error))
+            self.tag_template_request(parent)
 
         else:
             for i in enumerate(self.data):
@@ -91,18 +81,27 @@ class Catalog:
 
                 self.tag_template.fields.update(fields)
 
-                # Create the request and send it to create the tag template.
-                request = datacatalog_v1.CreateTagTemplateRequest(
-                    parent=parent,
-                    tag_template_id=self.tag_template_id,
-                    tag_template=self.tag_template,
-                )
+                self.tag_template_request(parent)
 
-                try:
-                    self.tag_template = self.client.create_tag_template(request)
-                except ValueError as error:
-                    print("""Error occured while creating
-                                tag template:""", str(error))
+
+    def tag_template_request(self, parent):
+        """Makes the request for the Tag Template creation.
+
+            Args:
+                parent(str): The parent resource for the tag template.
+        """
+        # Create the request and send it to create the tag template.
+        request = datacatalog_v1.CreateTagTemplateRequest(
+            parent=parent,
+            tag_template_id=self.tag_template_id,
+            tag_template=self.tag_template,
+        )
+
+        try:
+            self.tag_template = self.client.create_tag_template(request)
+        except ValueError as error:
+            print("""Error occured while creating
+                        tag template:""", str(error))
 
 
     def create_fields(self, data: Dict) -> Dict:
