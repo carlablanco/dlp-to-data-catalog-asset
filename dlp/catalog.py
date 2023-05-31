@@ -47,7 +47,9 @@ class Catalog:
             self.entry_group_id = f"dlp_{self.instance_id}_{self.ts}"
             self.entry_id = f"dlp_{self.ts}"
         else:
-            self.tag_template_id = f"""dlp_{self.dataset.lower()}_{self.table.lower()}_{self.ts}"""
+            self.tag_template_id =(
+                f"dlp_{self.dataset.lower()}_{self.table.lower()}_{self.ts}"
+                )
 
     def create_tag_template(self, parent: str) -> None:
         """Creates a tag template if it does not already exist.
@@ -58,8 +60,9 @@ class Catalog:
         # Create the tag template.
 
         if self.instance_id is None:
-            tag_template_name = f"""DLP_columns_{self.project_id}_
-            {self.dataset}_{self.table}"""
+            tag_template_name = (
+                f"DLP_columns_{self.project_id}_{self.dataset}_{self.table}"
+                )
         else:
             tag_template_name = f"DLP_columns_{self.instance_id}"
 
@@ -176,7 +179,8 @@ class Catalog:
                 self.create_tag_template(parent)
             else:
                 nested_data = (
-                    [{key.replace(".", "_"): value for key, value in self.data[0].items()}]
+                    [{key.replace(".", "_"): value for key,
+                      value in self.data[0].items()}]
                     )
                 self.data = nested_data
                 self.create_tag_template(parent)
