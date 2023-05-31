@@ -169,7 +169,7 @@ class Catalog:
         parent = f"projects/{self.project_id}/locations/{self.location}"
 
         nested_type = False
-        if any('.' in key for key in self.data[0].keys()) == True:
+        if any('.' in key for key in self.data[0].keys()) is True:
             nested_type = True
 
         # Checks if it's BigQuery or CloudSQL.
