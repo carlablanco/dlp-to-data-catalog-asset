@@ -51,6 +51,7 @@ class DlpInspection:
                 {"name": name} for name in filtered_infotypes
             ]
         }
+
         parent = f"projects/{self.project_id}"
         return parent, inspect_config
 
@@ -72,7 +73,6 @@ class DlpInspection:
                     the infotype and the likelihood value.
                 Example: {"name": {"PERSON_NAME": 4.4}, "age": {"AGE": 5.8}}
         """
-
         table_inspected = {}
         # Create a dictionary in the correct format
         # to analyze the API response.
@@ -88,7 +88,6 @@ class DlpInspection:
                 "LIKELY": 1.2,
                 "VERY_LIKELY": 1.4
             }
-
             if table_inspected["result"].findings:
                 for finding in table_inspected["result"].findings:
                     try:

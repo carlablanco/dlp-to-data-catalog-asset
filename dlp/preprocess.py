@@ -160,8 +160,12 @@ class Preprocessing:
         table_names = [table.table_id for table in dataset_tables]
         return table_names
 
-    def fetch_rows(self, table_bq: bigquery.table.Table,
-                   start_index: int, cells_to_analyze: int) -> List[Dict]:
+    def fetch_rows(
+        self,
+        table_bq: bigquery.table.Table,
+        start_index: int,
+        cells_to_analyze: int
+    ) -> List[Dict]:
         """Fetches a batch of rows from a BigQuery table.
 
            Args:
