@@ -67,7 +67,7 @@ class Catalog:
                 f"DLP_columns_{self.project_id}_{self.dataset}_{self.table}"
                 )
             self.tag_template.display_name = tag_template_name
-            
+
             fields = self.create_fields(self.data[0])
             self.tag_template.fields.update(fields)
 
@@ -84,7 +84,7 @@ class Catalog:
                 print("Error occured while creating tag template:", str(error))
 
         else:
-            for i in range(len(self.data)):
+            for i in enumerate(self.data):
                 self.tag_template_id = f"{self.tag_template_id}_{i}"
                 fields = self.create_fields(self.data[i])
                 self.tag_template.display_name = tag_template_name
@@ -101,7 +101,8 @@ class Catalog:
                 try:
                     self.tag_template = self.client.create_tag_template(request)
                 except ValueError as error:
-                    print("Error occured while creating tag template:", str(error))
+                    print("""Error occured while creating
+                                tag template:""", str(error))
 
 
     def create_fields(self, data: Dict) -> Dict:
@@ -127,7 +128,7 @@ class Catalog:
         )
             fields[new_source_field.name] = new_source_field
         return fields
-    
+
 
     def attach_tag_to_table(self, table_entry: str) -> None:
         """Attaches a tag to a BigQuery or CloudSQL table.
