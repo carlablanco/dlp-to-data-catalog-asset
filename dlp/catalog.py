@@ -63,28 +63,12 @@ class Catalog:
         # Checks if the a specific table or a whole dataset was inspected.
         if self.table is not None:
 
-            # Checks if is a CloudSQL or a BigQuery table.
-            if self.instance_id is None:
-                tag_template_name = (
-                    f"DLP_columns_{self.project_id}_{self.dataset}_{self.table}"
-                    )
-            else:
-                tag_template_name = f"DLP_columns_{self.instance_id}"
-            self.tag_template.display_name = tag_template_name
-
-            # Creates the fields of the Tag Template.
-            for key, value in self.data[0].items():
-                new_source_field = datacatalog_v1.TagTemplateField(
-                    name=key,
-                    type=datacatalog_v1.FieldType(
-                        primitive_type = (
-                    datacatalog_v1.FieldType.PrimitiveType.STRING
-                        )
-                    ),
-                    description=value,
+            tag_template_name = (
+                f"DLP_columns_{self.project_id}_{self.dataset}_{self.table}"
                 )
-                fields[new_source_field.name] = new_source_field
-
+            self.tag_template.display_name = tag_template_name
+            
+            fields = self.create_fields(self.data[0])
             self.tag_template.fields.update(fields)
 
             # Create the request and send it to create the tag template.
@@ -101,41 +85,49 @@ class Catalog:
 
         else:
             for i in range(len(self.data)):
-                # Checks if is a CloudSQL or a BigQuery table.
-                if self.instance_id is None:
-                    tag_template_name = (
-                        f"DLP_columns_{self.project_id}_{self.dataset}_{i}"
-                        )
-                else:
-                    tag_template_name = f"DLP_columns_{self.instance_id}_{i}"
-
-                # Creates the fields of the Tag Template.
-                for key, value in self.data[i].items():
-                    new_source_field = datacatalog_v1.TagTemplateField(
-                    name=key,
-                    type=datacatalog_v1.FieldType(
-                        primitive_type = (
-                    datacatalog_v1.FieldType.PrimitiveType.STRING
-                        )
-                    ),
-                    description=value,
-                )
-                fields[new_source_field.name] = new_source_field
                 self.tag_template_id = f"{self.tag_template_id}_{i}"
+                fields = self.create_fields(self.data[i])
+                self.tag_template.display_name = tag_template_name
 
-            self.tag_template.fields.update(fields)
+                self.tag_template.fields.update(fields)
 
-            # Create the request and send it to create the tag template.
-            request = datacatalog_v1.CreateTagTemplateRequest(
-                parent=parent,
-                tag_template_id=self.tag_template_id,
-                tag_template=self.tag_template,
-            )
+                # Create the request and send it to create the tag template.
+                request = datacatalog_v1.CreateTagTemplateRequest(
+                    parent=parent,
+                    tag_template_id=self.tag_template_id,
+                    tag_template=self.tag_template,
+                )
 
-            try:
-                self.tag_template = self.client.create_tag_template(request)
-            except ValueError as error:
-                print("Error occured while creating tag template:", str(error))
+                try:
+                    self.tag_template = self.client.create_tag_template(request)
+                except ValueError as error:
+                    print("Error occured while creating tag template:", str(error))
+
+
+    def create_fields(self, data: Dict) -> Dict:
+        """Creates a dictionary with the fields of the Tag Templates
+
+        Args:
+            data (dict): The field name and description.
+
+        Returns:
+            dict: The Dict with the filds of the Data Catalog.
+        """
+        fields = {}
+        # Creates the fields of the Tag Template.
+        for key, value in data.items():
+            new_source_field = datacatalog_v1.TagTemplateField(
+            name=key,
+            type=datacatalog_v1.FieldType(
+                primitive_type = (
+            datacatalog_v1.FieldType.PrimitiveType.STRING
+                )
+            ),
+            description=value,
+        )
+            fields[new_source_field.name] = new_source_field
+        return fields
+    
 
     def attach_tag_to_table(self, table_entry: str) -> None:
         """Attaches a tag to a BigQuery or CloudSQL table.
@@ -172,7 +164,7 @@ class Catalog:
         return entry_group.name
 
     def create_entry(self, entry_group_name: str) -> None:
-        """Creates one entry for each column in the inspected table.
+        """Creates one entry for each column in the CloudSQL inspected table.
 
         Saves the name of the column and the inspection InfoType as the
         description in a new entry that belongs to an entry group.
