@@ -107,6 +107,8 @@ class DlpInspection:
                 except AttributeError as err:
                     raise ValueError("""AttributeError: No findings
                                         returned from API call.""") from err
+
+        print(finding_results)        
         return finding_results
 
     def get_max_infotype(self, finding_results: Dict) -> Dict:
@@ -231,3 +233,44 @@ class DlpInspection:
             results.append(top_findings)
 
         return results
+    
+    def get_finding_results(self,table):
+        """Iterates over the given tables and analyzes each one.
+
+           Returns:
+                results: A list of dictionaries with the infotype with the
+                    highest likelihood.
+                    Example: [{"name": "PERSON_NAME", "age": "AGE"},
+                     {"DNI": "GOVERMENT_ID", "token": "AUTH_TOKEN"}]"""
+        parent, inspect_config = self.get_inspection_parameters()
+        
+        # Get the complete table inspected.
+        results_lists = self.analyze_dlp_table(parent, table,
+                                                inspect_config)
+        # Processes the results of the inspection.
+        finding_results = self.analyze_inspection_result(results_lists)
+
+        return finding_results
+    
+    def merge_and_top_finding(self,finding_results_list):
+        """_summary_
+
+        Args:
+            finding_results_list (_type_): _description_
+
+        Returns:
+            _type_: _description_
+        """
+        merge_finding_result = {}
+
+        for finding_results in finding_results_list:
+            for key, values in finding_results.items():
+                for infotype, value in values.items():
+                    if key not in merge_finding_result:
+                        merge_finding_result[key] = {}
+                    merge_finding_result[key][infotype] = merge_finding_result[key].get(infotype, 0) + value
+
+        print("-----FINDINGS MERGED----------")
+        print(merge_finding_result)
+        return self.get_max_infotype(merge_finding_result)
+    
