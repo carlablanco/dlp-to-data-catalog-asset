@@ -50,6 +50,7 @@ class Catalog:
             self.tag_template_id =(
                 f"dlp_{dataset.lower()}_{table.lower()}_{timestamp}"
                 )
+        
 
     def create_tag_template(self, parent: str) -> None:
         """Creates a tag template.
@@ -60,33 +61,44 @@ class Catalog:
         # Create a new source field for each field in the data.
         fields = {}
 
-        # Checks if the a specific table or a whole dataset was inspected.
-        if self.table is not None:
-            # Creates a unique display name for each tag template
-            tag_template_name = (
-                f"DLP_columns_{self.project_id}_{self.dataset}_{self.table}"
+        # Creates a unique display name for each tag template
+        tag_template_name = (
+            f"DLP_columns_{self.project_id}_{self.dataset}_{self.table}"
+            )
+        self.tag_template.display_name = tag_template_name
+
+        # Creates a dictionary with the fields of the Tag Templates
+        fields = self.create_fields(self.data)
+        self.tag_template.fields.update(fields)
+
+        # Makes the request for the Tag Template creation.
+        self.tag_template_request(parent)
+
+
+    def create_fields(self, data: Dict) -> Dict:
+        """Creates a dictionary with the fields of the Tag Templates
+
+        Args:
+            data (dict): The field name and description.
+
+        Returns:
+            dict: The Dict with the filds of the Data Catalog.
+        """
+        fields = {}
+        # Creates the fields of the Tag Template.
+        
+        for key, value in data[0].items():
+            new_source_field = datacatalog_v1.TagTemplateField(
+            name=key,
+            type=datacatalog_v1.FieldType(
+                primitive_type = (
+            datacatalog_v1.FieldType.PrimitiveType.STRING
                 )
-            self.tag_template.display_name = tag_template_name
-
-            # Creates a dictionary with the fields of the Tag Templates
-            fields = self.create_fields(self.data[0])
-            self.tag_template.fields.update(fields)
-            # Makes the request for the Tag Template creation.
-            self.tag_template_request(parent)
-
-        else:
-            for i in enumerate(self.data):
-                # Creates a unique display name for each tag template
-                self.tag_template_id = f"{self.tag_template_id}_{i}"
-                self.tag_template.display_name = tag_template_name
-
-                # Creates a dictionary with the fields of the Tag Templates
-                fields = self.create_fields(self.data[i])
-
-                self.tag_template.fields.update(fields)
-                # Makes the request for the Tag Template creation.
-                self.tag_template_request(parent)
-
+            ),
+            description=value,
+        )
+            fields[new_source_field.name] = new_source_field
+        return fields
 
     def tag_template_request(self, parent):
         """Makes the request for the Tag Template creation.
@@ -107,32 +119,6 @@ class Catalog:
             print("""Error occured while creating
                         tag template:""", str(error))
 
-
-    def create_fields(self, data: Dict) -> Dict:
-        """Creates a dictionary with the fields of the Tag Templates
-
-        Args:
-            data (dict): The field name and description.
-
-        Returns:
-            dict: The Dict with the filds of the Data Catalog.
-        """
-        fields = {}
-        # Creates the fields of the Tag Template.
-        for key, value in data.items():
-            new_source_field = datacatalog_v1.TagTemplateField(
-            name=key,
-            type=datacatalog_v1.FieldType(
-                primitive_type = (
-            datacatalog_v1.FieldType.PrimitiveType.STRING
-                )
-            ),
-            description=value,
-        )
-            fields[new_source_field.name] = new_source_field
-        return fields
-
-
     def attach_tag_to_table(self, table_entry: str) -> None:
         """Attaches a tag to a BigQuery or CloudSQL table.
 
@@ -144,10 +130,11 @@ class Catalog:
             template=self.tag_template.name, name="DLP_Analysis"
         )
 
-        for key, value in self.data[0].items():
+        for key, value in self.data.items():
             tag.fields[key] = datacatalog_v1.types.TagField(string_value=value)
 
         self.client.create_tag(parent=table_entry, tag=tag)
+
 
     def create_custom_entry_group(self) -> str:
         """Creates a new Custom entry group.
@@ -166,6 +153,7 @@ class Catalog:
             entry_group=entry_group_obj,
         )
         return entry_group.name
+
 
     def create_entry(self, entry_group_name: str) -> None:
         """Creates one entry for each column in the CloudSQL inspected table.
@@ -202,13 +190,14 @@ class Catalog:
                 parent=entry_group_name, entry_id=self.entry_id, entry=entry
             )
 
+
     def main(self) -> None:
         """Creates a tag template for BigQuery tables and creates custom
         entries for Cloud SQL."""
         parent = f"projects/{self.project_id}/locations/{self.location}"
 
         nested_type = False
-        if any('.' in key for key in self.data[0].keys()) is True:
+        if any('.' in key for key in self.data.keys()) is True:
             nested_type = True
 
         # Checks if it's BigQuery or CloudSQL.
@@ -219,21 +208,17 @@ class Catalog:
             else:
                 nested_data = (
                     [{key.replace(".", "_"): value for key,
-                      value in self.data[0].items()}]
+                      value in self.data.items()}]
                     )
                 self.data = nested_data
                 self.create_tag_template(parent)
 
-            if self.table is not None:
-                resource_name = (
-                    f"//bigquery.googleapis.com/projects/{self.project_id}"
-                    f"/datasets/{self.dataset}/tables/{self.table}"
-                )
-            else:
-                resource_name = (
-                    f"//bigquery.googleapis.com/projects/{self.project_id}"
-                    f"/datasets/{self.dataset}"
-                )
+            
+            resource_name = (
+                f"//bigquery.googleapis.com/projects/{self.project_id}"
+                f"/datasets/{self.dataset}/tables/{self.table}"
+            )
+            
 
             # Creates the BigQuery table entry.
             table_entry = self.client.lookup_entry(
@@ -241,7 +226,9 @@ class Catalog:
             )
             table_entry = table_entry.name
             # Attach the tag template to the BigQuery table.
-            self.attach_tag_to_table(table_entry)
+            print('attachment complete, should only call the method')
+            #self.attach_tag_to_table(table_entry)
+
         else:
             entry_group_name = self.create_custom_entry_group()
             self.create_entry(entry_group_name)

@@ -165,6 +165,9 @@ def run(args: Type[argparse.Namespace]):
         project=project,
         **preprocess_args,
     )
+    bigquery_tables = [
+                    preprocess.get_bigquery_tables(preprocess_args["bigquery_args"]["dataset"])
+                ]
     tables = preprocess.get_dlp_table_list()
 
     if source == "bigquery":
@@ -181,15 +184,42 @@ def run(args: Type[argparse.Namespace]):
     )
     data = inspection.main()
 
-    catalog = Catalog(
-        data=data,
-        project_id=project,
-        location=location,
-        dataset=dataset,
-        table=table,
-        instance_id=instance_id,
-    )
-    catalog.main()
+    if source == "bigquery":
+        if table is not None:
+            
+            catalog = Catalog(
+                data=data[0],
+                project_id=project,
+                location=location,
+                dataset=dataset,
+                table=table,
+                instance_id=instance_id,
+            )
+            catalog.main()
+        else:
+            bigquery_tables = (
+                    preprocess.get_bigquery_tables(dataset)
+                )
+            for i, table in enumerate(bigquery_tables): 
+                catalog = Catalog(
+                    data=data[i],
+                    project_id=project,
+                    location=location,
+                    dataset=dataset,
+                    table=table,
+                    instance_id=instance_id,
+                )
+                catalog.main()
+    else:
+        catalog = Catalog(
+                data=data[0],
+                project_id=project,
+                location=location,
+                dataset=dataset,
+                table=table,
+                instance_id=instance_id,
+            )
+        catalog.main()
 
 
 if __name__ == "__main__":
