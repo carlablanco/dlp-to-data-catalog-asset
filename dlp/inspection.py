@@ -50,8 +50,10 @@ class DlpInspection:
         inspect_config = {
             "info_types": [
                 {"name": name} for name in filtered_infotypes
-            ]
+            ],
+            "min_likelihood": "LIKELY"
         }
+
         parent = f"projects/{self.project_id}"
         return parent, inspect_config
 
@@ -73,40 +75,41 @@ class DlpInspection:
                     the infotype and the likelihood value.
                 Example: {"name": {"PERSON_NAME": 4.4}, "age": {"AGE": 5.8}}
         """
-
         table_inspected = {}
         # Create a dictionary in the correct format to analyze the API response.
+        finding_results = {}
         for result in (results):
             table_inspected["result"] = result.result
 
-        value_likelihood = {
-            "LIKELIHOOD_UNSPECIFIED": 1,
-            "VERY_UNLIKELY": 0.6,
-            "UNLIKELY": 0.8,
-            "POSSIBLE": 1,
-            "LIKELY": 1.2,
-            "VERY_LIKELY": 1.4
-        }
-        finding_results = {}
-        if table_inspected["result"].findings:
-            for finding in table_inspected["result"].findings:
-                try:
-                    column = finding.location.content_locations[
-                        0].record_location.field_id.name
-                    infotypes = finding_results.setdefault(column, {})
-                    likelihood = value_likelihood.get(finding.likelihood.name,
-                                                      0)
-                    # If the infotype is already in the dictionary, sum
-                    # the likelihood value to the exisiting one.
-                    if finding.info_type.name in infotypes:
-                        infotypes[finding.info_type.name] += likelihood
-                    else:
-                        # If the infotype is not in the dictionary, add it with
-                        # the likelihood value.
-                        infotypes[finding.info_type.name] = likelihood
-                except AttributeError as err:
-                    raise ValueError("""AttributeError: No findings
-                                        returned from API call.""") from err
+            value_likelihood = {
+                "LIKELIHOOD_UNSPECIFIED": 1,
+                "VERY_UNLIKELY": 0.6,
+                "UNLIKELY": 0.8,
+                "POSSIBLE": 1,
+                "LIKELY": 1.2,
+                "VERY_LIKELY": 1.4
+            }
+            if table_inspected["result"].findings:
+                for finding in table_inspected["result"].findings:
+                    try:
+                        column = finding.location.content_locations[
+                            0].record_location.field_id.name
+                        infotypes = finding_results.setdefault(column, {})
+                        likelihood = value_likelihood.get(
+                            finding.likelihood.name,0)
+                        # If the infotype is already in the dictionary, sum
+                        # the likelihood value to the exisiting one.
+                        if finding.info_type.name in infotypes:
+                            infotypes[finding.info_type.name] += likelihood
+                        else:
+                            # If the infotype is not in the dictionary, add it with
+                            # the likelihood value.
+                            infotypes[finding.info_type.name] = likelihood
+
+                    except AttributeError as err:
+                        raise ValueError("""AttributeError:
+                        No findings returned from API call.""") from err
+
         return finding_results
 
     def get_max_infotype(self, finding_results: Dict) -> Dict:
