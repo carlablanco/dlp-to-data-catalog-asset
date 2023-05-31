@@ -42,13 +42,13 @@ class Catalog:
         self.table = table
         self.instance_id = instance_id
 
-        self.ts = int(datetime.datetime.now().timestamp())
+        timestamp = int(datetime.datetime.now().timestamp())
         if self.instance_id is not None:
-            self.entry_group_id = f"dlp_{self.instance_id}_{self.ts}"
-            self.entry_id = f"dlp_{self.ts}"
+            self.entry_group_id = f"dlp_{self.instance_id}_{timestamp}"
+            self.entry_id = f"dlp_{timestamp}"
         else:
             self.tag_template_id =(
-                f"dlp_{self.dataset.lower()}_{self.table.lower()}_{self.ts}"
+                f"dlp_{dataset.lower()}_{table.lower()}_{timestamp}"
                 )
 
     def create_tag_template(self, parent: str) -> None:
