@@ -158,11 +158,12 @@ class Preprocessing:
          """
         content = []
 
-        rows_iter = self.bigquery.bq_client.list_rows(table=table_id,start_index=index,max_results=bloque)
+        rows_iter = self.bigquery.bq_client.list_rows(
+            table=table_id,start_index=index,max_results=1300)
 
         if not rows_iter.total_rows:
-            print(f"""The Table {table_id} is empty. Please populate the
-                                                        table and try again.""")
+            print(f"""The Table {table_id} is empty. Please populate 
+            the table and try again.""")
         else:
             for row in rows_iter:
                 content.append(tuple(row))
