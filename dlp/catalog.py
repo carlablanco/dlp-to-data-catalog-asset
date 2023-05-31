@@ -59,10 +59,10 @@ class Catalog:
         """
         # Create a new source field for each field in the data.
         fields = {}
-        
+
         # Checks if the a specific table or a whole dataset was inspected.
         if self.table is not None:
-            
+
             # Checks if is a CloudSQL or a BigQuery table.
             if self.instance_id is None:
                 tag_template_name = (
@@ -71,7 +71,7 @@ class Catalog:
             else:
                 tag_template_name = f"DLP_columns_{self.instance_id}"
             self.tag_template.display_name = tag_template_name
-            
+
             # Creates the fields of the Tag Template.
             for key, value in self.data[0].items():
                 new_source_field = datacatalog_v1.TagTemplateField(
@@ -98,7 +98,7 @@ class Catalog:
                 self.tag_template = self.client.create_tag_template(request)
             except ValueError as error:
                 print("Error occured while creating tag template:", str(error))
-                
+
         else:
             for i in range(len(self.data)):
                 # Checks if is a CloudSQL or a BigQuery table.
@@ -108,7 +108,7 @@ class Catalog:
                         )
                 else:
                     tag_template_name = f"DLP_columns_{self.instance_id}_{i}"
-                
+
                 # Creates the fields of the Tag Template.
                 for key, value in self.data[i].items():
                     new_source_field = datacatalog_v1.TagTemplateField(
@@ -124,7 +124,7 @@ class Catalog:
                 self.tag_template_id = f"{self.tag_template_id}_{i}"
 
             self.tag_template.fields.update(fields)
-            
+
             # Create the request and send it to create the tag template.
             request = datacatalog_v1.CreateTagTemplateRequest(
                 parent=parent,
@@ -212,7 +212,7 @@ class Catalog:
         parent = f"projects/{self.project_id}/locations/{self.location}"
 
         nested_type = False
-        if any('.' in key for key in self.data[0].keys()) == True:
+        if any('.' in key for key in self.data[0].keys()) is True:
             nested_type = True
 
         # Checks if it's BigQuery or CloudSQL.
