@@ -50,7 +50,7 @@ class Catalog:
             self.tag_template_id =(
                 f"dlp_{dataset.lower()}_{table.lower()}_{timestamp}"
                 )
-        
+
 
     def create_tag_template(self, parent: str) -> None:
         """Creates a tag template.
@@ -86,7 +86,7 @@ class Catalog:
         """
         fields = {}
         # Creates the fields of the Tag Template.
-        
+
         for key, value in data[0].items():
             new_source_field = datacatalog_v1.TagTemplateField(
             name=key,
@@ -213,12 +213,10 @@ class Catalog:
                 self.data = nested_data
                 self.create_tag_template(parent)
 
-            
             resource_name = (
                 f"//bigquery.googleapis.com/projects/{self.project_id}"
                 f"/datasets/{self.dataset}/tables/{self.table}"
             )
-            
 
             # Creates the BigQuery table entry.
             table_entry = self.client.lookup_entry(
@@ -226,8 +224,7 @@ class Catalog:
             )
             table_entry = table_entry.name
             # Attach the tag template to the BigQuery table.
-            print('attachment complete, should only call the method')
-            #self.attach_tag_to_table(table_entry)
+            self.attach_tag_to_table(table_entry)
 
         else:
             entry_group_name = self.create_custom_entry_group()
