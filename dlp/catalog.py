@@ -66,28 +66,14 @@ class Catalog:
             f"DLP_columns_{self.project_id}_{self.dataset}_{self.table}"
             )
         self.tag_template.display_name = tag_template_name
-
+        
+        #if the data is a list, it converts to a dict
+        if type(self.data) is list:
+            self.data = self.data[0]
         # Creates a dictionary with the fields of the Tag Templates
-        fields = self.create_fields(self.data)
-        self.tag_template.fields.update(fields)
-
-        # Makes the request for the Tag Template creation.
-        self.tag_template_request(parent)
-
-
-    def create_fields(self, data: Dict) -> Dict:
-        """Creates a dictionary with the fields of the Tag Templates
-
-        Args:
-            data (dict): The field name and description.
-
-        Returns:
-            dict: The Dict with the filds of the Data Catalog.
-        """
         fields = {}
         # Creates the fields of the Tag Template.
-
-        for key, value in data[0].items():
+        for key, value in self.data.items():
             new_source_field = datacatalog_v1.TagTemplateField(
             name=key,
             type=datacatalog_v1.FieldType(
@@ -98,15 +84,9 @@ class Catalog:
             description=value,
         )
             fields[new_source_field.name] = new_source_field
-        return fields
+        self.tag_template.fields.update(fields)
 
-    def tag_template_request(self, parent):
-        """Makes the request for the Tag Template creation.
-
-            Args:
-                parent(str): The parent resource for the tag template.
-        """
-        # Create the request and send it to create the tag template.
+        # Makes the request for the Tag Template creation.
         request = datacatalog_v1.CreateTagTemplateRequest(
             parent=parent,
             tag_template_id=self.tag_template_id,
@@ -119,6 +99,7 @@ class Catalog:
             print("""Error occured while creating
                         tag template:""", str(error))
 
+
     def attach_tag_to_table(self, table_entry: str) -> None:
         """Attaches a tag to a BigQuery or CloudSQL table.
 
@@ -129,7 +110,6 @@ class Catalog:
         tag = datacatalog_v1.types.Tag(
             template=self.tag_template.name, name="DLP_Analysis"
         )
-
         for key, value in self.data.items():
             tag.fields[key] = datacatalog_v1.types.TagField(string_value=value)
 
