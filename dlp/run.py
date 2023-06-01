@@ -164,7 +164,7 @@ def run(args: Type[argparse.Namespace]):
     else:
         # Handle unsupported source
         raise ValueError("Unsupported source: " + source)
-
+    
     preprocess = Preprocessing(
         source=source,
         project=project,
@@ -204,29 +204,24 @@ def run(args: Type[argparse.Namespace]):
         catalog.main()
 
 
-    # preprocess = Preprocessing(
-    #     source=source, project=project, **preprocess_args)
-    # dlpinspection = DlpInspection(project_id=project,
-    #             language_code=language_code)
-    
-    # info_tables = preprocess.get_info_tables()
-    # bloque = 100
-    # top_finding_tables = []
+    info_tables = preprocess.get_info_tables()
+    bloque = 5000
+    top_finding_tables = []
 
-    # for table_name,num_rows in info_tables:
-    #     finding_results_per_table = []
-    #     print(num_rows)
-    #     for index in range(0, 10000, bloque):
-    #         print(index)
-    #         print(bloque)
-    #         dlp_table = preprocess.get_dlp_table_per_block(bloque,table_name,index)
-    
-    #         finding_result_per_block = dlpinspection.get_finding_results(dlp_table)
-    #         print(finding_result_per_block)
-    #         finding_results_per_table.append(finding_result_per_block)
+    for table_name,num_rows in info_tables:
+        finding_results_per_table = []
+        print(num_rows)
+        for index in range(0, 100000, bloque):
+            print(index)
+            print(bloque)
+            dlp_table = preprocess.get_dlp_table_per_block(bloque,table_name,index)
 
-    #     top_finding_per_table = dlpinspection.merge_and_top_finding(finding_results_per_table)
-    #     top_finding_tables.append((table_name,top_finding_per_table))
+            finding_result_per_block = dlpinspection.get_finding_results(dlp_table)
+            print(finding_result_per_block)
+            finding_results_per_table.append(finding_result_per_block)
+
+        top_finding_per_table = dlpinspection.merge_and_top_finding(finding_results_per_table)
+        top_finding_tables.append((table_name,top_finding_per_table))
 
 if __name__ == "__main__":
     arguments = parse_arguments()
