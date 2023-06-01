@@ -66,9 +66,9 @@ class Catalog:
             f"DLP_columns_{self.project_id}_{self.dataset}_{self.table}"
             )
         self.tag_template.display_name = tag_template_name
-        
+
         #if the data is a list, it converts to a dict
-        if type(self.data) is list:
+        if isinstance(self.data, list):
             self.data = self.data[0]
         # Creates a dictionary with the fields of the Tag Templates
         fields = {}
