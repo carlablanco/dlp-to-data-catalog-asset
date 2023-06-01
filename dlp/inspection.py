@@ -102,8 +102,8 @@ class DlpInspection:
                         if finding.info_type.name in infotypes:
                             infotypes[finding.info_type.name] += likelihood
                         else:
-                            # If the infotype is not in the dictionary, add it with
-                            # the likelihood value.
+                            # If the infotype is not in the dictionary, add it
+                            # with the likelihood value.
                             infotypes[finding.info_type.name] = likelihood
 
                     except AttributeError as err:
