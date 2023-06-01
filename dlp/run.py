@@ -182,11 +182,11 @@ def run(args: Type[argparse.Namespace]):
     )
     data = inspection.main()
 
-    if source == "bigquery":
-        if table is not None:
-
+    if source == "bigquery" and table is None:
+        bigquery_tables = preprocess.get_bigquery_tables(dataset)
+        for i, table in enumerate(bigquery_tables):
             catalog = Catalog(
-                data=data[0],
+                data=data[i],
                 project_id=project,
                 location=location,
                 dataset=dataset,
@@ -194,30 +194,17 @@ def run(args: Type[argparse.Namespace]):
                 instance_id=instance_id,
             )
             catalog.main()
-        else:
-            bigquery_tables = (
-                    preprocess.get_bigquery_tables(dataset)
-                )
-            for i, table in enumerate(bigquery_tables):
-                catalog = Catalog(
-                    data=data[i],
-                    project_id=project,
-                    location=location,
-                    dataset=dataset,
-                    table=table,
-                    instance_id=instance_id,
-                )
-                catalog.main()
     else:
         catalog = Catalog(
-                data=data[0],
-                project_id=project,
-                location=location,
-                dataset=dataset,
-                table=table,
-                instance_id=instance_id,
-            )
+            data=data[0],
+            project_id=project,
+            location=location,
+            dataset=dataset,
+            table=table,
+            instance_id=instance_id,
+        )
         catalog.main()
+
 
 
 if __name__ == "__main__":
