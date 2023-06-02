@@ -18,7 +18,7 @@ class DlpInspection:
 
         Args:
             project_id: The project ID to be used.
-            location_category: The location to be inspected. Ex. 'UNITED_STATES'.
+            location_category: The location to be inspected. Ex. 'CANADA'.
             tables: Tables to be inspected in the correct format.
         """
         self.dlp_client = dlp_v2.DlpServiceClient()
@@ -39,7 +39,7 @@ class DlpInspection:
             if str(info_type.categories[0].location_category) ==(
             f"LocationCategory.{self.location_category}") or (
             str(info_type.categories[0].location_category) ==(
-            f'LocationCategory.GLOBAL'
+            "LocationCategory.GLOBAL"
                 )
             )
         ]

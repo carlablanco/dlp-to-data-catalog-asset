@@ -102,7 +102,7 @@ def parse_arguments() -> Type[argparse.Namespace]:
         "--location_category",
         type=str,
         required=True,
-        help="The location to be inspected. Ex. 'UNITED_STATES'",
+        help="The location to be inspected. Ex. 'CANADA'",
     )
     parser.add_argument(
         "--location",
@@ -120,7 +120,7 @@ def run(args: Type[argparse.Namespace]):
     Args:
         source (str): The name of the source of data used.
         project (str): The name of the Google Cloud Platform project.
-        location_category (str): The location to be inspected. Ex. 'UNITED_STATES'.
+        location_category (str): The location to be inspected. Ex. 'CANADA'.
         location(str): The compute engine region.
         bigquery_args(Dict):
             dataset (str): The name of the BigQuery dataset.
