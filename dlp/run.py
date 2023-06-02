@@ -120,7 +120,7 @@ def run(args: Type[argparse.Namespace]):
     Args:
         source (str): The name of the source of data used.
         project (str): The name of the Google Cloud Platform project.
-        location_category (str): The location to be inspected. Ex. 'CANADA'.
+        location_category (str): The location to be inspected. Ex. "CANADA".
         location(str): The compute engine region.
         bigquery_args(Dict):
             dataset (str): The name of the BigQuery dataset.

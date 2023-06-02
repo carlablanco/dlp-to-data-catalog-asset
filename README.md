@@ -79,7 +79,7 @@ Consult the official Python documentation on <a href= "https://docs.python.org/3
 To use the program locally, you need to provide the following parameters:
 
 project: The name of the Google Cloud Platform project.
-language_code: The language code specifying the localization of the inspection results.
+location_category: The location specifying the localization of the inspection results.
 
 These parameters are common to both the BigQuery and CloudSQL execution methods.
 
@@ -92,7 +92,7 @@ You can choose one of the following options for the source:
 ```
 python3 -m dlp.run \
 --project PROJECT \
---language_code LANGUAGE_CODE \
+--location_category location_category \
 bigquery \
 --dataset DATASET \
 --table TABLE
@@ -119,7 +119,7 @@ The following additional parameters are required for running the project with Cl
 ```
 python3 -m dlp.run \
 --project PROJECT \
---language_code LANGUAGE_CODE \
+--location_category location_category \
 cloudsql \
 --instance INSTANCE \
 --zone ZONE \
@@ -134,7 +134,7 @@ cloudsql \
 ```
 python3 -m dlp.run \
 --project PROJECT \
---language_code LANGUAGE_CODE \
+--location_category location_category \
 cloudsql \
 --instance INSTANCE \ 
 --zone ZONE \
@@ -144,4 +144,4 @@ cloudsql \
 --table TABLE
 ```
 
-Make sure to replace the placeholder values (PROJECT, LANGUAGE_CODE, DATASET, INSTANCE, ZONE, DB_NAME, and TABLE) with the appropriate values for your specific setup.
+Make sure to replace the placeholder values (PROJECT, location_category, DATASET, INSTANCE, ZONE, DB_NAME, and TABLE) with the appropriate values for your specific setup.

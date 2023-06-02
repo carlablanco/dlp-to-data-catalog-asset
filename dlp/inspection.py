@@ -18,7 +18,7 @@ class DlpInspection:
 
         Args:
             project_id: The project ID to be used.
-            location_category: The location to be inspected. Ex. 'CANADA'.
+            location_category: The location to be inspected. Ex. "CANADA".
             tables: Tables to be inspected in the correct format.
         """
         self.dlp_client = dlp_v2.DlpServiceClient()
