@@ -99,10 +99,10 @@ def parse_arguments() -> Type[argparse.Namespace]:
         help="The Google Cloud project to be used.",
     )
     parser.add_argument(
-        "--language_code",
+        "--location_category",
         type=str,
         required=True,
-        help="The BCP-47 language code to use, e.g. 'en-US'.",
+        help="The location to be inspected. Ex. 'UNITED_STATES'",
     )
     parser.add_argument(
         "--location",
@@ -120,7 +120,7 @@ def run(args: Type[argparse.Namespace]):
     Args:
         source (str): The name of the source of data used.
         project (str): The name of the Google Cloud Platform project.
-        language_code (str): The BCP-47 language code to use, e.g. "en-US".
+        location_category (str): The location to be inspected. Ex. 'UNITED_STATES'.
         location(str): The compute engine region.
         bigquery_args(Dict):
             dataset (str): The name of the BigQuery dataset.
@@ -137,7 +137,7 @@ def run(args: Type[argparse.Namespace]):
     """
     source = args.source
     project = args.project
-    language_code = args.language_code
+    location_category = args.location_category
     location = args.location
 
     preprocess_args = {}
@@ -178,7 +178,7 @@ def run(args: Type[argparse.Namespace]):
         table = None
 
     inspection = DlpInspection(
-        project_id=project, language_code=language_code, tables=tables
+        project_id=project, location_category=location_category, tables=tables
     )
     data = inspection.main()
 

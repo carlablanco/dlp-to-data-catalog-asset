@@ -12,18 +12,18 @@ class DlpInspection:
     """Performs a DLP inspection on a preprocessed table to identify
             sensitive information."""
 
-    def __init__(self, project_id: str, language_code: str,
+    def __init__(self, project_id: str,location_category: str,
                  tables: List[dlp_v2.Table]):
         """Initializes the class with the required data.
 
         Args:
             project_id: The project ID to be used.
-            language_code: The BCP-47 language code to use, e.g. "en-US".
+            location_category: The location to be inspected. Ex. 'UNITED_STATES'.
             tables: Tables to be inspected in the correct format.
         """
         self.dlp_client = dlp_v2.DlpServiceClient()
         self.project_id = project_id
-        self.language_code = language_code
+        self.location_category = location_category
         self.tables = tables
 
     def get_inspection_parameters(self):
@@ -33,12 +33,17 @@ class DlpInspection:
                 parent (str): The project route in GCP.
                 inspect_config (Dict): The configuration for the inspection.
         """
-        info_types = self.dlp_client.list_info_types(
-            request={"language_code": self.language_code})
+        info_types = self.dlp_client.list_info_types()
         info_types_names = [
             info_type.name for info_type in info_types.info_types
-            if self.language_code in info_type.name
+            if str(info_type.categories[0].location_category) ==(
+            f"LocationCategory.{self.location_category}") or (
+            str(info_type.categories[0].location_category) ==(
+            f'LocationCategory.GLOBAL'
+                )
+            )
         ]
+
         inspect_config = {
             "info_types": [{"name": name} for name in info_types_names]
         }
