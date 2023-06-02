@@ -126,7 +126,7 @@ class Catalog:
         entry_group_obj.display_name = f"Cloud SQL {self.instance_id}"
 
         entry_group = self.client.create_entry_group(
-            parent=datacatalog_v1.DataCatalogClient.common_location_path(
+            parent=self.client.common_location_path(
                 self.project_id, self.location
             ),
             entry_group_id=self.entry_group_id,
