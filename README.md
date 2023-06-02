@@ -146,4 +146,4 @@ cloudsql \
 --table TABLE
 ```
 
-Make sure to replace the placeholder values (PROJECT, location_category, DATASET, INSTANCE, ZONE, DB_NAME, and TABLE) with the appropriate values for your specific setup.
+Make sure to replace the placeholder values (PROJECT, LOCATION_CATEGORY, DATASET, INSTANCE, ZONE, DB_NAME, and TABLE) with the appropriate values for your specific setup.
