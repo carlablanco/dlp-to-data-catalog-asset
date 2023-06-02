@@ -42,37 +42,45 @@ class Database(Enum):
 class Preprocessing:
     """Converts input data into Data Loss Prevention tables."""
 
-    def __init__(self, source: str, project: str,
-                 bigquery_args: Dict = None, cloudsql_args: Dict = None):
+    def __init__(self, source: str, project: str, **preprocess_args):
         """Initializes `Preprocessing` class with arguments.
 
         Args:
             source (str): The name of the source of data used.
             project (str): The name of the Google Cloud Platform project.
-            bigquery_args(Dict):
-                dataset (str): The name of the BigQuery dataset.
-                table (str, optional): The name of the BigQuery table. If not
-                    provided, the entire dataset is scanned. Optional.
-                    Defaults to None.
-            cloudsql_args(Dict):
-                instance (str): Name of the database instance.
-                zone(str): The name of the zone.
-                service_account(str): Service account email to be used.
-                db_name(str): The name of the database.
-                table (str): The name of the table.
-                db_type(str): The type of the database. e.g. postgres, mysql.
+            **preprocess_args: Additional arguments for preprocessing.
+                Supported arguments are:
+                - bigquery_args(Dict):
+                    - dataset (str): The name of the BigQuery dataset.
+                    - table (str, optional): The name of the BigQuery table.
+                      If not provided, the entire dataset is scanned.
+                      Optional. Defaults to None.
+                - cloudsql_args(Dict):
+                    - instance (str): Name of the database instance.
+                    - zone(str): The name of the zone.
+                    - service_account(str): Service account email to be used.
+                    - db_name(str): The name of the database.
+                    - table (str): The name of the table.
+                    - db_type(str): The type of the database.
+                        e.g. postgres, mysql.
         """
         self.source = Database(source)
         self.project = project
         if self.source == Database.BIGQUERY:
-            self.bigquery = Bigquery(bigquery.Client(
-                project=project),
-                bigquery_args["dataset"],
-                bigquery_args["table"])
+            # Handle BigQuery source.
+            bigquery_args = preprocess_args.get("bigquery_args", {})
+            self.bigquery = Bigquery(bigquery.Client(project=project),
+                                     bigquery_args["dataset"],
+                                     bigquery_args["table"])
         elif self.source == Database.CLOUDSQL:
+            # Handle Cloud SQL source.
+            cloudsql_args = preprocess_args.get("cloudsql_args", {})
             zone = cloudsql_args["zone"]
             instance = cloudsql_args["instance"]
             db_type = cloudsql_args["db_type"]
+
+            # Determine the appropriate database driver and connection name
+            #  based on db_type.
             if db_type == "mysql":
                 driver = "pymysql"
                 connection_name = f"mysql+{driver}"
@@ -263,7 +271,8 @@ class Preprocessing:
         table_schema: List[Dict],
         nested_columns: List[Dict],
         record_columns: List[Dict],
-        table_id: str) -> List[Dict]:
+        table_id: str
+    ) -> List[Dict]:
         """Retrieves the content of the table.
 
         Args:
@@ -332,7 +341,10 @@ class Preprocessing:
         # Return the flattened list.
         return flattened
 
-    def get_bigquery_data(self, table_id: str) -> Tuple[List[Dict], List[Dict]]:
+    def get_bigquery_data(
+        self,
+        table_id: str
+    ) -> Tuple[List[Dict], List[Dict]]:
         """Retrieves the schema and content of a BigQuery table.
 
         Args:
@@ -365,9 +377,12 @@ class Preprocessing:
 
         return bq_schema, bq_rows_content
 
-    def convert_to_dlp_table(self, schema: List[Dict],
-                             content: List[Dict], table_id: str = None) ->(
-                             dlp_v2.Table):
+    def convert_to_dlp_table(
+        self,
+        schema: List[Dict],
+        content: List[Dict],
+        table_id: str = None,
+    ) -> (dlp_v2.Table):
         """Converts a BigQuery table into a DLP table.
 
         Converts a BigQuery table into a Data Loss Prevention table,
@@ -398,10 +413,10 @@ class Preprocessing:
         rows = []
         for row in content:
             values = [dlp_v2.Value(string_value=str(cell_val))
-                    for cell_val in row.values()] \
-                    if self.source == Database.BIGQUERY \
-                    else [dlp_v2.Value(string_value=str(cell_val))
-                        for cell_val in row]
+                      for cell_val in row.values()] \
+                if self.source == Database.BIGQUERY \
+                else [dlp_v2.Value(string_value=str(cell_val))
+                      for cell_val in row]
 
             rows.append(dlp_v2.Table.Row(values=values))
 

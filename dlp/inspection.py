@@ -12,8 +12,12 @@ class DlpInspection:
     """Performs a DLP inspection on a preprocessed table to identify
             sensitive information."""
 
-    def __init__(self, project_id: str,location_category: str,
-                 tables: List[dlp_v2.Table]):
+    def __init__(
+        self,
+        project_id: str,
+        location_category: str,
+        tables: List[dlp_v2.Table],
+    ):
         """Initializes the class with the required data.
 
         Args:
@@ -29,28 +33,29 @@ class DlpInspection:
     def get_inspection_parameters(self):
         """Gets the table to be inspected with an API call.
 
-            Returns:
-                parent (str): The project route in GCP.
-                inspect_config (Dict): The configuration for the inspection.
+        Returns:
+            parent (str): The project route in GCP.
+            inspect_config (Dict): The configuration for the inspection.
         """
-        info_types = self.dlp_client.list_info_types()
-        info_types_names = [
-            info_type.name for info_type in info_types.info_types
-            if str(info_type.categories[0].location_category) ==(
-            f"LocationCategory.{self.location_category}") or (
-            str(info_type.categories[0].location_category) ==(
-            "LocationCategory.GLOBAL"
-                )
-            )
+        infotypes = self.dlp_client.list_info_types()
+        filtered_infotypes = [
+            info_type.name
+            for info_type in infotypes.info_types
+            if (str(info_type.categories[0].location_category) ==
+                f"LocationCategory.{self.location_category}") or
+               (str(info_type.categories[0].location_category) ==
+                "LocationCategory.GLOBAL")
         ]
 
         inspect_config = {
-            "info_types": [{"name": name} for name in info_types_names]
+            "info_types": [
+                {"name": name} for name in filtered_infotypes
+            ]
         }
         parent = f"projects/{self.project_id}"
         return parent, inspect_config
 
-    def analyze_inspection_result(self, results: List[Dict] ) -> Dict:
+    def analyze_inspection_result(self, results: List[Dict]) -> Dict:
         """Processes the results of the inspection.
 
             This code iterates through a list of API responses and constructs a
@@ -132,8 +137,12 @@ class DlpInspection:
             top_findings[column] = max_infotype
         return top_findings
 
-    def analyze_dlp_table(self, parent: str, table: str,
-                          inspect_config: Dict) -> List[Dict]:
+    def analyze_dlp_table(
+        self,
+        parent: str,
+        table: str,
+        inspect_config: Dict,
+    ) -> List[Dict]:
         """ Analyze the complete DLP table in blocks of 10000 cells.
 
             This function iteratively analyzes a large DLP table by making API
@@ -163,10 +172,10 @@ class DlpInspection:
 
         # List of data chunks of 10000 cells.
         data_chunks = [
-                     table.rows[rows:rows+int((block_size/num_headers))]
-                     for rows in range(0, len(table.rows),
-                     int((block_size/num_headers)))
-                        ]
+            table.rows[rows:rows+int((block_size/num_headers))]
+            for rows in range(0, len(table.rows),
+                              int((block_size/num_headers)))
+        ]
 
         # Create a list for the DLP inspections.
         results_list = []

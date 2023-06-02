@@ -140,19 +140,24 @@ def run(args: Type[argparse.Namespace]):
     location_category = args.location_category
     location = args.location
 
-    preprocess_args = {}
     if source == "bigquery":
+        dataset = args.dataset
+        table = args.table
         preprocess_args = {
-            "bigquery_args": {"dataset": args.dataset, "table": args.table}
+            "bigquery_args": {"dataset": dataset, "table": table}
         }
+        instance_id = None
     elif source == "cloudsql":
+        instance_id = args.instance
+        dataset = args.db_name
+        table = args.table
         preprocess_args = {
             "cloudsql_args": {
-                "instance": args.instance,
+                "instance": instance_id,
                 "zone": args.zone,
                 "service_account": args.service_account,
-                "db_name": args.db_name,
-                "table": args.table,
+                "db_name": dataset,
+                "table": table,
                 "db_type": args.db_type,
             }
         }
@@ -168,21 +173,13 @@ def run(args: Type[argparse.Namespace]):
 
     tables = preprocess.get_dlp_table_list()
 
-    if source == "bigquery":
-        dataset = preprocess_args["bigquery_args"]["dataset"]
-        table = preprocess_args["bigquery_args"]["table"]
-        instance_id = None
-    else:
-        dataset = preprocess_args["cloudsql_args"]["db_name"]
-        instance_id = preprocess_args["cloudsql_args"]["instance"]
-        table = None
-
     inspection = DlpInspection(
         project_id=project, location_category=location_category, tables=tables
     )
     data = inspection.main()
 
     if source == "bigquery" and table is None:
+        # If scanning entire dataset.
         bigquery_tables = preprocess.get_bigquery_tables(dataset)
         for i, table in enumerate(bigquery_tables):
             catalog = Catalog(
@@ -195,6 +192,7 @@ def run(args: Type[argparse.Namespace]):
             )
             catalog.main()
     else:
+        # If scanning a specific table.
         catalog = Catalog(
             data=data[0],
             project_id=project,
@@ -204,7 +202,6 @@ def run(args: Type[argparse.Namespace]):
             instance_id=instance_id,
         )
         catalog.main()
-
 
 
 if __name__ == "__main__":
