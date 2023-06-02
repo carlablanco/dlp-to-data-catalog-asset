@@ -422,9 +422,9 @@ class Preprocessing:
             if self.bigquery.table:
                 bigquery_tables = [self.bigquery.table]
             else:
-                bigquery_tables = [
+                bigquery_tables = (
                     self.get_bigquery_tables(self.bigquery.dataset)
-                ]
+                )
 
             for table_name in bigquery_tables:
                 table_id = (
