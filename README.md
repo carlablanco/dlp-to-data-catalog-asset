@@ -92,7 +92,7 @@ You can choose one of the following options for the source:
 ```
 python3 -m dlp.run \
 --project PROJECT \
---location_category location_category \
+--location_category LOCATION_CATEGORY \
 bigquery \
 --dataset DATASET \
 --table TABLE
@@ -119,7 +119,7 @@ The following additional parameters are required for running the project with Cl
 ```
 python3 -m dlp.run \
 --project PROJECT \
---location_category location_category \
+--location_category LOCATION_CATEGORY \
 cloudsql \
 --instance INSTANCE \
 --zone ZONE \
@@ -134,7 +134,7 @@ cloudsql \
 ```
 python3 -m dlp.run \
 --project PROJECT \
---location_category location_category \
+--location_category LOCATION_CATEGORY \
 cloudsql \
 --instance INSTANCE \ 
 --zone ZONE \
