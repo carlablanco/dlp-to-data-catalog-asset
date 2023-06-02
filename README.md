@@ -30,7 +30,6 @@ Google recommends the use of service accounts. A service account is a special ty
 ### Creating and Configuring Service Account
 To create a service account and assign the required roles, execute the following commands using the gcloud command-line tool:
 
-sandbox-att-in-spanish-sa@carlita-sandbox.iam.gserviceaccount.com
 ```
 export SERVICE_ACCOUNT_NAME=service-account-name
 export PROJECT_ID=project-id
