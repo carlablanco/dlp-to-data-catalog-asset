@@ -6,7 +6,7 @@
 from typing import List, Dict
 from google.cloud import dlp_v2
 from google.api_core.exceptions import BadRequest
-
+import psutil
 
 class DlpInspection:
     """Performs a DLP inspection on a preprocessed table to identify
@@ -78,7 +78,7 @@ class DlpInspection:
                 "LIKELY": 1.2,
                 "VERY_LIKELY": 1.4
             }
-            
+
             if table_inspected["result"].findings:
                 for finding in table_inspected["result"].findings:
                     try:
@@ -98,7 +98,7 @@ class DlpInspection:
                     except AttributeError as err:
                         raise ValueError("""AttributeError: No findings
                                             returned from API call.""") from err
-        
+
         return finding_results
 
     def get_max_infotype(self, finding_results: Dict) -> Dict:
@@ -219,7 +219,7 @@ class DlpInspection:
             results.append(top_findings)
 
         return results
-    
+
     def get_finding_results(self,table):
         """Iterates over the given tables and analyzes each one.
 
@@ -229,15 +229,23 @@ class DlpInspection:
                     Example: [{"name": "PERSON_NAME", "age": "AGE"},
                      {"DNI": "GOVERMENT_ID", "token": "AUTH_TOKEN"}]"""
         parent, inspect_config = self.get_inspection_parameters()
-        
+
         # Get the complete table inspected.
         results_lists = self.analyze_dlp_table(parent, table,
                                                 inspect_config)
         # Processes the results of the inspection.
         finding_results = self.analyze_inspection_result(results_lists)
+        consumo_memoria = psutil.Process().memory_info().rss
+        consumo_memoria_vms = psutil.Process().memory_info().vms
+
+        consumo_memoria_mb = consumo_memoria / 1048576
+        consumo_memoria_mb_vms = consumo_memoria_vms / 1048576
+
+        print("Consumo de memoria total del dlpInspect:", consumo_memoria_mb, "MB")
+        print("Consumo de memoria total del dlpInspect vms:", consumo_memoria_mb_vms, "MB")
 
         return finding_results
-    
+
     def merge_and_top_finding(self,finding_results_list):
         """_summary_
 
@@ -254,7 +262,8 @@ class DlpInspection:
                 for infotype, value in values.items():
                     if key not in merge_finding_result:
                         merge_finding_result[key] = {}
-                    merge_finding_result[key][infotype] = merge_finding_result[key].get(infotype, 0) + value
+                    merge_finding_result[key][infotype] =  \
+                        merge_finding_result[key].get(infotype, 0) + value
 
         print("-----FINDINGS MERGED----------")
         print(merge_finding_result)
