@@ -7,6 +7,8 @@ import argparse
 import re
 from typing import Type
 
+import time
+import psutil
 from dlp.preprocess import Preprocessing
 from dlp.inspection import DlpInspection
 from dlp.catalog import Catalog
@@ -118,6 +120,7 @@ def run(args: Type[argparse.Namespace]):
     """Runs DLP inspection scan and tags the results to Data Catalog.
 
     Args:
+
         source (str): The name of the source of data used.
         project (str): The name of the Google Cloud Platform project.
         location_category (str): The location to be inspected. Ex. "CANADA".
@@ -135,6 +138,8 @@ def run(args: Type[argparse.Namespace]):
             table (str): The name of the table.
             db_type(str): The type of the database. e.g. postgres, mysql.
     """
+    tiempo_inicio = time.time()
+
     source = args.source
     project = args.project
     location_category = args.location_category
@@ -164,7 +169,10 @@ def run(args: Type[argparse.Namespace]):
     else:
         # Handle unsupported source
         raise ValueError("Unsupported source: " + source)
-    
+
+    cells_to_analyze = 50000
+
+
     preprocess = Preprocessing(
         source=source,
         project=project,
@@ -205,23 +213,50 @@ def run(args: Type[argparse.Namespace]):
 
 
     info_tables = preprocess.get_info_tables()
-    bloque = 5000
+
     top_finding_tables = []
 
-    for table_name,num_rows in info_tables:
+    for table_name,total_num_rows,num_columns in info_tables:
         finding_results_per_table = []
-        print(num_rows)
-        for index in range(0, 100000, bloque):
-            print(index)
-            print(bloque)
-            dlp_table = preprocess.get_dlp_table_per_block(bloque,table_name,index)
+        rows_to_analyze = int(cells_to_analyze/num_columns)
+        for start_index in range(0, total_num_rows, rows_to_analyze):
+            print(start_index)
+            print(rows_to_analyze)
+            dlp_table = preprocess.get_dlp_table_per_block(rows_to_analyze,table_name,start_index)
 
             finding_result_per_block = dlpinspection.get_finding_results(dlp_table)
             print(finding_result_per_block)
             finding_results_per_table.append(finding_result_per_block)
+            tiempo_parcial = time.time()
+            tiempo_transcurrido = (tiempo_parcial - tiempo_inicio) / 60
+
+            print("Tiempo Parcial por bloque:", tiempo_transcurrido, "minutos")
+            consumo_memoria = psutil.Process().memory_info().rss
+            consumo_memoria_vms = psutil.Process().memory_info().vms
+
+            consumo_memoria_mb = consumo_memoria / 1048576
+            consumo_memoria_mb_vms = consumo_memoria_vms / 1048576
+
+            print("Consumo de memoria total del programa:", consumo_memoria_mb, "MB")
+            print("Consumo de memoria total del programa vms:", consumo_memoria_mb_vms, "MB")
+
 
         top_finding_per_table = dlpinspection.merge_and_top_finding(finding_results_per_table)
         top_finding_tables.append((table_name,top_finding_per_table))
+        tiempo_final = time.time()
+        tiempo_transcurrido = (tiempo_final - tiempo_inicio) / 60
+        print("Tiempo Total:", tiempo_transcurrido, "minutos")
+
+
+        consumo_memoria = psutil.Process().memory_info().rss
+        consumo_memoria_vms = psutil.Process().memory_info().vms
+
+        consumo_memoria_mb = consumo_memoria / 1048576
+        consumo_memoria_mb_vms = consumo_memoria_vms / 1048576
+
+        print("Consumo de memoria total del programa:", consumo_memoria_mb, "MB")
+        print("Consumo de memoria total del programa vms:", consumo_memoria_mb_vms, "MB")
+
 
 if __name__ == "__main__":
     arguments = parse_arguments()
