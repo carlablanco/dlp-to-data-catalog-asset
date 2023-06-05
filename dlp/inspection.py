@@ -221,10 +221,10 @@ class DlpInspection:
         return finding_results
 
     def merge_and_top_finding(self,finding_results_list: List) -> Dict:
-        """_summary_
+        """_summary_a partir de una lista de findings_results, los mergea y obtiene el top_finding
 
         Args:
-            finding_results_list (_type_): _description_
+            finding_results_list (List): _description_
 
         Returns:
             _type_: _description_
