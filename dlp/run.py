@@ -170,7 +170,7 @@ def run(args: Type[argparse.Namespace]):
         # Handle unsupported source
         raise ValueError("Unsupported source: " + source)
 
-    cells_to_analyze = 50000
+    cells_to_analyze = 200000
 
 
     preprocess = Preprocessing(
@@ -231,36 +231,8 @@ def run(args: Type[argparse.Namespace]):
                 empty_search = True
             start_index += cells_to_analyze
 
-            tiempo_parcial = time.time()
-            tiempo_transcurrido = (tiempo_parcial - tiempo_inicio) / 60
-
-            print("Tiempo Parcial por bloque:", tiempo_transcurrido, "minutos")
-            consumo_memoria = psutil.Process().memory_info().rss
-            consumo_memoria_vms = psutil.Process().memory_info().vms
-
-            consumo_memoria_mb = consumo_memoria / 1048576
-            consumo_memoria_mb_vms = consumo_memoria_vms / 1048576
-
-            print("Consumo de memoria total del programa:", consumo_memoria_mb, "MB")
-            print("Consumo de memoria total del programa vms:", consumo_memoria_mb_vms, "MB")
-
-
         top_finding_per_table = dlpinspection.merge_and_top_finding(finding_results_per_table)
         top_finding_tables.append((table_name,top_finding_per_table))
-        tiempo_final = time.time()
-        tiempo_transcurrido = (tiempo_final - tiempo_inicio) / 60
-        print("Tiempo Total:", tiempo_transcurrido, "minutos")
-
-
-        consumo_memoria = psutil.Process().memory_info().rss
-        consumo_memoria_vms = psutil.Process().memory_info().vms
-
-        consumo_memoria_mb = consumo_memoria / 1048576
-        consumo_memoria_mb_vms = consumo_memoria_vms / 1048576
-
-        print("Consumo de memoria total del programa:", consumo_memoria_mb, "MB")
-        print("Consumo de memoria total del programa vms:", consumo_memoria_mb_vms, "MB")
-
 
 if __name__ == "__main__":
     arguments = parse_arguments()

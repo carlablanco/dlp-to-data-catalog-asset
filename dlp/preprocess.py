@@ -112,7 +112,8 @@ class Preprocessing:
         )
         return connector
 
-    def get_cloudsql_data(self, table: str, cells_to_analyze=None, start_index=None) -> Tuple[List, List]:
+    def get_cloudsql_data(self, table: str, cells_to_analyze=None,
+                          start_index=None) -> Tuple[List, List]:
         """Retrieves the schema and content of a table from CloudSQL.
 
         Args:
@@ -138,7 +139,9 @@ class Preprocessing:
 
         # Get table contents.
         with engine.connect() as connection:
-            select = table.select().with_only_columns(table.columns).limit(int(cells_to_analyze/num_columns)).offset(int(start_index/num_columns))
+            select = table.select().with_only_columns(table.columns) \
+                .limit(int(cells_to_analyze/num_columns)) \
+                    .offset(int(start_index/num_columns))
             content = list(connection.execute(select).fetchall())
 
         return schema, content
@@ -156,12 +159,15 @@ class Preprocessing:
         table_names = [table.table_id for table in dataset_tables]
         return table_names
 
-    def fetch_rows(self, table_bq: bigquery.table.Table ,
-                   start_index,cells_to_analyze) -> List[Dict]:
+    def fetch_rows(self, table_bq: bigquery.table.Table,
+                   start_index: int, cells_to_analyze: int) -> List[Dict]:
         """Fetches a batch of rows from a BigQuery table.
 
            Args:
-              table_id (str) = The path of the table were the data is fetched.
+              table_bq (bigquery.table.Table) : The path of the table
+                were the data is fetched.
+              start_index (int) : ...
+              cells_to_analyze (int) : ...
 
            Returns:
               List[Dict]: A list of rows, where each row is a tuple
@@ -172,7 +178,8 @@ class Preprocessing:
         num_columns = len(table_bq.schema)
 
         rows_iter = self.bigquery.bq_client.list_rows(
-            table=table_bq,start_index=int(start_index/num_columns),max_results=int(cells_to_analyze/num_columns))
+            table=table_bq,start_index=int(start_index/num_columns),
+            max_results=int(cells_to_analyze/num_columns))
 
         if not rows_iter.total_rows:
             print(f"""The Table {table_bq.table_id} is empty. Please populate
@@ -240,32 +247,37 @@ class Preprocessing:
         return field.name, False, False
 
     def get_query(
-            self, columns_selected: str, table_id: str, unnest: str) -> str:
+            self, columns_selected: str, table_bq: bigquery.table.Table,
+            unnest: str, limit: int, offset: int) -> str:
         """Creates a SQL query as a string.
 
         Args:
            columns_selected (str): The string with the selected columns.
-           table_id (str): The fully qualified name of the BigQuery table.
+           table_bq (bigquery.table.Table): The fully qualified name
+           of the BigQuery table.
            unnest (str): The unnest string for the query.
+           limit (int): ...
+           offset(int): ...
 
         Returns:
             str: SQL query as a string.
         """
         query = f"""SELECT {columns_selected}
-                    FROM `{table_id}`,
-                    {unnest}"""
+                    FROM `{table_bq}`,
+                    {unnest} LIMIT {limit} OFFSET {offset}"""
         return query
 
-    def get_nested_types(self, table_id: str) -> List[str]:
+    def get_nested_types(self, table_bq: bigquery.table.Table) -> List[str]:
         """ Gets the field modes of the selected table.
 
         Args:
-            table_id (str): The fully qualified name of the BigQuery table.
+            table_bq (bigquery.table.Table): The fully qualified
+            name of the BigQuery table.
 
         Returns:
             List: A complete list with the field modes of the columns.
         """
-        nested_types = [field.mode for field in table_id.schema]
+        nested_types = [field.mode for field in table_bq.schema]
         return nested_types
 
     def get_rows_query(
@@ -273,7 +285,9 @@ class Preprocessing:
         table_schema: List[Dict],
         nested_columns: List[Dict],
         record_columns: List[Dict],
-        table_id: str
+        table_bq: bigquery.table.Table,
+        cells_to_analyze: int,
+        start_index: int
     ) -> List[Dict]:
         """Retrieves the content of the table.
 
@@ -282,25 +296,32 @@ class Preprocessing:
             nested_columns (List[Dict]): A list with the columns
                 of the nested columns.
             record_columns (List[Dict]): The columns with the record type.
-            table_id (str): The fully qualified name of the BigQuery table.
+            table_bq (bigquery.table.Table): The fully qualified name
+            of the BigQuery table.
+            cells_to_analyze (int): ...
+            start_index (int): ...
 
         Returns:
             List[Dict]: The content of the BigQuery table.
         """
-        nested_types = self.get_nested_types(table_id)
-        print(nested_types)
+        nested_types = self.get_nested_types(table_bq)
+
         if "REPEATED" in nested_types:
             bq_schema = table_schema + record_columns
+            num_columns = len(bq_schema)
             columns_selected = ", ".join(str(column) for column in bq_schema)
             unnest = f"UNNEST ({record_columns[0]})"
         else:
             bq_schema = table_schema + nested_columns
+            num_columns = len(bq_schema)
             columns_selected = ", ".join(str(column) for column in bq_schema)
             unnest = (
                 f"UNNEST ([{record_columns[0]}]) as {record_columns[0]} "
             )
 
-        sql_query = self.get_query(columns_selected, table_id, unnest)
+        sql_query = self.get_query(columns_selected, table_bq, unnest,
+                                   int(cells_to_analyze/num_columns),
+                                   int(start_index/num_columns))
 
         query_job = self.bigquery.bq_client.query(sql_query)
         query_results = query_job.result()
@@ -324,7 +345,7 @@ class Preprocessing:
         Recursively flattens a nested list and returns a flattened list.
 
         Args:
-            lista (list): The input list that needs to be flattened.
+            list (list): The input list that needs to be flattened.
 
         Returns:
             list: The flattened list.
@@ -354,6 +375,8 @@ class Preprocessing:
 
         Args:
             table_id (str): The fully qualified name of the BigQuery table.
+            star_index (int): ...
+            cells_to_analyze (int): ...
 
         Returns:
             Tuple[List[Dict], List[Dict]]: A tuple containing the BigQuery
@@ -374,11 +397,13 @@ class Preprocessing:
             nested_columns = self.flatten_list(nested_columns)
             bq_schema = table_schema + nested_columns
             bq_rows_content = self.get_rows_query(
-                table_schema, nested_columns, record_columns, table_bq)
+                table_schema, nested_columns, record_columns,
+                table_bq,cells_to_analyze,start_index)
         else:
             table_schema = table_bq.schema
             bq_schema = [field.to_api_repr()["name"] for field in table_schema]
-            bq_rows_content = self.fetch_rows(table_bq,start_index,cells_to_analyze)
+            bq_rows_content = self.fetch_rows(
+                table_bq, start_index, cells_to_analyze)
 
         return bq_schema, bq_rows_content
 
@@ -394,8 +419,8 @@ class Preprocessing:
         an object that can be inspected by Data Loss Prevention.
 
         Args:
-            bq_schema (List[Dict]): The schema of a BigQuery table.
-            bq_content (List[Dict]): The content of a BigQuery table.
+            schema (List[Dict]): The schema of a BigQuery table.
+            content (List[Dict]): The content of a BigQuery table.
 
         Returns:
             A table object that can be inspected by Data Loss Prevention.
@@ -419,41 +444,15 @@ class Preprocessing:
 
         return table_dlp
 
-    def get_dlp_table_list(self) -> List[dlp_v2.Table]:
-        """Constructs a list of DLP Table objects
-
-        Returns:
-            A list of Data Loss Prevention table objects.
-        """
-
-        if self.source == Database.BIGQUERY:
-            # Data source is BigQuery
-            # Get the list of BigQuery tables
-            bigquery_tables = [self.bigquery.table] \
-                if self.bigquery.table \
-                else self.get_bigquery_tables(self.bigquery.dataset)
-
-            # Retrieve schema and content data for each BigQuery table
-            schema_content_list = [self.get_bigquery_data(
-                f"{self.bigquery.dataset}.{table_name}")
-                for table_name in bigquery_tables]
-
-        elif self.source == Database.CLOUDSQL:
-            # Data source is Cloud SQL
-            # Retrieve schema and content data for the Cloud SQL table
-            schema_content_list = [self.get_cloudsql_data(self.cloudsql.table)]
-
-        return [self.convert_to_dlp_table(
-            schema, content) for schema, content in schema_content_list ]
-
-    def get_table_names(self) -> Tuple:
+    def get_table_names(self) -> List:
         """Returns a list of tuples containing information about tables.
 
+        If the source is BigQuery, it returns the table name if specified,
+        otherwise it retrieves all table names within the dataset. 
+        If the source is Cloud SQL, it returns the table name.
+
         Returns:
-            A list of tuples, where each tuple contains the following information:
-            - table_name (str): The name of the table.
-            - total_num_rows (int): The total number of rows in the table.
-            - num_columns (int): The number of columns in the table.
+            A list of table names.
         """
 
         if self.source == Database.BIGQUERY:
@@ -465,38 +464,28 @@ class Preprocessing:
 
         return bigquery_tables
 
-    def get_dlp_table_per_block(self, cells_to_analyze,
-                                table, start_index) -> dlp_v2.Table:
+    def get_dlp_table_per_block(self, cells_to_analyze: int,
+                                table_name: str, start_index: int) -> dlp_v2.Table:
         """Constructs a list of DLP Table objects
+        Args:
+            cells_to_analyze (int): ...
+            table: ...
+            start_index (int): ...
 
         Returns:
             A list of Data Loss Prevention table objects.
         """
         if self.source == Database.BIGQUERY:
-            # Retrieve schema and content data for each BigQuery table
+            # Retrieve schema and content data for each BigQuery table.
             schema,content = self.get_bigquery_data(
-                f"{self.bigquery.dataset}.{table}",start_index,cells_to_analyze)
+                f"{self.bigquery.dataset}.{table_name}",
+                start_index, cells_to_analyze)
             devolver = self.convert_to_dlp_table(schema,content)
-            consumo_memoria = psutil.Process().memory_info().rss
-            consumo_memoria_vms = psutil.Process().memory_info().vms
-
-            consumo_memoria_mb = consumo_memoria / 1048576
-            consumo_memoria_mb_vms = consumo_memoria_vms / 1048576
-
-            print("Consumo de memoria total del prepocess:", consumo_memoria_mb, "MB")
-            print("Consumo de memoria total del preprocess vms:", consumo_memoria_mb_vms, "MB")
             return devolver
 
         elif self.source == Database.CLOUDSQL:
             schema,content = self.get_cloudsql_data(self.cloudsql.table,
-                                                    cells_to_analyze,start_index)
+                                                    cells_to_analyze,
+                                                    start_index)
             devolver = self.convert_to_dlp_table(schema,content)
-            consumo_memoria = psutil.Process().memory_info().rss
-            consumo_memoria_vms = psutil.Process().memory_info().vms
-
-            consumo_memoria_mb = consumo_memoria / 1048576
-            consumo_memoria_mb_vms = consumo_memoria_vms / 1048576
-
-            print("Consumo de memoria total del prepocess:", consumo_memoria_mb, "MB")
-            print("Consumo de memoria total del preprocess vms:", consumo_memoria_mb_vms, "MB")
             return devolver
