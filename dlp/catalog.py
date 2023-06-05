@@ -125,13 +125,17 @@ class Catalog:
         entry_group_obj = datacatalog_v1.types.EntryGroup()
         entry_group_obj.display_name = f"Cloud SQL {self.instance_id}"
 
-        entry_group = self.client.create_entry_group(
-            parent=datacatalog_v1.DataCatalogClient.common_location_path(
-                self.project_id, self.location
-            ),
-            entry_group_id=self.entry_group_id,
-            entry_group=entry_group_obj,
-        )
+        try:
+            entry_group = self.client.create_entry_group(
+                parent=self.client.common_location_path(
+                    self.project_id, self.location
+                ),
+                entry_group_id=self.entry_group_id,
+                entry_group=entry_group_obj,
+            )
+        except ValueError as error:
+            print("""Error occured while creating
+                        the entry group:""", str(error))
         return entry_group.name
 
 
@@ -144,32 +148,35 @@ class Catalog:
         Args:
         entry_group_name(str): The complete entry group resource name.
         """
-        for data_row in self.data:
-            # Create an entry
-            entry = datacatalog_v1.types.Entry()
-            entry.user_specified_system = "Cloud_SQL"
-            entry.user_specified_type = "SQL"
-            entry.display_name = f"DLP_inspection_{self.instance_id}"
-            entry.description = ""
-            entry.linked_resource = (
-                f"//sqladmin.googleapis.com/projects/{self.project_id}"
-                f"/instances/{self.instance_id}"
+
+        # Create an entry
+        entry = datacatalog_v1.types.Entry()
+        entry.user_specified_system = "Cloud_SQL"
+        entry.user_specified_type = "SQL"
+        entry.display_name = f"DLP_inspection_{self.instance_id}"
+        entry.description = ""
+        entry.linked_resource = (
+            f"//sqladmin.googleapis.com/projects/{self.project_id}"
+            f"/instances/{self.instance_id}"
+        )
+
+        entry.schema.columns = [
+            datacatalog_v1.types.ColumnSchema(
+                column=key,
+                type_="STRING",
+                description=value,
+                mode=None,
             )
+            for key, value in self.data.items()
+        ]
 
-            entry.schema.columns = [
-                datacatalog_v1.types.ColumnSchema(
-                    column=key,
-                    type_="STRING",
-                    description=value,
-                    mode=None,
-                )
-                for key, value in data_row.items()
-            ]
-
+        try:
             entry = self.client.create_entry(
                 parent=entry_group_name, entry_id=self.entry_id, entry=entry
             )
-
+        except ValueError as error:
+            print("""Error occured while creating
+                        the entry:""", str(error))
 
     def main(self) -> None:
         """Creates a tag template for BigQuery tables and creates custom
