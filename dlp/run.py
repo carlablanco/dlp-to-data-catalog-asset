@@ -9,19 +9,23 @@ from typing import Type
 
 from dlp.preprocess import Preprocessing
 from dlp.inspection import DlpInspection
+from dlp.catalog import Catalog
 
 
-EMAIL_REGEX = re.compile(r'^[\w\.-]+@[\w\.-]+\.\w+$')
+EMAIL_REGEX = re.compile(r"^[\w\.-]+@[\w\.-]+\.\w+$")
+
 
 def is_valid_email(email: str) -> bool:
     """Checks if a string is a valid email."""
     return bool(EMAIL_REGEX.match(email))
+
 
 def email_type(value) -> str:
     """Validates and returns a valid email."""
     if not is_valid_email(value):
         raise argparse.ArgumentTypeError(f"Invalid IAM user: {value}")
     return value
+
 
 def parse_arguments() -> Type[argparse.Namespace]:
     """Parses command line arguments."""
@@ -30,67 +34,85 @@ def parse_arguments() -> Type[argparse.Namespace]:
 
     bigquery_parser = subparsers.add_parser(
         "bigquery",
-        help="Use BigQuery as the data source.")
+        help="Use BigQuery as the data source."
+    )
     bigquery_parser.add_argument(
         "--table",
         type=str,
-        help="The BigQuery table to be scanned. Optional.")
+        help="The BigQuery table to be scanned. Optional.",
+    )
     bigquery_parser.add_argument(
         "--dataset",
         required=True,
         type=str,
-        help="The BigQuery dataset to be scanned.")
+        help="The BigQuery dataset to be scanned.",
+    )
 
     cloudsql_parser = subparsers.add_parser(
         "cloudsql",
-        help="Use CloudSQL as the data source.")
+        help="Use CloudSQL as the data source.",
+    )
     cloudsql_parser.add_argument(
         "--db_type",
         required=True,
         type=str,
-        choices=["postgres","mysql"],
-        help="""The CloudSQL type to be scanned.
-        e.g. postgres, mysql.""")
+        choices=["postgres", "mysql"],
+        help="The CloudSQL type to be scanned. e.g. postgres, mysql.",
+    )
     cloudsql_parser.add_argument(
         "--table",
         required=True,
         type=str,
-        help="The CloudSQL table to be scanned.")
+        help="The CloudSQL table to be scanned.",
+    )
     cloudsql_parser.add_argument(
         "--instance",
         required=True,
         type=str,
-        help="The name of the database instance used.")
+        help="The name of the database instance used.",
+    )
     cloudsql_parser.add_argument(
         "--zone",
         required=True,
         type=str,
-        help="The zone to use, e.g. us-central1-b.")
+        help="The zone to use, e.g. us-central1-b.",
+    )
     cloudsql_parser.add_argument(
         "--service_account",
         required=True,
         type=email_type,
         metavar="service_account",
-        help="Email address of the service account to be used.")
+        help="Email address of the service account to be used.",
+    )
     cloudsql_parser.add_argument(
         "--db_name",
         required=True,
         type=str,
-        help="The database to use. e.g. Bigquery, CloudSQL.")
+        help="The database to use. e.g. Bigquery, CloudSQL.",
+    )
 
     # Common arguments.
     parser.add_argument(
         "--project",
         type=str,
         required=True,
-        help="The Google Cloud project to be used.")
+        help="The Google Cloud project to be used.",
+    )
     parser.add_argument(
         "--language_code",
         type=str,
         required=True,
-        help="The BCP-47 language code to use, e.g. 'en-US'.")
+        help="The BCP-47 language code to use, e.g. 'en-US'.",
+    )
+    parser.add_argument(
+        "--location",
+        type=str,
+        required=False,
+        help="The location of the engine'.",
+    )
 
     return parser.parse_args()
+
 
 def run(args: Type[argparse.Namespace]):
     """Runs DLP inspection scan and tags the results to Data Catalog.
@@ -98,6 +120,8 @@ def run(args: Type[argparse.Namespace]):
     Args:
         source (str): The name of the source of data used.
         project (str): The name of the Google Cloud Platform project.
+        language_code (str): The BCP-47 language code to use, e.g. "en-US".
+        location(str): The compute engine region.
         bigquery_args(Dict):
             dataset (str): The name of the BigQuery dataset.
             table (str, optional): The name of the BigQuery table. If not
@@ -114,14 +138,12 @@ def run(args: Type[argparse.Namespace]):
     source = args.source
     project = args.project
     language_code = args.language_code
+    location = args.location
 
     preprocess_args = {}
     if source == "bigquery":
         preprocess_args = {
-            "bigquery_args": {
-                "dataset": args.dataset,
-                "table": args.table
-            }
+            "bigquery_args": {"dataset": args.dataset, "table": args.table}
         }
     elif source == "cloudsql":
         preprocess_args = {
@@ -131,7 +153,7 @@ def run(args: Type[argparse.Namespace]):
                 "service_account": args.service_account,
                 "db_name": args.db_name,
                 "table": args.table,
-                "db_type": args.db_type
+                "db_type": args.db_type,
             }
         }
     else:
@@ -139,12 +161,51 @@ def run(args: Type[argparse.Namespace]):
         raise ValueError("Unsupported source: " + source)
 
     preprocess = Preprocessing(
-        source=source, project=project, **preprocess_args)
+        source=source,
+        project=project,
+        **preprocess_args,
+    )
+
     tables = preprocess.get_dlp_table_list()
-    dlpinspection = DlpInspection(project_id=project,
-                language_code=language_code,
-                tables=tables)
-    dlpinspection.main()
+
+    if source == "bigquery":
+        dataset = preprocess_args["bigquery_args"]["dataset"]
+        table = preprocess_args["bigquery_args"]["table"]
+        instance_id = None
+    else:
+        dataset = preprocess_args["cloudsql_args"]["db_name"]
+        instance_id = preprocess_args["cloudsql_args"]["instance"]
+        table = None
+
+    inspection = DlpInspection(
+        project_id=project, language_code=language_code, tables=tables
+    )
+    data = inspection.main()
+    print(data)
+    if source == "bigquery" and table is None:
+        bigquery_tables = preprocess.get_bigquery_tables(dataset)
+        for i, table in enumerate(bigquery_tables):
+            catalog = Catalog(
+                data=data[i],
+                project_id=project,
+                location=location,
+                dataset=dataset,
+                table=table,
+                instance_id=instance_id,
+            )
+            catalog.main()
+    else:
+        catalog = Catalog(
+            data=data[0],
+            project_id=project,
+            location=location,
+            dataset=dataset,
+            table=table,
+            instance_id=instance_id,
+        )
+        catalog.main()
+
+
 
 if __name__ == "__main__":
     arguments = parse_arguments()
