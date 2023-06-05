@@ -6,7 +6,6 @@
 from typing import List, Dict
 from google.cloud import dlp_v2
 from google.api_core.exceptions import BadRequest
-import psutil
 
 class DlpInspection:
     """Performs a DLP inspection on a preprocessed table to identify
@@ -65,7 +64,8 @@ class DlpInspection:
         """
 
         table_inspected = {}
-        # Create a dictionary in the correct format to analyze the API response.
+        # Create a dictionary in the correct format
+        # to analyze the API response.
         finding_results = {}
         for result in (results):
             table_inspected["result"] = result.result
@@ -92,8 +92,8 @@ class DlpInspection:
                         if finding.info_type.name in infotypes:
                             infotypes[finding.info_type.name] += likelihood
                         else:
-                            # If the infotype is not in the dictionary, add it with
-                            # the likelihood value.
+                            # If the infotype is not in the dictionary,
+                            # add it with the likelihood value.
                             infotypes[finding.info_type.name] = likelihood
                     except AttributeError as err:
                         raise ValueError("""AttributeError: No findings
@@ -197,37 +197,19 @@ class DlpInspection:
                 raise BadRequest(error) from error
         return results_list
 
-    def main(self):
-        """Iterates over the given tables and analyzes each one.
+    def get_finding_results(self,table: dlp_v2.Table) -> Dict:
+        """Retrieve the finding results of inspected cells in a table.
+        This method takes a table and performs data inspection using the
+        configured inspection parameters. It returns a dictionary containing
+        the finding results for the inspected cells.
+
+            Args:
+                table: The particular table to be inspected in the correct
+                            format.
 
            Returns:
-                results: A list of dictionaries with the infotype with the
-                    highest likelihood.
-                    Example: [{"name": "PERSON_NAME", "age": "AGE"},
-                     {"DNI": "GOVERMENT_ID", "token": "AUTH_TOKEN"}]"""
-        results = []
-        parent, inspect_config = self.get_inspection_parameters()
-        for table in self.tables:
-            # Get the complete table inspected.
-            results_lists = self.analyze_dlp_table(parent, table,
-                                                   inspect_config)
-            # Processes the results of the inspection.
-            finding_results = self.analyze_inspection_result(results_lists)
-            # Get the max infotype for each variable.
-            top_findings = self.get_max_infotype(finding_results)
-            # Append to the results list.
-            results.append(top_findings)
-
-        return results
-
-    def get_finding_results(self,table):
-        """Iterates over the given tables and analyzes each one.
-
-           Returns:
-                results: A list of dictionaries with the infotype with the
-                    highest likelihood.
-                    Example: [{"name": "PERSON_NAME", "age": "AGE"},
-                     {"DNI": "GOVERMENT_ID", "token": "AUTH_TOKEN"}]"""
+                A dictionary, where each variable has its respective
+              "infotype" and "likelihood value."""
         parent, inspect_config = self.get_inspection_parameters()
 
         # Get the complete table inspected.
@@ -235,18 +217,10 @@ class DlpInspection:
                                                 inspect_config)
         # Processes the results of the inspection.
         finding_results = self.analyze_inspection_result(results_lists)
-        consumo_memoria = psutil.Process().memory_info().rss
-        consumo_memoria_vms = psutil.Process().memory_info().vms
-
-        consumo_memoria_mb = consumo_memoria / 1048576
-        consumo_memoria_mb_vms = consumo_memoria_vms / 1048576
-
-        print("Consumo de memoria total del dlpInspect:", consumo_memoria_mb, "MB")
-        print("Consumo de memoria total del dlpInspect vms:", consumo_memoria_mb_vms, "MB")
 
         return finding_results
 
-    def merge_and_top_finding(self,finding_results_list):
+    def merge_and_top_finding(self,finding_results_list: List) -> Dict:
         """_summary_
 
         Args:
@@ -265,7 +239,5 @@ class DlpInspection:
                     merge_finding_result[key][infotype] =  \
                         merge_finding_result[key].get(infotype, 0) + value
 
-        print("-----FINDINGS MERGED----------")
-        print(merge_finding_result)
         return self.get_max_infotype(merge_finding_result)
     
