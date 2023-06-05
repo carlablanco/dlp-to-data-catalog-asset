@@ -53,9 +53,9 @@ class Catalog:
             self.entry_group_id = f"dlp_{instance_id}_{timestamp}"
             self.entry_id = f"dlp_{timestamp}"
         else:
-            # Limits the dataset and table to 20 characters.
-            dataset = dataset[:25]
-            table = table[:25]
+            # Limits the dataset and table to 225 characters.
+            dataset = dataset[:120]
+            table = table[:119]
             self.tag_template_id =(
                 f"dlp_{dataset.lower()}_{table.lower()}_{timestamp}"
                 )
