@@ -107,7 +107,7 @@ def parse_arguments() -> Type[argparse.Namespace]:
     parser.add_argument(
         "--location",
         type=str,
-        required=False,
+        required=True,
         help="The location of the engine'.",
     )
 
@@ -181,7 +181,7 @@ def run(args: Type[argparse.Namespace]):
         project_id=project, language_code=language_code, tables=tables
     )
     data = inspection.main()
-    print(data)
+    
     if source == "bigquery" and table is None:
         bigquery_tables = preprocess.get_bigquery_tables(dataset)
         for i, table in enumerate(bigquery_tables):
