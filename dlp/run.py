@@ -212,21 +212,25 @@ def run(args: Type[argparse.Namespace]):
         catalog.main()
 
 
-    info_tables = preprocess.get_info_tables()
+    table_names = preprocess.get_table_names()
 
     top_finding_tables = []
 
-    for table_name,total_num_rows,num_columns in info_tables:
+    for table_name in table_names:
         finding_results_per_table = []
-        rows_to_analyze = int(cells_to_analyze/num_columns)
-        for start_index in range(0, total_num_rows, rows_to_analyze):
-            print(start_index)
-            print(rows_to_analyze)
-            dlp_table = preprocess.get_dlp_table_per_block(rows_to_analyze,table_name,start_index)
-
+        empty_search = False
+        start_index = 0
+        while not empty_search:
+            print(table_name)
+            dlp_table = preprocess.get_dlp_table_per_block(cells_to_analyze,table_name,start_index)
+            print(len(dlp_table.rows))
             finding_result_per_block = dlpinspection.get_finding_results(dlp_table)
             print(finding_result_per_block)
             finding_results_per_table.append(finding_result_per_block)
+            if not dlp_table.rows:
+                empty_search = True
+            start_index += cells_to_analyze
+
             tiempo_parcial = time.time()
             tiempo_transcurrido = (tiempo_parcial - tiempo_inicio) / 60
 
