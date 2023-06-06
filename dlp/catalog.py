@@ -43,8 +43,8 @@ class Catalog:
         self.table = table
         self.instance_id = instance_id
 
-        timestamp = int(datetime.datetime.now().timestamp())
-        timestamp = timestamp[:5]
+        timestamp = str(int(datetime.datetime.now().timestamp()))
+        timestamp = timestamp[:8]
         if self.instance_id is not None:
             # REGEX to remove special characters from the instance_id.
             instance_id = re.sub(r"[^a-zA-Z0-9_]", "", instance_id)
@@ -53,9 +53,6 @@ class Catalog:
             self.entry_group_id = f"dlp_{instance_id}_{timestamp}"
             self.entry_id = f"dlp_{timestamp}"
         else:
-            # Limits the dataset and table to 225 characters.
-            dataset = dataset[:120]
-            table = table[:119]
             self.tag_template_id =(
                 f"dlp_{dataset.lower()}_{table.lower()}_{timestamp}"
                 )
