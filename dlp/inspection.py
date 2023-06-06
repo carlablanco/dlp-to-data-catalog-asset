@@ -85,8 +85,8 @@ class DlpInspection:
                         column = finding.location.content_locations[
                             0].record_location.field_id.name
                         infotypes = finding_results.setdefault(column, {})
-                        likelihood = value_likelihood.get(finding.likelihood.name,
-                                                        0)
+                        likelihood = value_likelihood.get(
+                            finding.likelihood.name,0)
                         # If the infotype is already in the dictionary, sum
                         # the likelihood value to the exisiting one.
                         if finding.info_type.name in infotypes:
@@ -96,8 +96,8 @@ class DlpInspection:
                             # add it with the likelihood value.
                             infotypes[finding.info_type.name] = likelihood
                     except AttributeError as err:
-                        raise ValueError("""AttributeError: No findings
-                                            returned from API call.""") from err
+                        raise ValueError("""AttributeError:No
+                        findings returned from API call.""") from err
 
         return finding_results
 
@@ -212,7 +212,7 @@ class DlpInspection:
               "infotype" and "likelihood value."""
         parent, inspect_config = self.get_inspection_parameters()
 
-        # Get the complete table inspected.
+        # Get the complete cells inspected.
         results_lists = self.analyze_dlp_table(parent, table,
                                                 inspect_config)
         # Processes the results of the inspection.
@@ -221,23 +221,27 @@ class DlpInspection:
         return finding_results
 
     def merge_and_top_finding(self,finding_results_list: List) -> Dict:
-        """_summary_a partir de una lista de findings_results, los mergea y obtiene el top_finding
+        """Merges a list of finding results and finds the top findings.
 
         Args:
-            finding_results_list (List): _description_
+            finding_results_list (List): A list of finding results.
 
         Returns:
-            _type_: _description_
+            _type_: A dictionary containing the top findings with their
+            respective infotype and likelihood value.
         """
         merge_finding_result = {}
 
+        # Merge the finding results from the list.
         for finding_results in finding_results_list:
             for key, values in finding_results.items():
                 for infotype, value in values.items():
                     if key not in merge_finding_result:
                         merge_finding_result[key] = {}
+                    # Sum up the likelihood values for each infotype.
                     merge_finding_result[key][infotype] =  \
                         merge_finding_result[key].get(infotype, 0) + value
 
+        # Get the maximum infotype for each variable.
         return self.get_max_infotype(merge_finding_result)
     

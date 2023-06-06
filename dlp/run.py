@@ -7,8 +7,6 @@ import argparse
 import re
 from typing import Type
 
-import time
-import psutil
 from dlp.preprocess import Preprocessing
 from dlp.inspection import DlpInspection
 
@@ -114,7 +112,6 @@ def run(args: Type[argparse.Namespace]):
             table (str): The name of the table.
             db_type(str): The type of the database. e.g. postgres, mysql.
     """
-    tiempo_inicio = time.time()
 
     source = args.source
     project = args.project
@@ -143,34 +140,42 @@ def run(args: Type[argparse.Namespace]):
         # Handle unsupported source
         raise ValueError("Unsupported source: " + source)
 
+    # Specify the number of cells to analyze per batch.
     cells_to_analyze = 200000
 
-
+    # Create preprocessing and DLP inspection objects
     preprocess = Preprocessing(
         source=source, project=project, **preprocess_args)
     dlpinspection = DlpInspection(project_id=project,
                 language_code=language_code)
 
+    # Get a list of table names.
     table_names = preprocess.get_table_names()
 
+    # Store the top finding for each table.
     top_finding_tables = []
 
+    # Iterate through each table to obtain the finding_result_per_table.
     for table_name in table_names:
         finding_results_per_table = []
         empty_search = False
         start_index = 0
         while not empty_search:
-            print(table_name)
-            dlp_table = preprocess.get_dlp_table_per_block(cells_to_analyze,table_name,start_index)
-            print(len(dlp_table.rows))
-            finding_result_per_block = dlpinspection.get_finding_results(dlp_table)
-            print(finding_result_per_block)
+            # Retrieve DLP table per batch of cells.
+            dlp_table = preprocess.get_dlp_table_per_block(
+                cells_to_analyze,table_name,start_index)
+            finding_result_per_block = dlpinspection.get_finding_results(
+                dlp_table)
             finding_results_per_table.append(finding_result_per_block)
+
             if not dlp_table.rows:
                 empty_search = True
             start_index += cells_to_analyze
 
-        top_finding_per_table = dlpinspection.merge_and_top_finding(finding_results_per_table)
+        # Obtain the top finding for the table.
+        top_finding_per_table = dlpinspection.merge_and_top_finding(
+            finding_results_per_table)
+        # Add the table and its top_finding to the list.
         top_finding_tables.append((table_name,top_finding_per_table))
 
 if __name__ == "__main__":

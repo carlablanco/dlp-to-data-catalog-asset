@@ -11,7 +11,6 @@ from google.api_core.exceptions import NotFound
 from google.cloud import bigquery, dlp_v2
 from google.cloud.sql.connector import Connector
 from sqlalchemy import create_engine, MetaData, Table
-import psutil
 
 @dataclasses.dataclass
 class Bigquery:
@@ -104,12 +103,14 @@ class Preprocessing:
         )
         return connector
 
-    def get_cloudsql_data(self, table: str, cells_to_analyze=None,
-                          start_index=None) -> Tuple[List, List]:
+    def get_cloudsql_data(self, table: str, cells_to_analyze: int,
+                          start_index: int) -> Tuple[List, List]:
         """Retrieves the schema and content of a table from CloudSQL.
 
         Args:
             table (str): The name of the table.
+            cells_to_analyze (int): The block of cells to be analyzed.
+            start_index (int): The starting index of each block to be analyzed.
 
         Returns:
             Tuple(List, List): A tuple containing the schema and content
@@ -158,8 +159,8 @@ class Preprocessing:
            Args:
               table_bq (bigquery.table.Table) : The path of the table
                 were the data is fetched.
-              start_index (int) : ...
-              cells_to_analyze (int) : ...
+              start_index (int) : The starting index of each block to be analyzed.
+              cells_to_analyze (int) : The block of cells to be analyzed.
 
            Returns:
               List[Dict]: A list of rows, where each row is a tuple
@@ -248,8 +249,8 @@ class Preprocessing:
            table_bq (bigquery.table.Table): The fully qualified name
            of the BigQuery table.
            unnest (str): The unnest string for the query.
-           limit (int): ...
-           offset(int): ...
+           limit (int): The maximum number of rows to retrieve in each block.
+           offset(int): The starting index of the rows to retrieve.
 
         Returns:
             str: SQL query as a string.
@@ -289,8 +290,8 @@ class Preprocessing:
             record_columns (List[Dict]): The columns with the record type.
             table_bq (bigquery.table.Table): The fully qualified name
             of the BigQuery table.
-            cells_to_analyze (int): ...
-            start_index (int): ...
+            cells_to_analyze (int): The block of cells to be analyzed.
+            start_index (int): The starting index of each block to be analyzed.
 
         Returns:
             List[Dict]: The content of the BigQuery table.
@@ -309,7 +310,9 @@ class Preprocessing:
             unnest = (
                 f"UNNEST ([{record_columns[0]}]) as {record_columns[0]} "
             )
-
+        # Generate the SQL query using the selected columns,
+        # table, unnest, limit, and offset. Calculate the limit and offset for
+        # the SQL query based on the block size.
         sql_query = self.get_query(columns_selected, table_bq, unnest,
                                    int(cells_to_analyze/num_columns),
                                    int(start_index/num_columns))
@@ -357,15 +360,15 @@ class Preprocessing:
         return flattened
 
     def get_bigquery_data(self, table_id: str,
-                          start_index=None,
-                          cells_to_analyze=None) -> Tuple[List[Dict],
+                          start_index: int,
+                          cells_to_analyze:int) -> Tuple[List[Dict],
                                                           List[Dict]]:
         """Retrieves the schema and content of a BigQuery table.
 
         Args:
             table_id (str): The fully qualified name of the BigQuery table.
-            star_index (int): ...
-            cells_to_analyze (int): ...
+            star_index (int): The starting index of each block to be analyzed.
+            cells_to_analyze (int): The block of cells to be analyzed.
 
         Returns:
             Tuple[List[Dict], List[Dict]]: A tuple containing the BigQuery
@@ -426,7 +429,7 @@ class Preprocessing:
         return table_dlp
 
     def get_table_names(self) -> List:
-        """Returns a list of tuples containing information about tables.
+        """Returns a list of table names.
 
         If the source is BigQuery, it returns the table name if specified,
         otherwise it retrieves all table names within the dataset. 
@@ -437,36 +440,35 @@ class Preprocessing:
         """
 
         if self.source == Database.BIGQUERY:
-            bigquery_tables = [self.bigquery.table] \
+            tables = [self.bigquery.table] \
                 if self.bigquery.table \
                 else self.get_bigquery_tables(self.bigquery.dataset)
         elif self.source == Database.CLOUDSQL:
-            bigquery_tables = [self.cloudsql.table]
+            tables = [self.cloudsql.table]
 
-        return bigquery_tables
+        return tables
 
-    def get_dlp_table_per_block(self, cells_to_analyze: int,
-                                table_name: str, start_index: int) -> dlp_v2.Table:
-        """Constructs a list of DLP Table objects
+    def get_dlp_table_per_block(self,
+                                cells_to_analyze: int,
+                                table_name: str,
+                                start_index: int) -> dlp_v2.Table:
+        """Constructs a DLP Table object, a partir de cada bloque de celdas.
         Args:
-            cells_to_analyze (int): ...
-            table: ...
-            start_index (int): ...
+            cells_to_analyze (int): The block of cells to be analyzed.
+            table_name (str): The name of the table to be analyzed..
+            start_index (int): The starting index of each block to be analyzed.
 
         Returns:
-            A list of Data Loss Prevention table objects.
+            A Data Loss Prevention table object.
         """
         if self.source == Database.BIGQUERY:
-            # Retrieve schema and content data for each BigQuery table.
             schema,content = self.get_bigquery_data(
                 f"{self.bigquery.dataset}.{table_name}",
                 start_index, cells_to_analyze)
-            devolver = self.convert_to_dlp_table(schema,content)
-            return devolver
 
         elif self.source == Database.CLOUDSQL:
             schema,content = self.get_cloudsql_data(self.cloudsql.table,
                                                     cells_to_analyze,
                                                     start_index)
-            devolver = self.convert_to_dlp_table(schema,content)
-            return devolver
+
+        return self.convert_to_dlp_table(schema,content)
