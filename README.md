@@ -28,23 +28,31 @@ These are the Google Cloud Platform services leveraged for the solution:
 Google recommends the use of service accounts. A service account is a special type of Google Account that represents a non-human user. It is used to authenticate and authorize applications and services to access Google Cloud Platform resources securely. For more information on service accounts, refer to the <a href="https://cloud.google.com/iam/docs/service-account-overview">official documentation.</a>
 
 ### Creating and Configuring Service Account
-To create a service account and assign the required roles, execute the following commands using the gcloud command-line tool:
+To create a service account and assign the required roles, execute the following commands using the gcloud command-line tool.
+Make sure to replace `service-account-name` with your desired service account name, and `project-id` with your Google Cloud Platform project ID on the export clauses.
 
 ```
 export SERVICE_ACCOUNT_NAME=service-account-name
 export PROJECT_ID=project-id
 gcloud iam service-accounts create $SERVICE_ACCOUNT_NAME --display-name "Dlp to Data Catalog Service Account"
-gcloud projects add-iam-policy-binding $PROJECT_ID --member=serviceAccount:$SERVICE_ACCOUNT_NAME@$PROJECT_ID.iam.gserviceaccount.com --role=roles/bigquery.dataViewer
-gcloud projects add-iam-policy-binding $PROJECT_ID --member=serviceAccount:$SERVICE_ACCOUNT_NAME@$PROJECT_ID.iam.gserviceaccount.com --role=roles/cloudsql.instanceUser
-gcloud projects add-iam-policy-binding $PROJECT_ID --member=serviceAccount:$SERVICE_ACCOUNT_NAME@$PROJECT_ID.iam.gserviceaccount.com --role=roles/cloudsql.client
 gcloud projects add-iam-policy-binding $PROJECT_ID --member=serviceAccount:$SERVICE_ACCOUNT_NAME@$PROJECT_ID.iam.gserviceaccount.com --role=roles/dlp.user
 gcloud projects add-iam-policy-binding $PROJECT_ID --member=serviceAccount:$SERVICE_ACCOUNT_NAME@$PROJECT_ID.iam.gserviceaccount.com --role=roles/datacatalog.entryGroupCreator
 gcloud projects add-iam-policy-binding $PROJECT_ID --member=serviceAccount:$SERVICE_ACCOUNT_NAME@$PROJECT_ID.iam.gserviceaccount.com --role=roles/datacatalog.entryCreator
-gcloud projects add-iam-policy-binding $PROJECT_ID --member=serviceAccount:$SERVICE_ACCOUNT_NAME@$PROJECT_ID.iam.gserviceaccount.com --role=roles/bigquery.dataEditor
-gcloud projects add-iam-policy-binding $PROJECT_ID --member=serviceAccount:$SERVICE_ACCOUNT_NAME@$PROJECT_ID.iam.gserviceaccount.com --role=roles/bigquery.jobUser
 gcloud projects add-iam-policy-binding $PROJECT_ID --member=serviceAccount:$SERVICE_ACCOUNT_NAME@$PROJECT_ID.iam.gserviceaccount.com --role=roles/datacatalog.tagTemplateCreator
 ```
-Make sure to replace `service-account-name` with your desired service account name, and `project-id` with your Google Cloud Platform project ID on the export clauses.
+
+For inspecting BigQuery, also run:
+```
+gcloud projects add-iam-policy-binding $PROJECT_ID --member=serviceAccount:$SERVICE_ACCOUNT_NAME@$PROJECT_ID.iam.gserviceaccount.com --role=roles/bigquery.dataViewer
+gcloud projects add-iam-policy-binding $PROJECT_ID --member=serviceAccount:$SERVICE_ACCOUNT_NAME@$PROJECT_ID.iam.gserviceaccount.com --role=roles/bigquery.dataEditor
+gcloud projects add-iam-policy-binding $PROJECT_ID --member=serviceAccount:$SERVICE_ACCOUNT_NAME@$PROJECT_ID.iam.gserviceaccount.com --role=roles/bigquery.jobUser
+```
+
+For inspecting CloudSQL, also run:
+```
+gcloud projects add-iam-policy-binding $PROJECT_ID --member=serviceAccount:$SERVICE_ACCOUNT_NAME@$PROJECT_ID.iam.gserviceaccount.com --role=roles/cloudsql.instanceUser
+gcloud projects add-iam-policy-binding $PROJECT_ID --member=serviceAccount:$SERVICE_ACCOUNT_NAME@$PROJECT_ID.iam.gserviceaccount.com --role=roles/cloudsql.client
+```
 
 ### Running locally with your own credentials
 
