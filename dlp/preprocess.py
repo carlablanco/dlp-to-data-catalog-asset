@@ -160,13 +160,17 @@ class Preprocessing:
         table_names = [table.table_id for table in dataset_tables]
         return table_names
 
-    def fetch_rows(self, table_bq: bigquery.table.Table,
-                   start_index: int, cells_to_analyze: int) -> List[Dict]:
+    def fetch_rows(
+        self,
+        table_bq: bigquery.table.Table,
+        start_index: int,
+        cells_to_analyze: int
+    ) -> List[Dict]:
         """Fetches a batch of rows from a BigQuery table.
 
            Args:
-              table_bq (bigquery.table.Table) : The table object were the
-                data is fetched.
+              table_bq (bigquery.table.Table) : The path of the table
+                were the data is fetched.
               start_index (int) : The starting index of each block to be analyzed.
               cells_to_analyze (int) : The block of cells to be analyzed.
 
@@ -288,7 +292,8 @@ class Preprocessing:
         record_columns: List[Dict],
         table_bq: bigquery.table.Table,
         cells_to_analyze: int,
-        start_index: int) -> List[Dict]:
+        start_index: int
+    ) -> List[Dict]:
         """Retrieves the content of the table.
 
         Args:
@@ -367,10 +372,12 @@ class Preprocessing:
         # Return the flattened list.
         return flattened
 
-    def get_bigquery_data(self, table_id: str,
-                          start_index: int,
-                          cells_to_analyze:int) -> Tuple[List[Dict],
-                                                          List[Dict]]:
+    def get_bigquery_data(
+        self,
+        table_id: str,
+        start_index: int,
+        cells_to_analyze: int
+    ) -> Tuple[List[Dict], List[Dict]]:
         """Retrieves the schema and content of a BigQuery table.
 
         Args:

@@ -105,7 +105,6 @@ class DlpInspection:
                             # If the infotype is not in the dictionary, add it
                             # with the likelihood value.
                             infotypes[finding.info_type.name] = likelihood
-
                     except AttributeError as err:
                         raise ValueError("""AttributeError:
                         No findings returned from API call.""") from err

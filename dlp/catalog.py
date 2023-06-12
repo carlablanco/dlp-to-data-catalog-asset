@@ -4,6 +4,7 @@
 """Creates and attaches a tag template to a BigQuery table."""
 
 from typing import List, Dict, Optional
+import re
 import datetime
 from google.cloud import datacatalog_v1
 
@@ -42,9 +43,14 @@ class Catalog:
         self.table = table
         self.instance_id = instance_id
 
-        timestamp = int(datetime.datetime.now().timestamp())
+        timestamp = str(int(datetime.datetime.now().timestamp()))
+        timestamp = timestamp[:8]
         if self.instance_id is not None:
-            self.entry_group_id = f"dlp_{self.instance_id}_{timestamp}"
+            # REGEX to remove special characters from the instance_id.
+            instance_id = re.sub(r"[^a-zA-Z0-9_]", "", instance_id)
+            # Limits the instance_id to 50 characters.
+            instance_id = instance_id[:50]
+            self.entry_group_id = f"dlp_{instance_id}_{timestamp}"
             self.entry_id = f"dlp_{timestamp}"
         else:
             self.tag_template_id =(

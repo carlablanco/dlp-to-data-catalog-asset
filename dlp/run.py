@@ -172,13 +172,16 @@ def run(args: Type[argparse.Namespace]):
 
     # Create preprocessing and DLP inspection objects
     preprocess = Preprocessing(
-        source=source, project=project, **preprocess_args)
+        source=source,
+        project=project,
+        **preprocess_args,
+    )
+
     dlpinspection = DlpInspection(project_id=project,
                 location_category=location_category)
 
     # Get a list of table names.
     table_names = preprocess.get_table_names()
-
     # Store the top finding for each table.
     top_finding_tables = []
 
