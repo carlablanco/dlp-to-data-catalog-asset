@@ -12,6 +12,7 @@ from google.cloud import bigquery, dlp_v2
 from google.cloud.sql.connector import Connector
 from sqlalchemy import create_engine, MetaData, Table
 
+
 @dataclasses.dataclass
 class Bigquery:
     """Represents a connection to a Google BigQuery dataset and table."""
@@ -111,8 +112,12 @@ class Preprocessing:
         )
         return connector
 
-    def get_cloudsql_data(self, table: str, cells_to_analyze: int,
-                          start_index: int) -> Tuple[List, List]:
+    def get_cloudsql_data(
+            self,
+            table: str,
+            cells_to_analyze: int,
+            start_index: int
+    ) -> Tuple[List, List]:
         """Retrieves the schema and content of a table from CloudSQL.
 
         Args:
@@ -142,7 +147,7 @@ class Preprocessing:
         with engine.connect() as connection:
             select = table.select().with_only_columns(table.columns) \
                 .limit(int(cells_to_analyze/num_columns)) \
-                    .offset(int(start_index/num_columns))
+                .offset(int(start_index/num_columns))
             content = list(connection.execute(select).fetchall())
 
         return schema, content
@@ -184,7 +189,7 @@ class Preprocessing:
         num_columns = len(table_bq.schema)
 
         rows_iter = self.bigquery.bq_client.list_rows(
-            table=table_bq,start_index=int(start_index/num_columns),
+            table=table_bq, start_index=int(start_index/num_columns),
             max_results=int(cells_to_analyze/num_columns))
 
         if not rows_iter.total_rows:
@@ -292,7 +297,7 @@ class Preprocessing:
 
     def get_rows_query(
         self,
-        nested_args:Dict,
+        nested_args: Dict,
         table_bq: bigquery.table.Table,
         cells_to_analyze: int,
         start_index: int
@@ -317,30 +322,30 @@ class Preprocessing:
 
         if "REPEATED" in nested_types:
             bq_schema = nested_args["table_schema"] \
-            + nested_args["record_columns"]
+                + nested_args["record_columns"]
             num_columns = len(bq_schema)
             columns_selected = ", ".join(str(column) for column in bq_schema)
             unnest = f"UNNEST ({nested_args['record_columns'][0]})"
         else:
             bq_schema = nested_args["table_schema"] \
-            + nested_args["nested_columns"]
+                + nested_args["nested_columns"]
             num_columns = len(bq_schema)
             columns_selected = ", ".join(str(column) for column in bq_schema)
             unnest = (
-                f"""UNNEST ([{nested_args['record_columns'][0]}]) 
+                f"""UNNEST ([{nested_args['record_columns'][0]}])
                 as {nested_args['record_columns'][0]} """
             )
         # Generate the SQL query using the selected columns,
         # table, unnest, limit, and offset. Calculate the limit and offset for
         # the SQL query based on the block size.
         sql_query = self.get_query(
-                                   table_bq,
-                                   {
-                                     "columns_selected":columns_selected,
-                                     "unnest":unnest,
-                                     "offset": int(start_index/num_columns),
-                                     "limit": int(cells_to_analyze/num_columns)
-                                   })
+            table_bq,
+            {
+                "columns_selected": columns_selected,
+                "unnest": unnest,
+                "offset": int(start_index/num_columns),
+                "limit": int(cells_to_analyze/num_columns)
+            })
 
         query_job = self.bigquery.bq_client.query(sql_query)
         query_results = query_job.result()
@@ -417,9 +422,9 @@ class Preprocessing:
             bq_schema = table_schema + nested_columns
             bq_rows_content = self.get_rows_query(
                 {
-                "table_schema":table_schema,
-                "nested_columns":nested_columns, 
-                "record_columns":record_columns 
+                    "table_schema": table_schema,
+                    "nested_columns": nested_columns,
+                    "record_columns": record_columns
                 },
                 table_bq,
                 cells_to_analyze,
@@ -465,7 +470,7 @@ class Preprocessing:
         """Returns a list of table names.
 
         If the source is BigQuery, it returns the table name if specified,
-        otherwise it retrieves all table names within the dataset. 
+        otherwise it retrieves all table names within the dataset.
         If the source is Cloud SQL, it returns the table name.
 
         Returns:
@@ -481,10 +486,12 @@ class Preprocessing:
 
         return tables
 
-    def get_dlp_table_per_block(self,
-                                cells_to_analyze: int,
-                                table_name: str,
-                                start_index: int) -> dlp_v2.Table:
+    def get_dlp_table_per_block(
+            self,
+            cells_to_analyze: int,
+            table_name: str,
+            start_index: int
+        ) -> dlp_v2.Table:
         """Constructs a DLP Table object, a partir de cada bloque de celdas.
         Args:
             cells_to_analyze (int): The block of cells to be analyzed.
@@ -495,13 +502,13 @@ class Preprocessing:
             A Data Loss Prevention table object.
         """
         if self.source == Database.BIGQUERY:
-            schema,content = self.get_bigquery_data(
+            schema, content = self.get_bigquery_data(
                 f"{self.bigquery.dataset}.{table_name}",
                 start_index, cells_to_analyze)
 
         elif self.source == Database.CLOUDSQL:
-            schema,content = self.get_cloudsql_data(self.cloudsql.table,
-                                                    cells_to_analyze,
-                                                    start_index)
+            schema, content = self.get_cloudsql_data(self.cloudsql.table,
+                                                     cells_to_analyze,
+                                                     start_index)
 
-        return self.convert_to_dlp_table(schema,content)
+        return self.convert_to_dlp_table(schema, content)
