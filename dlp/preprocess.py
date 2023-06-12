@@ -78,8 +78,8 @@ class Preprocessing:
             instance = cloudsql_args["instance"]
             db_type = cloudsql_args["db_type"]
 
-            # Determine the appropriate database driver and connection name
-            #  based on db_type.
+            # Determine the appropriate database driver and connection
+            # name based on db_type.
             if db_type == "mysql":
                 driver = "pymysql"
                 connection_name = f"mysql+{driver}"
@@ -252,24 +252,27 @@ class Preprocessing:
         return field.name, False, False
 
     def get_query(
-            self, columns_selected: str, table_bq: bigquery.table.Table,
-            unnest: str, limit: int, offset: int) -> str:
+            self,
+            table_bq: bigquery.table.Table,
+            query_args: Dict) -> str:
         """Creates a SQL query as a string.
 
         Args:
-           columns_selected (str): The string with the selected columns.
-           table_bq (bigquery.table.Table): The fully qualified name
-           of the BigQuery table.
-           unnest (str): The unnest string for the query.
-           limit (int): The maximum number of rows to retrieve in each block.
-           offset(int): The starting index of the rows to retrieve.
+            table_bq (bigquery.table.Table): The fully qualified name
+            of the BigQuery table.
+            query_args (Dict) :
+                columns_selected (str): The string with the selected columns.
+                unnest (str): The unnest string for the query.
+                limit (int): The maximum number of rows to retrieve in each block.
+                offset(int): The starting index of the rows to retrieve.
 
         Returns:
             str: SQL query as a string.
         """
-        query = f"""SELECT {columns_selected}
+        query = f"""SELECT {query_args['columns_selected']}
                     FROM `{table_bq}`,
-                    {unnest} LIMIT {limit} OFFSET {offset}"""
+                    {query_args['unnest']} LIMIT {query_args['limit']} 
+                    OFFSET {query_args['offset']}"""
         return query
 
     def get_nested_types(self, table_bq: bigquery.table.Table) -> List[str]:
@@ -287,9 +290,7 @@ class Preprocessing:
 
     def get_rows_query(
         self,
-        table_schema: List[Dict],
-        nested_columns: List[Dict],
-        record_columns: List[Dict],
+        nested_args:Dict,
         table_bq: bigquery.table.Table,
         cells_to_analyze: int,
         start_index: int
@@ -297,10 +298,11 @@ class Preprocessing:
         """Retrieves the content of the table.
 
         Args:
-            table_schema (List[Dict]): The schema of a BigQuery table.
-            nested_columns (List[Dict]): A list with the columns
+            nested_args (Dict):
+                table_schema (List[Dict]): The schema of a BigQuery table.
+                nested_columns (List[Dict]): A list with the columns
                 of the nested columns.
-            record_columns (List[Dict]): The columns with the record type.
+                record_columns (List[Dict]): The columns with the record type.
             table_bq (bigquery.table.Table): The fully qualified name
             of the BigQuery table.
             cells_to_analyze (int): The block of cells to be analyzed.
@@ -312,23 +314,29 @@ class Preprocessing:
         nested_types = self.get_nested_types(table_bq)
 
         if "REPEATED" in nested_types:
-            bq_schema = table_schema + record_columns
+            bq_schema = nested_args["table_schema"] + nested_args["record_columns"]
             num_columns = len(bq_schema)
             columns_selected = ", ".join(str(column) for column in bq_schema)
-            unnest = f"UNNEST ({record_columns[0]})"
+            unnest = f"UNNEST ({nested_args['record_columns'][0]})"
         else:
-            bq_schema = table_schema + nested_columns
+            bq_schema = nested_args["table_schema"] + nested_args["nested_columns"]
             num_columns = len(bq_schema)
             columns_selected = ", ".join(str(column) for column in bq_schema)
             unnest = (
-                f"UNNEST ([{record_columns[0]}]) as {record_columns[0]} "
+                f"""UNNEST ([{nested_args['record_columns'][0]}]) 
+                as {nested_args['record_columns'][0]} """
             )
         # Generate the SQL query using the selected columns,
         # table, unnest, limit, and offset. Calculate the limit and offset for
         # the SQL query based on the block size.
-        sql_query = self.get_query(columns_selected, table_bq, unnest,
-                                   int(cells_to_analyze/num_columns),
-                                   int(start_index/num_columns))
+        sql_query = self.get_query(
+                                   table_bq,
+                                   {
+                                     "columns_selected":columns_selected,
+                                     "unnest":unnest,
+                                     "offset": int(start_index/num_columns),
+                                     "limit": int(cells_to_analyze/num_columns)
+                                   })
 
         query_job = self.bigquery.bq_client.query(sql_query)
         query_results = query_job.result()
@@ -404,8 +412,14 @@ class Preprocessing:
             nested_columns = self.flatten_list(nested_columns)
             bq_schema = table_schema + nested_columns
             bq_rows_content = self.get_rows_query(
-                table_schema, nested_columns, record_columns,
-                table_bq,cells_to_analyze,start_index)
+                {
+                "table_schema":table_schema,
+                "nested_columns":nested_columns, 
+                "record_columns":record_columns 
+                },
+                table_bq,
+                cells_to_analyze,
+                start_index)
         else:
             table_schema = table_bq.schema
             bq_schema = [field.to_api_repr()["name"] for field in table_schema]

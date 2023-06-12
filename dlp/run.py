@@ -208,6 +208,7 @@ def run(args: Type[argparse.Namespace]):
         # Add the table and its top_finding to the list.
         top_finding_tables.append(top_finding_per_table)
 
+    print(top_finding_tables)
 
     if source == "bigquery" and table is None:
         # If scanning entire dataset.
