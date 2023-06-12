@@ -171,7 +171,8 @@ class Preprocessing:
            Args:
               table_bq (bigquery.table.Table) : The path of the table
                 were the data is fetched.
-              start_index (int) : The starting index of each block to be analyzed.
+              start_index (int) : The starting index of each block to
+              be analyzed.
               cells_to_analyze (int) : The block of cells to be analyzed.
 
            Returns:
@@ -263,7 +264,8 @@ class Preprocessing:
             query_args (Dict) :
                 columns_selected (str): The string with the selected columns.
                 unnest (str): The unnest string for the query.
-                limit (int): The maximum number of rows to retrieve in each block.
+                limit (int): The maximum number of rows to
+                retrieve in each block.
                 offset(int): The starting index of the rows to retrieve.
 
         Returns:
@@ -314,12 +316,14 @@ class Preprocessing:
         nested_types = self.get_nested_types(table_bq)
 
         if "REPEATED" in nested_types:
-            bq_schema = nested_args["table_schema"] + nested_args["record_columns"]
+            bq_schema = nested_args["table_schema"] \
+            + nested_args["record_columns"]
             num_columns = len(bq_schema)
             columns_selected = ", ".join(str(column) for column in bq_schema)
             unnest = f"UNNEST ({nested_args['record_columns'][0]})"
         else:
-            bq_schema = nested_args["table_schema"] + nested_args["nested_columns"]
+            bq_schema = nested_args["table_schema"] \
+            + nested_args["nested_columns"]
             num_columns = len(bq_schema)
             columns_selected = ", ".join(str(column) for column in bq_schema)
             unnest = (
