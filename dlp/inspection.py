@@ -249,9 +249,10 @@ class DlpInspection:
         # Merge the finding results from the list.
         for finding_results in finding_results_list:
             for key, values in finding_results.items():
+                if key not in merge_finding_result:
+                    merge_finding_result[key] = {}
                 for infotype, value in values.items():
-                    if key not in merge_finding_result:
-                        merge_finding_result[key] = {}
+
                     # Sum up the likelihood values for each infotype.
                     merge_finding_result[key][infotype] =  \
                         merge_finding_result[key].get(infotype, 0) + value

@@ -168,7 +168,7 @@ def run(args: Type[argparse.Namespace]):
         raise ValueError("Unsupported source: " + source)
 
     # Specify the number of cells to analyze per batch.
-    cells_to_analyze = 200000
+    batch_size = 5000
 
     # Create preprocessing and DLP inspection objects
     preprocess = Preprocessing(
@@ -193,22 +193,22 @@ def run(args: Type[argparse.Namespace]):
         while not empty_search:
             # Retrieve DLP table per batch of cells.
             dlp_table = preprocess.get_dlp_table_per_block(
-                cells_to_analyze,table_name,start_index)
+                batch_size,table_name,start_index)
             finding_result_per_block = dlpinspection.get_finding_results(
                 dlp_table)
             finding_results_per_table.append(finding_result_per_block)
 
             if not dlp_table.rows:
                 empty_search = True
-            start_index += cells_to_analyze
+            start_index += batch_size
 
         # Obtain the top finding for the table.
         top_finding_per_table = dlpinspection.merge_and_top_finding(
             finding_results_per_table)
+
         # Add the table and its top_finding to the list.
         top_finding_tables.append(top_finding_per_table)
 
-    print(top_finding_tables)
 
     if source == "bigquery" and table is None:
         # If scanning entire dataset.

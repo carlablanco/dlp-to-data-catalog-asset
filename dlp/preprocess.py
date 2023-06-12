@@ -111,13 +111,13 @@ class Preprocessing:
         )
         return connector
 
-    def get_cloudsql_data(self, table: str, cells_to_analyze: int,
+    def get_cloudsql_data(self, table: str, batch_size: int,
                           start_index: int) -> Tuple[List, List]:
         """Retrieves the schema and content of a table from CloudSQL.
 
         Args:
             table (str): The name of the table.
-            cells_to_analyze (int): The block of cells to be analyzed.
+            batch_size (int): The block of cells to be analyzed.
             start_index (int): The starting index of each block to be analyzed.
 
         Returns:
@@ -141,7 +141,7 @@ class Preprocessing:
         # Get table contents.
         with engine.connect() as connection:
             select = table.select().with_only_columns(table.columns) \
-                .limit(int(cells_to_analyze/num_columns)) \
+                .limit(int(batch_size/num_columns)) \
                     .offset(int(start_index/num_columns))
             content = list(connection.execute(select).fetchall())
 
@@ -164,16 +164,16 @@ class Preprocessing:
         self,
         table_bq: bigquery.table.Table,
         start_index: int,
-        cells_to_analyze: int
+        batch_size: int
     ) -> List[Dict]:
         """Fetches a batch of rows from a BigQuery table.
 
            Args:
               table_bq (bigquery.table.Table) : The path of the table
-                were the data is fetched.
+                where the data is fetched.
               start_index (int) : The starting index of each block to
               be analyzed.
-              cells_to_analyze (int) : The block of cells to be analyzed.
+              batch_size (int) : The block of cells to be analyzed.
 
            Returns:
               List[Dict]: A list of rows, where each row is a tuple
@@ -185,7 +185,7 @@ class Preprocessing:
 
         rows_iter = self.bigquery.bq_client.list_rows(
             table=table_bq,start_index=int(start_index/num_columns),
-            max_results=int(cells_to_analyze/num_columns))
+            max_results=int(batch_size/num_columns))
 
         if not rows_iter.total_rows:
             print(f"""The Table {table_bq.table_id} is empty. Please populate
@@ -294,7 +294,7 @@ class Preprocessing:
         self,
         nested_args:Dict,
         table_bq: bigquery.table.Table,
-        cells_to_analyze: int,
+        batch_size: int,
         start_index: int
     ) -> List[Dict]:
         """Retrieves the content of the table.
@@ -307,7 +307,7 @@ class Preprocessing:
                 record_columns (List[Dict]): The columns with the record type.
             table_bq (bigquery.table.Table): The fully qualified name
             of the BigQuery table.
-            cells_to_analyze (int): The block of cells to be analyzed.
+            batch_size (int): The block of cells to be analyzed.
             start_index (int): The starting index of each block to be analyzed.
 
         Returns:
@@ -339,7 +339,7 @@ class Preprocessing:
                                      "columns_selected":columns_selected,
                                      "unnest":unnest,
                                      "offset": int(start_index/num_columns),
-                                     "limit": int(cells_to_analyze/num_columns)
+                                     "limit": int(batch_size/num_columns)
                                    })
 
         query_job = self.bigquery.bq_client.query(sql_query)
@@ -388,14 +388,14 @@ class Preprocessing:
         self,
         table_id: str,
         start_index: int,
-        cells_to_analyze: int
+        batch_size: int
     ) -> Tuple[List[Dict], List[Dict]]:
         """Retrieves the schema and content of a BigQuery table.
 
         Args:
             table_id (str): The fully qualified name of the BigQuery table.
             star_index (int): The starting index of each block to be analyzed.
-            cells_to_analyze (int): The block of cells to be analyzed.
+            batch_size (int): The block of cells to be analyzed.
 
         Returns:
             Tuple[List[Dict], List[Dict]]: A tuple containing the BigQuery
@@ -422,13 +422,13 @@ class Preprocessing:
                 "record_columns":record_columns 
                 },
                 table_bq,
-                cells_to_analyze,
+                batch_size,
                 start_index)
         else:
             table_schema = table_bq.schema
             bq_schema = [field.to_api_repr()["name"] for field in table_schema]
             bq_rows_content = self.fetch_rows(
-                table_bq, start_index, cells_to_analyze)
+                table_bq, start_index, batch_size)
 
         return bq_schema, bq_rows_content
 
@@ -482,12 +482,12 @@ class Preprocessing:
         return tables
 
     def get_dlp_table_per_block(self,
-                                cells_to_analyze: int,
+                                batch_size: int,
                                 table_name: str,
                                 start_index: int) -> dlp_v2.Table:
         """Constructs a DLP Table object, a partir de cada bloque de celdas.
         Args:
-            cells_to_analyze (int): The block of cells to be analyzed.
+            batch_size (int): The block of cells to be analyzed.
             table_name (str): The name of the table to be analyzed..
             start_index (int): The starting index of each block to be analyzed.
 
@@ -497,11 +497,12 @@ class Preprocessing:
         if self.source == Database.BIGQUERY:
             schema,content = self.get_bigquery_data(
                 f"{self.bigquery.dataset}.{table_name}",
-                start_index, cells_to_analyze)
+                start_index, batch_size)
 
         elif self.source == Database.CLOUDSQL:
-            schema,content = self.get_cloudsql_data(self.cloudsql.table,
-                                                    cells_to_analyze,
-                                                    start_index)
+            schema,content = self.get_cloudsql_data(
+                self.cloudsql.table,
+                batch_size,
+                start_index)
 
         return self.convert_to_dlp_table(schema,content)
