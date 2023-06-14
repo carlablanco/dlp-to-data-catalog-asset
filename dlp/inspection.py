@@ -175,7 +175,8 @@ class DlpInspection:
             rows = []
             for row in table.rows:
                 cell_value = row.values[col_index].string_value
-                rows.append(dlp_v2.Table.Row(values=[dlp_v2.Value(string_value=cell_value)]))
+                rows.append(dlp_v2.Table.Row(
+                    values=[dlp_v2.Value(string_value=cell_value)]))
 
             dlp_table.rows = rows
 
