@@ -6,7 +6,6 @@
 from typing import List, Dict
 from google.cloud import dlp_v2
 from google.api_core.exceptions import BadRequest
-from grpc import RpcError
 
 class DlpInspection:
     """Performs a DLP inspection on a preprocessed table to identify
@@ -192,9 +191,8 @@ class DlpInspection:
                 # Append the chunk inspection into the results.
                 results_list.append(response)
             except BadRequest as error:
-                print (error)
-            except Exception as error:
-                print (error) 
+                # Handle the BadRequest exception here.
+                raise BadRequest(error) from error
 
         return results_list
 

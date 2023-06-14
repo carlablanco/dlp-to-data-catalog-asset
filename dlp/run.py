@@ -10,7 +10,6 @@ from typing import Type
 from dlp.preprocess import Preprocessing
 from dlp.inspection import DlpInspection
 from dlp.catalog import Catalog
-import time
 
 
 EMAIL_REGEX = re.compile(r"^[\w\.-]+@[\w\.-]+\.\w+$")
@@ -116,7 +115,6 @@ def parse_arguments() -> Type[argparse.Namespace]:
 
 
 def run(args: Type[argparse.Namespace]):
-    inicio = time.time()
     """Runs DLP inspection scan and tags the results to Data Catalog.
 
     Args:
@@ -196,19 +194,10 @@ def run(args: Type[argparse.Namespace]):
             # Retrieve DLP table per batch of cells.
             dlp_table = preprocess.get_dlp_table_per_block(
                 batch_size,table_name,start_index)
-            print(len(dlp_table.rows))
-            print(start_index)
             finding_result_per_block = dlpinspection.get_finding_results(
                 dlp_table)
             finding_results_per_table.append(finding_result_per_block)
-            print(finding_result_per_block)
-            tiempo_transcurrido = time.time() - inicio
 
-            # Convierte el tiempo transcurrido a minutos
-            tiempo_transcurrido_minutos = tiempo_transcurrido / 60
-
-            # Imprime el tiempo transcurrido en minutos
-            print("Tiempo transcurrido:", tiempo_transcurrido_minutos, "minutos")
             if not dlp_table.rows:
                 empty_search = True
             start_index += batch_size
