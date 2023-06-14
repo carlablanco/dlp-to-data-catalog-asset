@@ -6,6 +6,7 @@
 from typing import List, Dict
 from google.cloud import dlp_v2
 from google.api_core.exceptions import BadRequest
+from grpc import RpcError
 
 class DlpInspection:
     """Performs a DLP inspection on a preprocessed table to identify
@@ -50,7 +51,10 @@ class DlpInspection:
             "info_types": [
                 {"name": name} for name in filtered_infotypes
             ],
-            "min_likelihood": "LIKELY"
+            "min_likelihood": "LIKELY",
+            "limits": {
+                "max_findings_per_request": 100
+            }
         }
 
         parent = f"projects/{self.project_id}"
@@ -145,56 +149,37 @@ class DlpInspection:
         table: str,
         inspect_config: Dict,
     ) -> List[Dict]:
-        """ Analyze the complete DLP table in blocks of 10000 cells.
+        """Analyze the complete DLP table one column at a time.
 
-            This function iteratively analyzes a large DLP table by making API
-            calls in blocks of 10000 cells at a time. This helps to avoid
-            exceeding API quotas and rate limits, which can cause errors
-            and delays.
+        This function iteratively analyzes a large DLP table by making API
+        calls for each column individually. This helps to avoid exceeding
+        API quotas and rate limits, which can cause errors and delays.
 
-            Args:
-               parent (str): The project route in GCP.
-               table: The particular table to be inspected in the correct
-                        format.
-               inspect_config (Dict): Parameters for the ispection. InfoTypes
-                               and the minimum likelihood.
+        Args:
+           parent (str): The project route in GCP.
+           table: The particular table to be inspected in the correct format.
+           inspect_config (Dict): Parameters for the inspection. InfoTypes
+                           and the minimum likelihood.
 
-            Returns:
-                List[Dict]: The response from the API. Each varibale is
-                inspected and returns findings for each record.
-
+        Returns:
+            List[Dict]: The response from the API. Each variable is
+            inspected and returns findings for each record.
         """
-        # The Block size adecuate to the DLP scan.
-        block_size = 10000
-        num_headers = len(table.headers)
-        # Get the headers from the first row of the table.
-        dlp_table = dlp_v2.Table()
-        dlp_table.headers = [
-            {"name": table.headers[i].name} for i in range(num_headers)]
 
-        # List of data chunks of 10000 cells.
-        data_chunks = [
-            table.rows[rows:rows+int((block_size/num_headers))]
-            for rows in range(0, len(table.rows),
-                              int((block_size/num_headers)))
-        ]
-
-        # Create a list for the DLP inspections.
+        num_columns = len(table.headers)
         results_list = []
 
-        for chunk in data_chunks:
-            # Get specific data chunk.
-            chunk_data = [[value.string_value for value in row.values]
-                          for row in chunk]
+        for col_index in range(num_columns):
+            dlp_table = dlp_v2.Table()
+            dlp_table.headers = [{"name": table.headers[col_index].name}]
 
-            # Add the specific data chunk to the dlp object.
             rows = []
-            for row in chunk_data:
-                rows.append(dlp_v2.Table.Row(
-                    values=[dlp_v2.Value(
-                        string_value=cell_val) for cell_val in row]))
+            for row in table.rows:
+                cell_value = row.values[col_index].string_value
+                rows.append(dlp_v2.Table.Row(values=[dlp_v2.Value(string_value=cell_value)]))
 
             dlp_table.rows = rows
+
             try:
                 # Make the API request for the chunk of data.
                 response = self.dlp_client.inspect_content(
@@ -207,8 +192,10 @@ class DlpInspection:
                 # Append the chunk inspection into the results.
                 results_list.append(response)
             except BadRequest as error:
-                # Handle the BadRequest exception here.
-                raise BadRequest(error) from error
+                print (error)
+            except Exception as error:
+                print (error) 
+
         return results_list
 
     def get_finding_results(self,table: dlp_v2.Table) -> Dict:
