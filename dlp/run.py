@@ -122,17 +122,17 @@ def run(args: Type[argparse.Namespace]):
         source (str): The name of the source of data used.
         project (str): The name of the Google Cloud Platform project.
         location_category (str): The location to be inspected. Ex. "CANADA".
-        location(str): The compute engine region.
-        bigquery_args(Dict):
+        location (str): The compute engine region.
+        bigquery_args (Dict):
             dataset (str): The name of the BigQuery dataset.
             table (str, optional): The name of the BigQuery table. If not
               provided, the entire dataset is scanned. Optional.
               Defaults to None.
-        cloudsql_args(Dict):
+        cloudsql_arg (Dict):
             instance (str): Name of the database instance.
-            zone(str): The name of the zone.
-            service_account(str): Service account email to be used.
-            db_name(str): The name of the database.
+            zone (str): The name of the zone.
+            service_account (str): Service account email to be used.
+            db_name (str): The name of the database.
             table (str): The name of the table.
             db_type(str): The type of the database. e.g. postgres, mysql.
     """
