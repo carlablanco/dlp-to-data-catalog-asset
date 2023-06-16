@@ -7,6 +7,7 @@ from typing import List, Dict
 from google.cloud import dlp_v2
 from google.api_core.exceptions import BadRequest
 
+
 class DlpInspection:
     """Performs a DLP inspection on a preprocessed table to identify
             sensitive information."""
@@ -15,7 +16,7 @@ class DlpInspection:
         self,
         project_id: str,
         location_category: str,
-        tables: List[dlp_v2.Table]=None,
+        tables: List[dlp_v2.Table] = None,
     ):
         """Initializes the class with the required data.
 
@@ -99,7 +100,7 @@ class DlpInspection:
                             0].record_location.field_id.name
                         infotypes = finding_results.setdefault(column, {})
                         likelihood = value_likelihood.get(
-                            finding.likelihood.name,0)
+                            finding.likelihood.name, 0)
                         # If the infotype is already in the dictionary, sum
                         # the likelihood value to the exisiting one.
                         if finding.info_type.name in infotypes:
@@ -197,7 +198,7 @@ class DlpInspection:
 
         return results_list
 
-    def get_finding_results(self,table: dlp_v2.Table) -> Dict:
+    def get_finding_results(self, table: dlp_v2.Table) -> Dict:
         """Retrieve the finding results of inspected cells in a table.
         This method takes a table and performs data inspection using the
         configured inspection parameters. It returns a dictionary containing
@@ -214,13 +215,13 @@ class DlpInspection:
 
         # Get the complete cells inspected.
         results_lists = self.analyze_dlp_table(parent, table,
-                                                inspect_config)
+                                               inspect_config)
         # Processes the results of the inspection.
         finding_results = self.analyze_inspection_result(results_lists)
 
         return finding_results
 
-    def merge_and_top_finding(self,finding_results_list: List) -> Dict:
+    def merge_and_top_finding(self, finding_results_list: List) -> Dict:
         """Merges a list of finding results and finds the top findings.
 
         Args:
@@ -245,4 +246,3 @@ class DlpInspection:
 
         # Get the maximum infotype for each variable.
         return self.get_max_infotype(merge_finding_result)
-    
