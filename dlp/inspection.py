@@ -146,7 +146,7 @@ class DlpInspection:
     def analyze_dlp_table(
         self,
         parent: str,
-        table: str,
+        table: dlp_v2.Table,
         inspect_config: Dict,
     ) -> List[Dict]:
         """Analyze the complete DLP table one column at a time.
@@ -157,7 +157,8 @@ class DlpInspection:
 
         Args:
            parent (str): The project route in GCP.
-           table: The particular table to be inspected in the correct format.
+           table (dlp_v2.Table): The particular table to be inspected in
+                the correct format.
            inspect_config (Dict): Parameters for the inspection. InfoTypes
                            and the minimum likelihood.
 
@@ -166,10 +167,9 @@ class DlpInspection:
             inspected and returns findings for each record.
         """
 
-        num_columns = len(table.headers)
         results_list = []
 
-        for col_index in range(num_columns):
+        for col_index in enumerate(table.headers):
             dlp_table = dlp_v2.Table()
             dlp_table.headers = [{"name": table.headers[col_index].name}]
 
@@ -221,15 +221,15 @@ class DlpInspection:
 
         return finding_results
 
-    def merge_and_top_finding(self, finding_results_list: List) -> Dict:
+    def merge_finding_results(self, finding_results_list: List) -> Dict:
         """Merges a list of finding results and finds the top findings.
 
         Args:
             finding_results_list (List): A list of finding results.
 
         Returns:
-            _type_: A dictionary containing the top findings with their
-            respective infotype and likelihood value.
+            A dictionary containing the top findings with their
+                respective infotype and likelihood value.
         """
         merge_finding_result = {}
 

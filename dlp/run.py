@@ -178,7 +178,7 @@ def run(args: Type[argparse.Namespace]):
     )
 
     dlpinspection = DlpInspection(project_id=project,
-                location_category=location_category)
+                                  location_category=location_category)
 
     # Get a list of table names.
     table_names = preprocess.get_table_names()
@@ -193,7 +193,7 @@ def run(args: Type[argparse.Namespace]):
         while not empty_search:
             # Retrieve DLP table per batch of cells.
             dlp_table = preprocess.get_dlp_table_per_block(
-                batch_size,table_name,start_index)
+                batch_size, table_name, start_index)
             finding_result_per_block = dlpinspection.get_finding_results(
                 dlp_table)
             finding_results_per_table.append(finding_result_per_block)
@@ -203,12 +203,11 @@ def run(args: Type[argparse.Namespace]):
             start_index += batch_size
 
         # Obtain the top finding for the table.
-        top_finding_per_table = dlpinspection.merge_and_top_finding(
+        top_finding_per_table = dlpinspection.merge_finding_results(
             finding_results_per_table)
 
         # Add the table and its top_finding to the list.
         top_finding_tables.append(top_finding_per_table)
-
 
     if source == "bigquery" and table is None:
         # If scanning entire dataset.
