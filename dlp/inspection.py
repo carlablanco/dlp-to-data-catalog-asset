@@ -16,7 +16,7 @@ class DlpInspection:
         self,
         project_id: str,
         location_category: str,
-        tables: List[dlp_v2.Table],
+        tables: List[dlp_v2.Table] = None,
     ):
         """Initializes the class with the required data.
 
@@ -50,8 +50,13 @@ class DlpInspection:
         inspect_config = {
             "info_types": [
                 {"name": name} for name in filtered_infotypes
-            ]
+            ],
+            "min_likelihood": "LIKELY",
+            "limits": {
+                "max_findings_per_request": 100
+            }
         }
+
         parent = f"projects/{self.project_id}"
         return parent, inspect_config
 
@@ -73,40 +78,41 @@ class DlpInspection:
                     the infotype and the likelihood value.
                 Example: {"name": {"PERSON_NAME": 4.4}, "age": {"AGE": 5.8}}
         """
-
         table_inspected = {}
-        # Create a dictionary in the correct format to analyze the API response.
+        # Create a dictionary in the correct format
+        # to analyze the API response.
+        finding_results = {}
         for result in (results):
             table_inspected["result"] = result.result
 
-        value_likelihood = {
-            "LIKELIHOOD_UNSPECIFIED": 1,
-            "VERY_UNLIKELY": 0.6,
-            "UNLIKELY": 0.8,
-            "POSSIBLE": 1,
-            "LIKELY": 1.2,
-            "VERY_LIKELY": 1.4
-        }
-        finding_results = {}
-        if table_inspected["result"].findings:
-            for finding in table_inspected["result"].findings:
-                try:
-                    column = finding.location.content_locations[
-                        0].record_location.field_id.name
-                    infotypes = finding_results.setdefault(column, {})
-                    likelihood = value_likelihood.get(finding.likelihood.name,
-                                                      0)
-                    # If the infotype is already in the dictionary, sum
-                    # the likelihood value to the exisiting one.
-                    if finding.info_type.name in infotypes:
-                        infotypes[finding.info_type.name] += likelihood
-                    else:
-                        # If the infotype is not in the dictionary, add it with
-                        # the likelihood value.
-                        infotypes[finding.info_type.name] = likelihood
-                except AttributeError as err:
-                    raise ValueError("""AttributeError: No findings
-                                        returned from API call.""") from err
+            value_likelihood = {
+                "LIKELIHOOD_UNSPECIFIED": 1,
+                "VERY_UNLIKELY": 0.6,
+                "UNLIKELY": 0.8,
+                "POSSIBLE": 1,
+                "LIKELY": 1.2,
+                "VERY_LIKELY": 1.4
+            }
+            if table_inspected["result"].findings:
+                for finding in table_inspected["result"].findings:
+                    try:
+                        column = finding.location.content_locations[
+                            0].record_location.field_id.name
+                        infotypes = finding_results.setdefault(column, {})
+                        likelihood = value_likelihood.get(
+                            finding.likelihood.name, 0)
+                        # If the infotype is already in the dictionary, sum
+                        # the likelihood value to the exisiting one.
+                        if finding.info_type.name in infotypes:
+                            infotypes[finding.info_type.name] += likelihood
+                        else:
+                            # If the infotype is not in the dictionary, add it
+                            # with the likelihood value.
+                            infotypes[finding.info_type.name] = likelihood
+                    except AttributeError as err:
+                        raise ValueError("""AttributeError:
+                        No findings returned from API call.""") from err
+
         return finding_results
 
     def get_max_infotype(self, finding_results: Dict) -> Dict:
@@ -140,59 +146,41 @@ class DlpInspection:
     def analyze_dlp_table(
         self,
         parent: str,
-        table: str,
+        table: dlp_v2.Table,
         inspect_config: Dict,
     ) -> List[Dict]:
-        """ Analyze the complete DLP table in blocks of 10000 cells.
+        """Analyze the complete DLP table one column at a time.
 
-            This function iteratively analyzes a large DLP table by making API
-            calls in blocks of 10000 cells at a time. This helps to avoid
-            exceeding API quotas and rate limits, which can cause errors
-            and delays.
+        This function iteratively analyzes a large DLP table by making API
+        calls for each column individually. This helps to avoid exceeding
+        API quotas and rate limits, which can cause errors and delays.
 
-            Args:
-               parent (str): The project route in GCP.
-               table: The particular table to be inspected in the correct
-                        format.
-               inspect_config (Dict): Parameters for the ispection. InfoTypes
-                               and the minimum likelihood.
+        Args:
+           parent (str): The project route in GCP.
+           table (dlp_v2.Table): The particular table to be inspected in
+                the correct format.
+           inspect_config (Dict): Parameters for the inspection. InfoTypes
+                           and the minimum likelihood.
 
-            Returns:
-                List[Dict]: The response from the API. Each varibale is
-                inspected and returns findings for each record.
-
+        Returns:
+            List[Dict]: The response from the API. Each variable is
+            inspected and returns findings for each record.
         """
-        # The Block size adecuate to the DLP scan.
-        block_size = 10000
-        num_headers = len(table.headers)
-        # Get the headers from the first row of the table.
-        dlp_table = dlp_v2.Table()
-        dlp_table.headers = [
-            {"name": table.headers[i].name} for i in range(num_headers)]
 
-        # List of data chunks of 10000 cells.
-        data_chunks = [
-            table.rows[rows:rows+int((block_size/num_headers))]
-            for rows in range(0, len(table.rows),
-                              int((block_size/num_headers)))
-        ]
-
-        # Create a list for the DLP inspections.
         results_list = []
 
-        for chunk in data_chunks:
-            # Get specific data chunk.
-            chunk_data = [[value.string_value for value in row.values]
-                          for row in chunk]
+        for col_index in enumerate(table.headers):
+            dlp_table = dlp_v2.Table()
+            dlp_table.headers = [{"name": table.headers[col_index].name}]
 
-            # Add the specific data chunk to the dlp object.
             rows = []
-            for row in chunk_data:
+            for row in table.rows:
+                cell_value = row.values[col_index].string_value
                 rows.append(dlp_v2.Table.Row(
-                    values=[dlp_v2.Value(
-                        string_value=cell_val) for cell_val in row]))
+                    values=[dlp_v2.Value(string_value=cell_value)]))
 
             dlp_table.rows = rows
+
             try:
                 # Make the API request for the chunk of data.
                 response = self.dlp_client.inspect_content(
@@ -207,27 +195,54 @@ class DlpInspection:
             except BadRequest as error:
                 # Handle the BadRequest exception here.
                 raise BadRequest(error) from error
+
         return results_list
 
-    def main(self):
-        """Iterates over the given tables and analyzes each one.
+    def get_finding_results(self, table: dlp_v2.Table) -> Dict:
+        """Retrieve the finding results of inspected cells in a table.
+        This method takes a table and performs data inspection using the
+        configured inspection parameters. It returns a dictionary containing
+        the finding results for the inspected cells.
+
+            Args:
+                table: The particular table to be inspected in the correct
+                            format.
 
            Returns:
-                results: A list of dictionaries with the infotype with the
-                    highest likelihood.
-                    Example: [{"name": "PERSON_NAME", "age": "AGE"},
-                     {"DNI": "GOVERMENT_ID", "token": "AUTH_TOKEN"}]"""
-        results = []
+                A dictionary, where each variable has its respective
+              "infotype" and "likelihood value."""
         parent, inspect_config = self.get_inspection_parameters()
-        for table in self.tables:
-            # Get the complete table inspected.
-            results_lists = self.analyze_dlp_table(parent, table,
-                                                   inspect_config)
-            # Processes the results of the inspection.
-            finding_results = self.analyze_inspection_result(results_lists)
-            # Get the max infotype for each variable.
-            top_findings = self.get_max_infotype(finding_results)
-            # Append to the results list.
-            results.append(top_findings)
 
-        return results
+        # Get the complete cells inspected.
+        results_lists = self.analyze_dlp_table(parent, table,
+                                               inspect_config)
+        # Processes the results of the inspection.
+        finding_results = self.analyze_inspection_result(results_lists)
+
+        return finding_results
+
+    def merge_finding_results(self, finding_results_list: List) -> Dict:
+        """Merges a list of finding results and finds the top findings.
+
+        Args:
+            finding_results_list (List): A list of finding results.
+
+        Returns:
+            A dictionary containing the top findings with their
+                respective infotype and likelihood value.
+        """
+        merge_finding_result = {}
+
+        # Merge the finding results from the list.
+        for finding_results in finding_results_list:
+            for key, values in finding_results.items():
+                if key not in merge_finding_result:
+                    merge_finding_result[key] = {}
+                for infotype, value in values.items():
+
+                    # Sum up the likelihood values for each infotype.
+                    merge_finding_result[key][infotype] =  \
+                        merge_finding_result[key].get(infotype, 0) + value
+
+        # Get the maximum infotype for each variable.
+        return self.get_max_infotype(merge_finding_result)

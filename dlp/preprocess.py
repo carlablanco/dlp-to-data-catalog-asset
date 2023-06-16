@@ -79,8 +79,8 @@ class Preprocessing:
             instance = cloudsql_args["instance"]
             db_type = cloudsql_args["db_type"]
 
-            # Determine the appropriate database driver and connection name
-            #  based on db_type.
+            # Determine the appropriate database driver and connection
+            # name based on db_type.
             if db_type == "mysql":
                 driver = "pymysql"
                 connection_name = f"mysql+{driver}"
@@ -112,11 +112,18 @@ class Preprocessing:
         )
         return connector
 
-    def get_cloudsql_data(self, table: str) -> Tuple[List, List]:
+    def get_cloudsql_data(
+            self,
+            table: str,
+            batch_size: int,
+            start_index: int
+    ) -> Tuple[List, List]:
         """Retrieves the schema and content of a table from CloudSQL.
 
         Args:
             table (str): The name of the table.
+            batch_size (int): The block of cells to be analyzed.
+            start_index (int): The starting index of each block to be analyzed.
 
         Returns:
             Tuple(List, List): A tuple containing the schema and content
@@ -131,12 +138,16 @@ class Preprocessing:
         table = Table(table, metadata, extend_existing=True,
                       autoload_with=engine)
 
+        num_columns = len(table.columns.keys())
+
         # Get table schema.
         schema = [column.name for column in table.columns]
 
         # Get table contents.
         with engine.connect() as connection:
-            select = table.select().with_only_columns(table.columns)
+            select = table.select().with_only_columns(table.columns) \
+                .limit(int(batch_size/num_columns)) \
+                    .offset(int(start_index/num_columns))
             content = list(connection.execute(select).fetchall())
 
         return schema, content
@@ -154,30 +165,39 @@ class Preprocessing:
         table_names = [table.table_id for table in dataset_tables]
         return table_names
 
-    def fetch_rows(self, table_id: str) -> List[Dict]:
+    def fetch_rows(
+        self,
+        table_bq: bigquery.table.Table,
+        start_index: int,
+        batch_size: int
+    ) -> List[Dict]:
         """Fetches a batch of rows from a BigQuery table.
 
            Args:
-              table_id (str) = The path of the table were the data is fetched.
+              table_bq (bigquery.table.Table) : The path of the table
+                where the data is fetched.
+              start_index (int) : The starting index of each block to
+              be analyzed.
+              batch_size (int) : The block of cells to be analyzed.
 
            Returns:
               List[Dict]: A list of rows, where each row is a tuple
               containing the values for each field in the table schema.
          """
         content = []
-        fields = table_id.schema
 
-        rows_iter = self.bigquery.bq_client.list_rows(table_id)
+        num_columns = len(table_bq.schema)
+
+        rows_iter = self.bigquery.bq_client.list_rows(
+            table=table_bq,start_index=int(start_index/num_columns),
+            max_results=int(batch_size/num_columns))
 
         if not rows_iter.total_rows:
-            print(f"""The Table {table_id} is empty. Please populate the
-                                                        table and try again.""")
+            print(f"""The Table {table_bq.table_id} is empty. Please populate
+                  the table and try again.""")
         else:
             for row in rows_iter:
-                row_dict = {}
-                for i, field in enumerate(fields):
-                    row_dict[field.name] = row[i]
-                content.append(row_dict)
+                content.append(tuple(row))
 
         return content
 
@@ -238,70 +258,98 @@ class Preprocessing:
         return field.name, False, False
 
     def get_query(
-            self, columns_selected: str, table_id: str, unnest: str) -> str:
+            self,
+            table_bq: bigquery.table.Table,
+            query_args: Dict) -> str:
         """Creates a SQL query as a string.
 
         Args:
-           columns_selected (str): The string with the selected columns.
-           table_id (str): The fully qualified name of the BigQuery table.
-           unnest (str): The unnest string for the query.
+            table_bq (bigquery.table.Table): The fully qualified name
+            of the BigQuery table.
+            query_args (Dict) :
+                columns_selected (str): The string with the selected columns.
+                unnest (str): The unnest string for the query.
+                limit (int): The maximum number of rows to
+                retrieve in each block.
+                offset(int): The starting index of the rows to retrieve.
 
         Returns:
             str: SQL query as a string.
         """
-        query = f"""SELECT {columns_selected}
-                    FROM `{table_id}`,
-                    {unnest}"""
+        query = f"""SELECT {query_args['columns_selected']}
+                    FROM `{table_bq}`,
+                    {query_args['unnest']} LIMIT {query_args['limit']} 
+                    OFFSET {query_args['offset']}"""
         return query
 
-    def get_nested_types(self, table_id: str) -> List[str]:
+    def get_nested_types(self, table_bq: bigquery.table.Table) -> List[str]:
         """ Gets the field modes of the selected table.
 
         Args:
-            table_id (str): The fully qualified name of the BigQuery table.
+            table_bq (bigquery.table.Table): The fully qualified
+            name of the BigQuery table.
 
         Returns:
             List: A complete list with the field modes of the columns.
         """
-        nested_types = [field.mode for field in table_id.schema]
+        nested_types = [field.mode for field in table_bq.schema]
         return nested_types
 
     def get_rows_query(
         self,
-        table_schema: List[Dict],
-        nested_columns: List[Dict],
-        record_columns: List[Dict],
-        table_id: str
+        nested_args: Dict,
+        table_bq: bigquery.table.Table,
+        batch_size: int,
+        start_index: int
     ) -> List[Dict]:
         """Retrieves the content of the table.
 
         Args:
-            table_schema (List[Dict]): The schema of a BigQuery table.
-            nested_columns (List[Dict]): A list with the columns
+            nested_args (Dict):
+                table_schema (List[Dict]): The schema of a BigQuery table.
+                nested_columns (List[Dict]): A list with the columns
                 of the nested columns.
-            record_columns (List[Dict]): The columns with the record type.
-            table_id (str): The fully qualified name of the BigQuery table.
+                record_columns (List[Dict]): The columns with the record type.
+            table_bq (bigquery.table.Table): The fully qualified name
+            of the BigQuery table.
+            batch_size (int): The block of cells to be analyzed.
+            start_index (int): The starting index of each block to be analyzed.
 
         Returns:
             List[Dict]: The content of the BigQuery table.
         """
-        nested_types = self.get_nested_types(table_id)
+        nested_types = self.get_nested_types(table_bq)
+
         if "REPEATED" in nested_types:
-            bq_schema = table_schema + record_columns
+            bq_schema = nested_args["table_schema"] \
+                + nested_args["record_columns"]
+            num_columns = len(bq_schema)
             columns_selected = ", ".join(str(column) for column in bq_schema)
-            unnest = f"UNNEST ({record_columns[0]})"
+            unnest = f"UNNEST ({nested_args['record_columns'][0]})"
         else:
-            bq_schema = table_schema + nested_columns
+            bq_schema = nested_args["table_schema"] \
+                + nested_args["nested_columns"]
+            num_columns = len(bq_schema)
             columns_selected = ", ".join(str(column) for column in bq_schema)
             unnest = (
-                f"UNNEST ([{record_columns[0]}]) as {record_columns[0]} "
+                f"""UNNEST ([{nested_args['record_columns'][0]}])
+                as {nested_args['record_columns'][0]} """
             )
-
-        sql_query = self.get_query(columns_selected, table_id, unnest)
+        # Generate the SQL query using the selected columns,
+        # table, unnest, limit, and offset. Calculate the limit and offset for
+        # the SQL query based on the block size.
+        sql_query = self.get_query(
+            table_bq,
+            {
+                "columns_selected": columns_selected,
+                "unnest": unnest,
+                "offset": int(start_index/num_columns),
+                "limit": int(batch_size/num_columns)
+            })
 
         query_job = self.bigquery.bq_client.query(sql_query)
         query_results = query_job.result()
-        bq_rows_content = [dict(row) for row in query_results]
+        bq_rows_content = [tuple(dict(row).values()) for row in query_results]
 
         return bq_rows_content
 
@@ -321,7 +369,7 @@ class Preprocessing:
         Recursively flattens a nested list and returns a flattened list.
 
         Args:
-            lista (list): The input list that needs to be flattened.
+            list (list): The input list that needs to be flattened.
 
         Returns:
             list: The flattened list.
@@ -343,12 +391,16 @@ class Preprocessing:
 
     def get_bigquery_data(
         self,
-        table_id: str
+        table_id: str,
+        start_index: int,
+        batch_size: int
     ) -> Tuple[List[Dict], List[Dict]]:
         """Retrieves the schema and content of a BigQuery table.
 
         Args:
             table_id (str): The fully qualified name of the BigQuery table.
+            star_index (int): The starting index of each block to be analyzed.
+            batch_size (int): The block of cells to be analyzed.
 
         Returns:
             Tuple[List[Dict], List[Dict]]: A tuple containing the BigQuery
@@ -369,91 +421,94 @@ class Preprocessing:
             nested_columns = self.flatten_list(nested_columns)
             bq_schema = table_schema + nested_columns
             bq_rows_content = self.get_rows_query(
-                table_schema, nested_columns, record_columns, table_bq)
+                {
+                    "table_schema": table_schema,
+                    "nested_columns": nested_columns,
+                    "record_columns": record_columns
+                },
+                table_bq,
+                batch_size,
+                start_index)
         else:
             table_schema = table_bq.schema
-            bq_schema = [field.to_api_repr() for field in table_schema]
-            bq_rows_content = self.fetch_rows(table_bq)
+            bq_schema = [field.to_api_repr()["name"] for field in table_schema]
+            bq_rows_content = self.fetch_rows(
+                table_bq, start_index, batch_size)
 
         return bq_schema, bq_rows_content
 
-    def convert_to_dlp_table(
-        self,
-        schema: List[Dict],
-        content: List[Dict],
-        table_id: str = None,
-    ) -> (dlp_v2.Table):
+    def convert_to_dlp_table(self, schema: List[Dict],
+                             content: List[Dict]) -> dlp_v2.Table:
         """Converts a BigQuery table into a DLP table.
 
         Converts a BigQuery table into a Data Loss Prevention table,
         an object that can be inspected by Data Loss Prevention.
 
         Args:
-            bq_schema (List[Dict]): The schema of a BigQuery table.
-            bq_content (List[Dict]): The content of a BigQuery table.
-            table_id (str): The fully qualified name of the BigQuery table.
+            schema (List[Dict]): The schema of a BigQuery table.
+            content (List[Dict]): The content of a BigQuery table.
 
         Returns:
             A table object that can be inspected by Data Loss Prevention.
         """
         table_dlp = dlp_v2.Table()
-
-        # Determine the column names based on the source
-        if self.source == Database.BIGQUERY:
-            table_bq = self.bigquery.bq_client.get_table(table_id)
-            dtypes = self.get_data_types(table_bq)
-            if "RECORD" in dtypes:
-                table_dlp.headers = [{"name": name} for name in schema]
-            else:
-                table_dlp.headers = [{"name": item['name']} for item in schema]
-        else:
-            column_names = schema
-            table_dlp.headers = [{"name": name} for name in column_names]
+        table_dlp.headers = [
+            {"name": schema_object} for schema_object in schema
+        ]
 
         rows = []
         for row in content:
-            values = [dlp_v2.Value(string_value=str(cell_val))
-                      for cell_val in row.values()] \
-                if self.source == Database.BIGQUERY \
-                else [dlp_v2.Value(string_value=str(cell_val))
-                      for cell_val in row]
-
-            rows.append(dlp_v2.Table.Row(values=values))
+            rows.append(dlp_v2.Table.Row(
+                values=[dlp_v2.Value(
+                    string_value=str(cell_val)) for cell_val in row]))
 
         table_dlp.rows = rows
 
         return table_dlp
 
-    def get_dlp_table_list(self) -> List[dlp_v2.Table]:
-        """Constructs a list of DLP Table objects
+    def get_table_names(self) -> List:
+        """Returns a list of table names.
+
+        If the source is BigQuery, it returns the table name if specified,
+        otherwise it retrieves all table names within the dataset.
+        If the source is Cloud SQL, it returns the table name.
 
         Returns:
-            A list of Data Loss Prevention table objects.
+            A list of table names.
         """
 
-        dlp_tables_list = []
-
         if self.source == Database.BIGQUERY:
-            if self.bigquery.table:
-                bigquery_tables = [self.bigquery.table]
-            else:
-                bigquery_tables = (
-                    self.get_bigquery_tables(self.bigquery.dataset)
-                )
+            tables = [self.bigquery.table] \
+                if self.bigquery.table \
+                else self.get_bigquery_tables(self.bigquery.dataset)
+        elif self.source == Database.CLOUDSQL:
+            tables = [self.cloudsql.table]
 
-            for table_name in bigquery_tables:
-                table_id = (
-                    f"{self.project}.{self.bigquery.dataset}.{table_name}")
-                schema, content = self.get_bigquery_data(table_id)
-                table_dlp = self.convert_to_dlp_table(
-                    schema, content, table_id)
-                dlp_tables_list.append(table_dlp)
+        return tables
+
+    def get_dlp_table_per_block(
+            self,
+            batch_size: int,
+            table_name: str,
+            start_index: int
+        ) -> dlp_v2.Table:
+        """Constructs a DLP Table object, a partir de cada bloque de celdas.
+        Args:
+            batch_size (int): The block of cells to be analyzed.
+            table_name (str): The name of the table to be analyzed..
+            start_index (int): The starting index of each block to be analyzed.
+
+        Returns:
+            A Data Loss Prevention table object.
+        """
+        if self.source == Database.BIGQUERY:
+            schema, content = self.get_bigquery_data(
+                f"{self.bigquery.dataset}.{table_name}",
+                start_index, batch_size)
 
         elif self.source == Database.CLOUDSQL:
-            schema_content_list = [self.get_cloudsql_data(self.cloudsql.table)]
-            dlp_tables_list = [
-                self.convert_to_dlp_table(schema, content)
-                for schema, content in schema_content_list
-            ]
+            schema, content = self.get_cloudsql_data(self.cloudsql.table,
+                                                     batch_size,
+                                                     start_index)
 
-        return dlp_tables_list
+        return self.convert_to_dlp_table(schema, content)

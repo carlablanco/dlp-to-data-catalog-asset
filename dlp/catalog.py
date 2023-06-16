@@ -53,10 +53,9 @@ class Catalog:
             self.entry_group_id = f"dlp_{instance_id}_{timestamp}"
             self.entry_id = f"dlp_{timestamp}"
         else:
-            self.tag_template_id =(
+            self.tag_template_id = (
                 f"dlp_{dataset.lower()}_{table.lower()}_{timestamp}"
-                )
-
+            )
 
     def create_tag_template(self, parent: str) -> None:
         """Creates a tag template.
@@ -70,10 +69,10 @@ class Catalog:
         # Creates a unique display name for each tag template
         tag_template_name = (
             f"DLP_columns_{self.project_id}_{self.dataset}_{self.table}"
-            )
+        )
         self.tag_template.display_name = tag_template_name
 
-        #if the data is a list, it converts to a dict
+        # if the data is a list, it converts to a dict
         if isinstance(self.data, list):
             self.data = self.data[0]
         # Creates a dictionary with the fields of the Tag Templates
@@ -81,14 +80,14 @@ class Catalog:
         # Creates the fields of the Tag Template.
         for key, value in self.data.items():
             new_source_field = datacatalog_v1.TagTemplateField(
-            name=key,
-            type=datacatalog_v1.FieldType(
-                primitive_type = (
-            datacatalog_v1.FieldType.PrimitiveType.STRING
-                )
-            ),
-            description=value,
-        )
+                name=key,
+                type=datacatalog_v1.FieldType(
+                    primitive_type=(
+                        datacatalog_v1.FieldType.PrimitiveType.STRING
+                    )
+                ),
+                description=value,
+            )
             fields[new_source_field.name] = new_source_field
         self.tag_template.fields.update(fields)
 
@@ -105,7 +104,6 @@ class Catalog:
             print("""Error occured while creating
                         tag template:""", str(error))
 
-
     def attach_tag_to_table(self, table_entry: str) -> None:
         """Attaches a tag to a BigQuery or CloudSQL table.
 
@@ -120,7 +118,6 @@ class Catalog:
             tag.fields[key] = datacatalog_v1.types.TagField(string_value=value)
 
         self.client.create_tag(parent=table_entry, tag=tag)
-
 
     def create_custom_entry_group(self) -> str:
         """Creates a new Custom entry group.
@@ -143,7 +140,6 @@ class Catalog:
             print("""Error occured while creating
                         the entry group:""", str(error))
         return entry_group.name
-
 
     def create_entry(self, entry_group_name: str) -> None:
         """Creates one entry for each column in the CloudSQL inspected table.
@@ -202,7 +198,7 @@ class Catalog:
                 nested_data = (
                     [{key.replace(".", "_"): value for key,
                       value in self.data.items()}]
-                    )
+                )
                 self.data = nested_data
                 self.create_tag_template(parent)
 
