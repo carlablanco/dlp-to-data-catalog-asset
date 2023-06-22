@@ -42,12 +42,13 @@ class Database(Enum):
 class Preprocessing:
     """Converts input data into Data Loss Prevention tables."""
 
-    def __init__(self, source: str, project: str, **preprocess_args):
+    def __init__(self, source: str, project: str, zone: str, **preprocess_args):
         """Initializes `Preprocessing` class with arguments.
 
         Args:
             source (str): The name of the source of data used.
             project (str): The name of the Google Cloud Platform project.
+            zone(str): The name of the zone.
             **preprocess_args: Additional arguments for preprocessing.
                 Supported arguments are:
                 - bigquery_args(Dict):
@@ -57,7 +58,6 @@ class Preprocessing:
                       Optional. Defaults to None.
                 - cloudsql_args(Dict):
                     - instance (str): Name of the database instance.
-                    - zone(str): The name of the zone.
                     - service_account(str): Service account email to be used.
                     - db_name(str): The name of the database.
                     - table (str): The name of the table.
@@ -66,6 +66,7 @@ class Preprocessing:
         """
         self.source = Database(source)
         self.project = project
+        self.zone = zone
         if self.source == Database.BIGQUERY:
             # Handle BigQuery source.
             bigquery_args = preprocess_args.get("bigquery_args", {})
@@ -75,7 +76,6 @@ class Preprocessing:
         elif self.source == Database.CLOUDSQL:
             # Handle Cloud SQL source.
             cloudsql_args = preprocess_args.get("cloudsql_args", {})
-            zone = cloudsql_args["zone"]
             instance = cloudsql_args["instance"]
             db_type = cloudsql_args["db_type"]
 

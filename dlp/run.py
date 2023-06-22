@@ -16,7 +16,7 @@ EMAIL_REGEX = re.compile(r"^[\w\.-]+@[\w\.-]+\.\w+$")
 
 
 def is_valid_email(email: str) -> bool:
-    """Checks if a string is a valid email. """
+    """Checks if a string is a valid email."""
     return bool(EMAIL_REGEX.match(email))
 
 
@@ -72,12 +72,6 @@ def parse_arguments() -> Type[argparse.Namespace]:
         help="The name of the database instance used.",
     )
     cloudsql_parser.add_argument(
-        "--zone",
-        required=True,
-        type=str,
-        help="The zone to use, e.g. us-central1-b.",
-    )
-    cloudsql_parser.add_argument(
         "--service_account",
         required=True,
         type=email_type,
@@ -105,10 +99,10 @@ def parse_arguments() -> Type[argparse.Namespace]:
         help="The location to be inspected. Ex. 'CANADA'",
     )
     parser.add_argument(
-        "--location",
-        type=str,
+        "--zone",
         required=True,
-        help="The location of the engine'.",
+        type=str,
+        help="The zone to use, e.g. us-central1-b.",
     )
 
     return parser.parse_args()
@@ -123,6 +117,7 @@ def run(args: Type[argparse.Namespace]):
         project (str): The name of the Google Cloud Platform project.
         location_category (str): The location to be inspected. Ex. "CANADA".
         location (str): The compute engine region.
+        zone (str): The name of the zone.
         bigquery_args (Dict):
             dataset (str): The name of the BigQuery dataset.
             table (str, optional): The name of the BigQuery table. If not
@@ -130,7 +125,6 @@ def run(args: Type[argparse.Namespace]):
               Defaults to None.
         cloudsql_arg (Dict):
             instance (str): Name of the database instance.
-            zone (str): The name of the zone.
             service_account (str): Service account email to be used.
             db_name (str): The name of the database.
             table (str): The name of the table.
@@ -140,7 +134,7 @@ def run(args: Type[argparse.Namespace]):
     source = args.source
     project = args.project
     location_category = args.location_category
-    location = args.location
+    zone = args.zone
 
     if source == "bigquery":
         dataset = args.dataset
@@ -156,7 +150,6 @@ def run(args: Type[argparse.Namespace]):
         preprocess_args = {
             "cloudsql_args": {
                 "instance": instance_id,
-                "zone": args.zone,
                 "service_account": args.service_account,
                 "db_name": dataset,
                 "table": table,
@@ -216,7 +209,7 @@ def run(args: Type[argparse.Namespace]):
             catalog = Catalog(
                 data=top_finding_tables[i],
                 project_id=project,
-                location=location,
+                zone=zone,
                 dataset=dataset,
                 table=table,
                 instance_id=instance_id,
@@ -227,7 +220,7 @@ def run(args: Type[argparse.Namespace]):
         catalog = Catalog(
             data=top_finding_tables[0],
             project_id=project,
-            location=location,
+            zone=zone,
             dataset=dataset,
             table=table,
             instance_id=instance_id,
