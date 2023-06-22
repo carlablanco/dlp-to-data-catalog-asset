@@ -169,7 +169,7 @@ class DlpInspection:
 
         results_list = []
 
-        for col_index in enumerate(table.headers):
+        for col_index,_ in enumerate(table.headers):
             dlp_table = dlp_v2.Table()
             dlp_table.headers = [{"name": table.headers[col_index].name}]
 
