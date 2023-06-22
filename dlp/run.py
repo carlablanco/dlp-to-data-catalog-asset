@@ -16,7 +16,7 @@ EMAIL_REGEX = re.compile(r"^[\w\.-]+@[\w\.-]+\.\w+$")
 
 
 def is_valid_email(email: str) -> bool:
-    """Checks if a string is a valid email."""
+    """Checks if a string is a valid email. """
     return bool(EMAIL_REGEX.match(email))
 
 
