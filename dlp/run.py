@@ -186,7 +186,7 @@ def run(args: Type[argparse.Namespace]):
     top_finding_tables = []
 
     # Iterate through each table to obtain the finding_result_per_table.
-    for table_name in table_names:
+    for index, table_name in enumerate(table_names):
         finding_results_per_table = []
         empty_search = False
         start_index = 0
@@ -211,7 +211,7 @@ def run(args: Type[argparse.Namespace]):
 
         # Create Catalog instance for each table.
         catalog = Catalog(
-            data=top_finding_tables[0],
+            data=top_finding_tables[index],
             project_id=project,
             zone=zone,
             dataset=dataset,
