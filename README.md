@@ -92,7 +92,7 @@ To use the program locally, you need to provide the following parameters:
 
 - project: The name of the Google Cloud Platform project.
 - location_category: The location specifying the localization of the inspection results. <a href= "https://cloud.google.com/php/docs/reference/cloud-dlp/latest/V2.InfoTypeCategory.LocationCategory"> Accepted location categories.</a>
-- zone: The zone where the CloudSQL instance is located.
+- zone: The zone where the CloudSQL instance and Data Catalog is located .
 
 These parameters are common to both the BigQuery and CloudSQL execution methods.
 
