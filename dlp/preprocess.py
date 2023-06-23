@@ -48,7 +48,7 @@ class Preprocessing:
         Args:
             source (str): The name of the source of data used.
             project (str): The name of the Google Cloud Platform project.
-            zone(str): The name of the zone.
+            zone (str): The name of the zone.
             **preprocess_args: Additional arguments for preprocessing.
                 Supported arguments are:
                 - bigquery_args(Dict):
