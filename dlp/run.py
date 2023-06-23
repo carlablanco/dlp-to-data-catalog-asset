@@ -61,7 +61,6 @@ def parse_arguments() -> Type[argparse.Namespace]:
     )
     cloudsql_parser.add_argument(
         "--table",
-        required=True,
         type=str,
         help="The CloudSQL table to be scanned.",
     )
@@ -155,6 +154,14 @@ def run(args: Type[argparse.Namespace]):
                 "db_type": args.db_type,
             }
         }
+        catalog = Catalog(
+            data=None,
+            project_id=project,
+            location=location,
+            instance_id=instance_id,
+            entry_group_name=None,
+        )
+        entry_group_name = catalog.create_custom_entry_group()
     else:
         # Handle unsupported source
         raise ValueError("Unsupported source: " + source)
@@ -202,28 +209,15 @@ def run(args: Type[argparse.Namespace]):
         # Add the table and its top_finding to the list.
         top_finding_tables.append(top_finding_per_table)
 
-    if source == "bigquery" and table is None:
-        # If scanning entire dataset.
-        bigquery_tables = preprocess.get_bigquery_tables(dataset)
-        for i, table in enumerate(bigquery_tables):
-            catalog = Catalog(
-                data=top_finding_tables[i],
-                project_id=project,
-                zone=zone,
-                dataset=dataset,
-                table=table,
-                instance_id=instance_id,
-            )
-            catalog.main()
-    else:
-        # If scanning a specific table.
+        # Create Catalog instance for each table.
         catalog = Catalog(
             data=top_finding_tables[0],
             project_id=project,
             zone=zone,
             dataset=dataset,
-            table=table,
+            table=table_name,
             instance_id=instance_id,
+            entry_group_name=entry_group_name,
         )
         catalog.main()
 
