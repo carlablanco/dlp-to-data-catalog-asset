@@ -495,7 +495,7 @@ class Preprocessing:
         """Constructs a DLP Table object, a partir de cada bloque de celdas.
         Args:
             batch_size (int): The block of cells to be analyzed.
-            table_name (str): The name of the table to be analyzed..
+            table_name (str): The name of the table to be analyzed.
             start_index (int): The starting index of each block to be analyzed.
 
         Returns:
