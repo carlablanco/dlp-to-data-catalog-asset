@@ -166,6 +166,7 @@ def run(args: Type[argparse.Namespace]):
     preprocess = Preprocessing(
         source=source,
         project=project,
+        zone = zone,
         **preprocess_args,
     )
 
