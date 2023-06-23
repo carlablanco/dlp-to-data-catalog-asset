@@ -90,7 +90,7 @@ Consult the official Python documentation on <a href= "https://docs.python.org/3
 ## Run the program locally.
 To use the program locally, you need to provide the following parameters:
 
-project: The name of the Google Cloud Platform project.
+- project: The name of the Google Cloud Platform project.
 
 location_category: The location specifying the localization of the inspection results. <a href= "https://cloud.google.com/php/docs/reference/cloud-dlp/latest/V2.InfoTypeCategory.LocationCategory"> Accepted location categories.</a>
 
