@@ -137,6 +137,7 @@ def run(args: Type[argparse.Namespace]):
     if source == "bigquery":
         dataset = args.dataset
         table = args.table
+        entry_group_name = None
         preprocess_args = {
             "bigquery_args": {"dataset": dataset, "table": table}
         }
