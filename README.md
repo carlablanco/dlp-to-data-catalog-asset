@@ -162,7 +162,7 @@ Make sure to replace the placeholder values (PROJECT, LOCATION_CATEGORY, DATASET
 
 To use the program on DataFlow the following steps are required. 
 
-### Steps to run the solutions on Dataflow using the local shell:
+### Steps to run the solutions on Dataflow using the cloud shell:
 
 Upload the Datflow template and its dependencies on Cloud Shell editor.
 
