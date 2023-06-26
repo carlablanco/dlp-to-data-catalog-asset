@@ -4,7 +4,7 @@ Our objective for this asset is to provide a solution for data cataloging that i
 
 ## How it works ##
 
-To use our program, users must provide as a parameter the name of the BigQuery dataset they wish to analyze or the name of the specific table containing the data to be inspected. Our program then uses the Google Cloud DLP API to inspect the data. Once the inspection process is complete, our program creates a Data Catalog template linked to the inspected BigQuery table. This data catalog contains detailed information about the sensitive data found, including the type of data, its location, and any other relevant metadata.
+To use our program, users must provide as a parameter the name of the BigQuery dataset they wish to analyze or the name of the specific table containing the data to be inspected. Our program then uses the Google Cloud DLP API to inspect the data. Once the inspection process is complete, our program creates a Data Catalog template linked to the inspected BigQuery table. This data catalog contains detailed information about the sensitive data found, including the type of data, its zone, and any other relevant metadata.
 
 To create the Data Catalog template, our program uses the Cloud Data Catalog API, which allows you to effectively tag and organize the data. By using the Data Catalog API, our program can automatically tag the sensitive data found and add additional relevant information to the data catalog.
 
@@ -90,8 +90,9 @@ Consult the official Python documentation on <a href= "https://docs.python.org/3
 ## Run the program locally.
 To use the program locally, you need to provide the following parameters:
 
-project: The name of the Google Cloud Platform project.
-location_category: The location specifying the localization of the inspection results.
+- project: The name of the Google Cloud Platform project.
+- location_category: The location specifying the localization of the inspection results. <a href= "https://cloud.google.com/php/docs/reference/cloud-dlp/latest/V2.InfoTypeCategory.LocationCategory"> Accepted location categories.</a>
+- zone: The zone where the CloudSQL instance and Data Catalog is located .
 
 These parameters are common to both the BigQuery and CloudSQL execution methods.
 
@@ -120,7 +121,6 @@ CloudSQL Parameters:
 The following additional parameters are required for running the project with CloudSQL as the data source:
 
 - instance: The name of the CloudSQL instance.
-- zone: The zone where the CloudSQL instance is located.
 - service_account: Email address of the service account to be used.
 - db_name: The name of the database within the CloudSQL instance.
 - db_type: The type of the database (only accepts `mysql` or `postgres`).

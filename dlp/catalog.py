@@ -16,7 +16,7 @@ class Catalog:
         self,
         data: List[Dict],
         project_id: str,
-        location: str,
+        zone: str,
         dataset: Optional[str] = None,
         table: Optional[str] = None,
         instance_id: Optional[str] = None,
@@ -26,7 +26,7 @@ class Catalog:
         Args:
             data(str): The data Previously inspected by the DLP API.
             project(str): Project ID for which the client acts on behalf of.
-            location(str): The compute engine region.
+            zone(str): The compute engine region.
             dataset(str): The BigQuery dataset to be scanned if it's BigQuery.
                         Optional. Default value is None.
             table(str): The name of the table if it's BigQuery.
@@ -38,7 +38,7 @@ class Catalog:
         self.tag_template = datacatalog_v1.TagTemplate()
         self.data = data
         self.project_id = project_id
-        self.location = location
+        self.zone = zone
         self.dataset = dataset
         self.table = table
         self.instance_id = instance_id
@@ -131,7 +131,7 @@ class Catalog:
         try:
             entry_group = self.client.create_entry_group(
                 parent=self.client.common_location_path(
-                    self.project_id, self.location
+                    self.project_id, self.zone
                 ),
                 entry_group_id=self.entry_group_id,
                 entry_group=entry_group_obj,
@@ -183,7 +183,7 @@ class Catalog:
     def main(self) -> None:
         """Creates a tag template for BigQuery tables and creates custom
         entries for Cloud SQL."""
-        parent = f"projects/{self.project_id}/locations/{self.location}"
+        parent = f"projects/{self.project_id}/locations/{self.zone}"
 
         nested_type = False
         if any('.' in key for key in self.data.keys()) is True:
