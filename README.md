@@ -162,9 +162,14 @@ Make sure to replace the placeholder values (PROJECT, LOCATION_CATEGORY, DATASET
 
 To use the program on DataFlow the following steps are required. 
 
-### Steps to run the solutions.
+### Steps to run the solutions on Dataflow using the local shell:
 
--Create a Dataflow template from the Apache Beam code by executing the necessary command. Specify the appropriate options and parameters.
+Upload the Datflow template and its dependencies on Cloud Shell editor.
 
--Once the template is created, deploy the Dataflow job using the template. Configure the job with the required parameters, such as the source database connection details, DLP inspection configuration, and Data Catalog metadata management settings.
---> ver como le paso los placeholders, son los mismos que arriba
+Create the template running the [Dataflow Template](#run-the-program-locally) just like before.
+
+Create the DataFlow Job.
+
+```
+gcloud dataflow jobs run NAME --gcs-location=TEMPLATE_LOCATION
+```
