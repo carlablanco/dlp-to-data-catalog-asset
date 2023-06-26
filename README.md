@@ -166,7 +166,7 @@ To use the program on DataFlow the following steps are required.
 
 Upload the Datflow template and its dependencies on Cloud Shell editor.
 
-Create the template running the [Dataflow Template](#run-the-program-locally) just like before.
+Create the template running the [Dataflow Template](#run-the-program-locally) just like running it locally.
 
 Create the DataFlow Job.
 
