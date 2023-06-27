@@ -160,15 +160,17 @@ Make sure to replace the placeholder values (PROJECT, LOCATION_CATEGORY, DATASET
 
 ## Run the program on DataFlow.
 
-To use the program on DataFlow the following steps are required. 
+To use the program on DataFlow you will need to create the template and the DataFlow job.
 
 ### Steps to run the solutions on Dataflow using the cloud shell:
 
-Upload the Datflow template and its dependencies on Cloud Shell editor.
+1. Clone the program from github.
 
-Create the template running the [Dataflow Template](#run-the-program-locally) just like running it locally.
+2. Upload the zip file into the Cloud Shell Virtual Machine.
 
-Create the DataFlow Job.
+3. Create the template running the [Dataflow Template](#run-the-program-locally) just like running it locally.
+
+4. Create the DataFlow Job.
 
 ```
 gcloud dataflow jobs run NAME --gcs-location=TEMPLATE_LOCATION
