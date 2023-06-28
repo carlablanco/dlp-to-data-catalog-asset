@@ -73,12 +73,6 @@ def parse_arguments() -> Type[argparse.Namespace]:
         help="The name of the database instance used.",
     )
     cloudsql_parser.add_argument(
-        "--zone",
-        required=True,
-        type=str,
-        help="The zone to use, e.g. us-central1-b.",
-    )
-    cloudsql_parser.add_argument(
         "--service_account",
         required=True,
         type=email_type,
@@ -106,10 +100,10 @@ def parse_arguments() -> Type[argparse.Namespace]:
         help="The location to be inspected. Ex. 'CANADA'",
     )
     parser.add_argument(
-        "--location",
-        type=str,
+        "--zone",
         required=True,
-        help="The location of the engine'.",
+        type=str,
+        help="The zone to use, e.g. us-central1-b.",
     )
 
     return parser.parse_args()
@@ -123,8 +117,8 @@ def run(args: Type[argparse.Namespace]):
         source (str): The name of the source of data used.
         project (str): The name of the Google Cloud Platform project.
         location_category (str): The location to be inspected. Ex. "CANADA".
-        location(str): The compute engine region.
-        bigquery_args(Dict):
+        zone (str): The default location to use when making API calls..
+        bigquery_args (Dict):
             dataset (str): The name of the BigQuery dataset.
             table (str, optional): The name of the BigQuery table. If not
               provided, the entire dataset is scanned. Optional.
@@ -141,7 +135,7 @@ def run(args: Type[argparse.Namespace]):
     source = args.source
     project = args.project
     location_category = args.location_category
-    location = args.location
+    zone = args.zone
 
     pipeline_options = PipelineOptions(
         runner='DataflowRunner',
@@ -168,7 +162,6 @@ def run(args: Type[argparse.Namespace]):
         preprocess_args = {
             "cloudsql_args": {
                 "instance": instance_id,
-                "zone": args.zone,
                 "service_account": args.service_account,
                 "db_name": dataset,
                 "table": table,
@@ -183,7 +176,10 @@ def run(args: Type[argparse.Namespace]):
     def process_table(table_tuple):
         table_name, start_index = table_tuple
         preprocess = Preprocessing(
-            source=source, project=project, **preprocess_args)
+            source=source,
+            project=project,
+            zone = zone, 
+            **preprocess_args)
 
         dlp_table = preprocess.get_dlp_table_per_block(50000, table_name, start_index)
         return table_name,dlp_table
@@ -224,7 +220,7 @@ def run(args: Type[argparse.Namespace]):
         catalog = Catalog(
             data=top_finding,
             project_id=project,
-            location=location,
+            zone=zone,
             dataset=dataset,
             table=table_name,
             instance_id=instance_id,
