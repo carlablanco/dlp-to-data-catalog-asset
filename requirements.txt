@@ -9,3 +9,6 @@ cloud-sql-python-connector >= 1.2.2
 cloud-sql-python-connector[pg8000]
 cloud-sql-python-connector[pymysql]
 SQLAlchemy >= 2.0.11
+wheel
+apache-beam[gcp]
+
