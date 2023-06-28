@@ -4,6 +4,7 @@
 """Runs the DLP inspection over the preprocessed table."""
 
 from typing import List, Dict
+import warnings
 from google.cloud import dlp_v2
 from google.api_core.exceptions import BadRequest
 
@@ -38,14 +39,17 @@ class DlpInspection:
             inspect_config (Dict): The configuration for the inspection.
         """
         infotypes = self.dlp_client.list_info_types()
-        filtered_infotypes = [
-            info_type.name
-            for info_type in infotypes.info_types
-            if (str(info_type.categories[0].location_category) ==
-                f"LocationCategory.{self.location_category}") or
-               (str(info_type.categories[0].location_category) ==
-                "LocationCategory.GLOBAL")
-        ]
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore")
+
+            filtered_infotypes = [
+                info_type.name
+                for info_type in infotypes.info_types
+                if (str(info_type.categories[0].location_category) ==
+                    f"LocationCategory.{self.location_category}") or
+                   (str(info_type.categories[0].location_category) ==
+                    "LocationCategory.GLOBAL")
+            ]
 
         inspect_config = {
             "info_types": [
