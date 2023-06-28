@@ -160,7 +160,9 @@ Make sure to replace the placeholder values (PROJECT, LOCATION_CATEGORY, DATASET
 
 ## Run the program on DataFlow.
 
-To use the program on DataFlow you will need to create the template and the DataFlow job.
+This program can be run on DataFlow, a fully managed service that optimizes for processing time and runs the program in the cloud. This makes it ideal for processing really large tables, as the parallel jobs can significantly speed up the processing time.
+
+To use the program on DataFlow, you will need to create a template and the DataFlow job.
 
 ### Installation:
 
