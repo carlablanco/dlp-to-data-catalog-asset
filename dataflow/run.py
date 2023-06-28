@@ -72,6 +72,7 @@ def parse_arguments() -> Type[argparse.Namespace]:
         type=str,
         help="The name of the database instance used.",
     )
+
     cloudsql_parser.add_argument(
         "--service_account",
         required=True,
@@ -101,9 +102,37 @@ def parse_arguments() -> Type[argparse.Namespace]:
     )
     parser.add_argument(
         "--zone",
-        required=True,
         type=str,
-        help="The zone to use, e.g. us-central1-b.",
+        required=True,
+        help="The location of the engine'.",
+    )
+
+    parser.add_argument(
+        "--temp_location",
+        type=str,
+        required=True,
+        help="The location of the engine'.",
+    )
+
+    parser.add_argument(
+        "--staging_location",
+        type=str,
+        required=True,
+        help="The location of the engine'.",
+    )
+
+    parser.add_argument(
+        "--template_location",
+        type=str,
+        required=True,
+        help="The location of the engine'.",
+    )
+
+    parser.add_argument(
+        "--output_txt_location",
+        type=str,
+        required=True,
+        help="The location of the engine'.",
     )
 
     return parser.parse_args()
@@ -117,15 +146,14 @@ def run(args: Type[argparse.Namespace]):
         source (str): The name of the source of data used.
         project (str): The name of the Google Cloud Platform project.
         location_category (str): The location to be inspected. Ex. "CANADA".
-        zone (str): The default location to use when making API calls..
-        bigquery_args (Dict):
+        zone(str): The name of the zone.
+        bigquery_args(Dict):
             dataset (str): The name of the BigQuery dataset.
             table (str, optional): The name of the BigQuery table. If not
               provided, the entire dataset is scanned. Optional.
               Defaults to None.
         cloudsql_args(Dict):
             instance (str): Name of the database instance.
-            zone(str): The name of the zone.
             service_account(str): Service account email to be used.
             db_name(str): The name of the database.
             table (str): The name of the table.
@@ -136,14 +164,18 @@ def run(args: Type[argparse.Namespace]):
     project = args.project
     location_category = args.location_category
     zone = args.zone
+    temp_location = args.temp_location
+    staging_location = args.staging_location
+    template_location = args.template_location
+    output_txt_location = args.output_txt_location
 
     pipeline_options = PipelineOptions(
         runner='DataflowRunner',
-        project='data-poc-sandbox-378818',
-        region='us-central1',
-        staging_location='gs://jimedina-bucket-prueba/stagingrun4',
-        temp_location='gs://jimedina-bucket-prueba/temprun4',
-        template_location='gs://jimedina-bucket-prueba/templateDataflow4',
+        project=project,
+        region=zone,
+        staging_location=staging_location,
+        temp_location=temp_location,
+        template_location=template_location,
         setup_file='./setup.py',
         save_main_session=True
     )
@@ -176,10 +208,7 @@ def run(args: Type[argparse.Namespace]):
     def process_table(table_tuple):
         table_name, start_index = table_tuple
         preprocess = Preprocessing(
-            source=source,
-            project=project,
-            zone = zone, 
-            **preprocess_args)
+            source=source, project=project,zone=zone, **preprocess_args)
 
         dlp_table = preprocess.get_dlp_table_per_block(50000, table_name, start_index)
         return table_name,dlp_table
@@ -194,7 +223,7 @@ def run(args: Type[argparse.Namespace]):
 
     def get_tables_info():
         preprocess = Preprocessing(
-                source=source, project=project, **preprocess_args)
+                source=source, project=project, zone=zone, **preprocess_args)
         tables_info = preprocess.get_tables_info()
 
         combined_list = []
@@ -228,16 +257,17 @@ def run(args: Type[argparse.Namespace]):
         catalog.main()
 
 
-    with beam.Pipeline() as p:
-
-        (p | f'Get_tables_info' >> beam.Create(get_tables_info())
-           | f'PreProcessTable' >> beam.Map(process_table)
-           | f'Inspect' >> beam.Map(inspect_table)
-           | f'GroupByKey' >> beam.GroupByKey()
-           | f'ProcessTopFinding' >> beam.Map(merge_and_top_finding)
-           | f'ProcessCatalog' >> beam.Map(process_catalog)
-
-        )
+    with beam.Pipeline(options=pipeline_options) as pipeline:
+        # pylint: disable=expression-not-assigned
+        top_finding = (pipeline | 'Get_tables_info' >> beam.Create(get_tables_info())
+                         | 'PreProcessTable' >> beam.Map(process_table)
+                         | 'Inspect' >> beam.Map(inspect_table)
+                         | 'GroupByKey' >> beam.GroupByKey()
+                         | 'ProcessTopFinding' >> beam.Map(merge_and_top_finding)
+                         )
+        top_finding | 'WriteOutput' >> beam.io.WriteToText(
+            output_txt_location)
+        top_finding | 'ProcessCatalog' >> beam.Map(process_catalog)
 
 
 if __name__ == "__main__":

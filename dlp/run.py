@@ -7,11 +7,10 @@ import argparse
 import re
 from typing import Type
 
-import apache_beam as beam
-from apache_beam.options.pipeline_options import PipelineOptions
 from dlp.preprocess import Preprocessing
 from dlp.inspection import DlpInspection
 from dlp.catalog import Catalog
+
 
 EMAIL_REGEX = re.compile(r"^[\w\.-]+@[\w\.-]+\.\w+$")
 
@@ -123,17 +122,17 @@ def run(args: Type[argparse.Namespace]):
         source (str): The name of the source of data used.
         project (str): The name of the Google Cloud Platform project.
         location_category (str): The location to be inspected. Ex. "CANADA".
-        location(str): The compute engine region.
-        bigquery_args(Dict):
+        location (str): The compute engine region.
+        bigquery_args (Dict):
             dataset (str): The name of the BigQuery dataset.
             table (str, optional): The name of the BigQuery table. If not
               provided, the entire dataset is scanned. Optional.
               Defaults to None.
-        cloudsql_args(Dict):
+        cloudsql_arg (Dict):
             instance (str): Name of the database instance.
-            zone(str): The name of the zone.
-            service_account(str): Service account email to be used.
-            db_name(str): The name of the database.
+            zone (str): The name of the zone.
+            service_account (str): Service account email to be used.
+            db_name (str): The name of the database.
             table (str): The name of the table.
             db_type(str): The type of the database. e.g. postgres, mysql.
     """
@@ -142,17 +141,6 @@ def run(args: Type[argparse.Namespace]):
     project = args.project
     location_category = args.location_category
     location = args.location
-
-    pipeline_options = PipelineOptions(
-        runner='DataflowRunner',
-        project='data-poc-sandbox-378818',
-        region='us-central1',
-        staging_location='gs://jimedina-bucket-prueba/stagingrun4',
-        temp_location='gs://jimedina-bucket-prueba/temprun4',
-        template_location='gs://jimedina-bucket-prueba/templateDataflow4',
-        setup_file='./setup.py',
-        save_main_session=True
-    )
 
     if source == "bigquery":
         dataset = args.dataset
@@ -179,69 +167,72 @@ def run(args: Type[argparse.Namespace]):
         # Handle unsupported source
         raise ValueError("Unsupported source: " + source)
 
+    # Specify the number of cells to analyze per batch.
+    batch_size = 50000
+
     # Create preprocessing and DLP inspection objects
-    def process_table(table_tuple):
-        table_name, start_index = table_tuple
-        preprocess = Preprocessing(
-            source=source, project=project, **preprocess_args)
+    preprocess = Preprocessing(
+        source=source,
+        project=project,
+        **preprocess_args,
+    )
 
-        dlp_table = preprocess.get_dlp_table_per_block(50000, table_name, start_index)
-        return table_name,dlp_table
+    dlpinspection = DlpInspection(project_id=project,
+                                  location_category=location_category)
 
-    def inspect_table(table_tuple):
-        table_name,dlp_table = table_tuple
-        dlpinspection = DlpInspection(project_id=project,
-                    location_category=location_category)
+    # Get a list of table names.
+    table_names = preprocess.get_table_names()
+    # Store the top finding for each table.
+    top_finding_tables = []
 
-        finding_results_per_block = dlpinspection.get_finding_results(dlp_table)
-        return table_name,finding_results_per_block
+    # Iterate through each table to obtain the finding_result_per_table.
+    for table_name in table_names:
+        finding_results_per_table = []
+        empty_search = False
+        start_index = 0
+        while not empty_search:
+            # Retrieve DLP table per batch of cells.
+            dlp_table = preprocess.get_dlp_table_per_block(
+                batch_size, table_name, start_index)
+            finding_result_per_block = dlpinspection.get_finding_results(
+                dlp_table)
+            finding_results_per_table.append(finding_result_per_block)
 
-    def get_tables_info():
-        preprocess = Preprocessing(
-                source=source, project=project, **preprocess_args)
-        tables_info = preprocess.get_tables_info()
+            if not dlp_table.rows:
+                empty_search = True
+            start_index += batch_size
 
-        combined_list = []
+        # Obtain the top finding for the table.
+        top_finding_per_table = dlpinspection.merge_finding_results(
+            finding_results_per_table)
 
-        for table_name,total_cells in tables_info:
-            range_list = list(range(0,total_cells,50000))
-            for num in range_list:
-                combined_list.append((table_name,num))
-        return combined_list
+        # Add the table and its top_finding to the list.
+        top_finding_tables.append(top_finding_per_table)
 
-    def merge_and_top_finding(finding_tuple):
-        table_name,finding_results = finding_tuple
-
-        dlpinspection = DlpInspection(project_id=project,
-                location_category=location_category)
-        top_finding = dlpinspection.merge_finding_results(finding_results)
-        print(top_finding)
-        return table_name,top_finding
-
-    def process_catalog(top_finding_tuple):
-        table_name,top_finding = top_finding_tuple
-
+    if source == "bigquery" and table is None:
+        # If scanning entire dataset.
+        bigquery_tables = preprocess.get_bigquery_tables(dataset)
+        for i, table in enumerate(bigquery_tables):
+            catalog = Catalog(
+                data=top_finding_tables[i],
+                project_id=project,
+                location=location,
+                dataset=dataset,
+                table=table,
+                instance_id=instance_id,
+            )
+            catalog.main()
+    else:
+        # If scanning a specific table.
         catalog = Catalog(
-            data=top_finding,
+            data=top_finding_tables[0],
             project_id=project,
             location=location,
             dataset=dataset,
-            table=table_name,
+            table=table,
             instance_id=instance_id,
         )
         catalog.main()
-
-
-    with beam.Pipeline(options=pipeline_options) as p:
-
-        (p | f'Get_tables_info' >> beam.Create(get_tables_info())
-           | f'PreProcessTable' >> beam.Map(process_table)
-           | f'Inspect' >> beam.Map(inspect_table)
-           | f'GroupByKey' >> beam.GroupByKey()
-           | f'ProcessTopFinding' >> beam.Map(merge_and_top_finding)
-           | f'ProcessCatalog' >> beam.Map(process_catalog)
-
-        )
 
 
 if __name__ == "__main__":
