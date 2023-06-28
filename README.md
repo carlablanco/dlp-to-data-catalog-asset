@@ -177,7 +177,7 @@ git clone https://github.com/carlablanco/dlp-to-data-catalog-asset.git
 
 1. Move to the program directory. 
 
-2.Create the template running the [following command](#run-the-program-locally), just like running it locally but on the cloud shell.
+2.Create the template running the [following command](#run-the-program-locally), just like running it locally, but on the cloud shell.
 
 3. Create the DataFlow Job from your template saved in Google Cloud Storage.
 
