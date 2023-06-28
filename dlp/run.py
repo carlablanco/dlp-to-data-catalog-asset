@@ -206,6 +206,8 @@ def run(args: Type[argparse.Namespace]):
         # If scanning entire dataset.
         bigquery_tables = preprocess.get_bigquery_tables(dataset)
         for i, table in enumerate(bigquery_tables):
+            if not top_finding_tables[i]:
+                continue
             catalog = Catalog(
                 data=top_finding_tables[i],
                 project_id=project,
