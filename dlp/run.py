@@ -218,16 +218,19 @@ def run(args: Type[argparse.Namespace]):
             )
             catalog.main()
     else:
-        # If scanning a specific table.
-        catalog = Catalog(
-            data=top_finding_tables[0],
-            project_id=project,
-            zone=zone,
-            dataset=dataset,
-            table=table,
-            instance_id=instance_id,
-        )
-        catalog.main()
+        if len(top_finding_tables[0])== 0:
+            print(f"There weren't any PII on {table}")
+        else:
+            # If scanning a specific table.
+            catalog = Catalog(
+                data=top_finding_tables[0],
+                project_id=project,
+                zone=zone,
+                dataset=dataset,
+                table=table,
+                instance_id=instance_id,
+            )
+            catalog.main()
 
 
 if __name__ == "__main__":
