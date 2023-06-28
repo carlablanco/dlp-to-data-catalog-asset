@@ -164,22 +164,23 @@ To use the program on DataFlow you will need to create the template and the Data
 
 ### Installation:
 
-1. Clone the program from github.
+1. Clone the program from github into the cloud shell.
 
-2. Upload the github zip file into the Cloud Shell Virtual Machine.
 
 ```
-
+git clone https://github.com/carlablanco/dlp-to-data-catalog-asset.git
 ```
 
 ### Usage:
 
-1. Create the template running the [following command](#run-the-program-locally), just like running it locally.
+1. Move to the program directory. 
 
-2. Create the DataFlow Job.
+2.Create the template running the [following command](#run-the-program-locally), just like running it locally.
+
+3. Create the DataFlow Job from your template saved in Google Cloud Storage.
 
 ```
 gcloud dataflow jobs run NAME --gcs-location=TEMPLATE_LOCATION
 ```
 
-The template location correct format should be "gs://your-gcs-path-to-template"
+The TEMPLATE_LOCATION correct format should be "gs://your-gcs-path-to-template"
