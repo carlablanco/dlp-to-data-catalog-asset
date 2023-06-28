@@ -62,7 +62,7 @@ def parse_arguments() -> Type[argparse.Namespace]:
     cloudsql_parser.add_argument(
         "--table",
         type=str,
-        help="The CloudSQL table to be scanned.",
+        help="The CloudSQL table to be scanned. Optional.",
     )
     cloudsql_parser.add_argument(
         "--instance",
