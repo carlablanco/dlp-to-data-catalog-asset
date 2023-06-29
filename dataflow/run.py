@@ -5,7 +5,7 @@
 
 import argparse
 import re
-from typing import Type, List, Tuple
+from typing import Type, List, Tuple, Dict
 
 import apache_beam as beam
 from apache_beam.options.pipeline_options import PipelineOptions
@@ -241,7 +241,7 @@ def run(args: Type[argparse.Namespace]):
             50000, table_name, start_index)
         return table_name,dlp_table
 
-    def inspect_table(table_dlp_table_tuple: Tuple) -> Tuple:
+    def inspect_table(table_dlp_table_tuple: Tuple) -> Tuple[str, Dict]:
         """Inspect table and retrieve finding results for each block.
 
         Args:
