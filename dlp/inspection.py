@@ -7,6 +7,9 @@ from typing import List, Dict
 from google.cloud import dlp_v2
 from google.api_core.exceptions import BadRequest
 
+import backoff
+import requests
+
 
 class DlpInspection:
     """Performs a DLP inspection on a preprocessed table to identify
@@ -143,6 +146,14 @@ class DlpInspection:
             top_findings[column] = max_infotype
         return top_findings
 
+
+    #Geor
+    @backoff.on_exception(backoff.expo,
+                      #requests.exceptions.RequestException,
+                      requests.exceptions.Timeout,
+                      #max_tries=20,
+                      max_time=60,
+                      jitter=None)
     def analyze_dlp_table(
         self,
         parent: str,
@@ -169,6 +180,10 @@ class DlpInspection:
 
         results_list = []
 
+
+        #Geor
+        errors = []
+
         for col_index, _ in enumerate(table.headers):
             dlp_table = dlp_v2.Table()
             dlp_table.headers = [{"name": table.headers[col_index].name}]
@@ -194,7 +209,16 @@ class DlpInspection:
                 results_list.append(response)
             except BadRequest as error:
                 # Handle the BadRequest exception here.
-                raise BadRequest(error) from error
+                #Gepr
+                print("error raise !!" )                
+                errors.append("Error Inspection in: ", error.args[0])
+
+                #raise BadRequest(error) from error
+
+        #Geor
+        if errors:
+            raise BadRequest("\n".join(errors)) 
+
 
         return results_list
 

@@ -11,6 +11,8 @@ from dlp.preprocess import Preprocessing
 from dlp.inspection import DlpInspection
 from dlp.catalog import Catalog
 
+import datetime
+import backoff
 
 EMAIL_REGEX = re.compile(r"^[\w\.-]+@[\w\.-]+\.\w+$")
 
@@ -160,7 +162,8 @@ def run(args: Type[argparse.Namespace]):
         raise ValueError("Unsupported source: " + source)
 
     # Specify the number of cells to analyze per batch.
-    batch_size = 50000
+    #batch_size = 50000
+    batch_size = 10000
 
     # Create preprocessing and DLP inspection objects
     preprocess = Preprocessing(
@@ -170,8 +173,15 @@ def run(args: Type[argparse.Namespace]):
         **preprocess_args,
     )
 
+    print("End preprocess\n")
+    now = datetime.datetime.now()
+    print ("Current date and time : ")
+    print (now.strftime("%Y-%m-%d %H:%M:%S"))
+
     dlpinspection = DlpInspection(project_id=project,
                                   location_category=location_category)
+
+   
 
     # Get a list of table names.
     table_names = preprocess.get_table_names()
@@ -202,6 +212,16 @@ def run(args: Type[argparse.Namespace]):
         # Add the table and its top_finding to the list.
         top_finding_tables.append(top_finding_per_table)
 
+
+
+    print("End DlpInspection\n")
+    print ("Current date and time : ")
+    now = datetime.datetime.now()
+    print (now.strftime("%Y-%m-%d %H:%M:%S"))
+    
+    print("Top Findings: ", top_finding_tables)
+    print("\n")
+    
     if source == "bigquery" and table is None:
         # If scanning entire dataset.
         bigquery_tables = preprocess.get_bigquery_tables(dataset)
@@ -226,6 +246,12 @@ def run(args: Type[argparse.Namespace]):
             instance_id=instance_id,
         )
         catalog.main()
+
+
+    print("End DataCatalog \n")
+    print ("Current date and time : ")
+    now = datetime.datetime.now()
+    print (now.strftime("%Y-%m-%d %H:%M:%S"))
 
 
 if __name__ == "__main__":
