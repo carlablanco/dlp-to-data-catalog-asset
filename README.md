@@ -168,21 +168,43 @@ To use the program on DataFlow, you will need to create a template and the DataF
 
 1. Clone the program from github into the cloud shell.
 
-
-```
-git clone https://github.com/carlablanco/dlp-to-data-catalog-asset.git
-```
-
 ### Usage:
 
 1. Move to the program directory. 
 
-2.Create the template running the [following command](#run-the-program-locally), just like running it locally, but on the cloud shell.
+2. Install pip.
 
-3. Create the DataFlow Job from your template saved in Google Cloud Storage.
+```
+sudo apt install python3-pip
+```
+
+3. Install requirements.
+
+```
+pip install requirements.txt
+```
+
+4. Create the template by running the program with the appropriate parameters. In this case, use the run_dataflow file and use the parameters as [running the program locally](#run-the-program-locally). The new parameters include temp_location, staging_location, template_location, and output_txt_location. Here's an example command:
+
+
+```
+python dataflow.run.py --temp_location TEMP_LOCATION --staging_location STAGING_LOCATION --template_location TEMPLATE_LOCATION --output_txt_location OUTPUT_TXT_LOCATION --REST OF PARAMETERS
+```
+
+Replace TEMP_LOCATION, STAGING_LOCATION, TEMPLATE_LOCATION, and OUTPUT_TXT_LOCATION with the actual values appropriate for your setup.
+
+- TEMP_LOCATION: The temporary location where DataFlow will store intermediate data during the job execution. It should be a Google Cloud Storage (GCS) path, such as "gs://your-bucket/temporary_location".
+
+- STAGING_LOCATION: The staging location for DataFlow job resources. It should be a GCS path, such as "gs://your-bucket/staging_location".
+
+- TEMPLATE_LOCATION: The GCS path where the DataFlow template file will be stored. It should be a GCS path, such as "gs://your-bucket/template_location".
+
+- OUTPUT_TXT_LOCATION: The desired location where the output of the DataFlow job will be saved. It should be a GCS path, such as "gs://your-bucket/output_location"
+
+5. Create the DataFlow Job from your template saved in Google Cloud Storage.
 
 ```
 gcloud dataflow jobs run NAME --gcs-location=TEMPLATE_LOCATION
 ```
 
-The TEMPLATE_LOCATION correct format should be "gs://your-gcs-path-to-template"
+Replace JOB_NAME with a name for your DataFlow job, and TEMPLATE_LOCATION with the correct format of the template file's Google Cloud Storage path, for example, "gs://your-gcs-path-to-template".
