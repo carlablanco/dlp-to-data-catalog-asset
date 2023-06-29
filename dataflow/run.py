@@ -5,7 +5,7 @@
 
 import argparse
 import re
-from typing import Type
+from typing import Type, List, Tuple
 
 import apache_beam as beam
 from apache_beam.options.pipeline_options import PipelineOptions
@@ -72,7 +72,6 @@ def parse_arguments() -> Type[argparse.Namespace]:
         type=str,
         help="The name of the database instance used.",
     )
-
     cloudsql_parser.add_argument(
         "--service_account",
         required=True,
@@ -104,35 +103,34 @@ def parse_arguments() -> Type[argparse.Namespace]:
         "--zone",
         type=str,
         required=True,
-        help="The location of the engine'.",
+        help="The location of the engine.",
     )
-
     parser.add_argument(
         "--temp_location",
         type=str,
         required=True,
-        help="The location of the engine'.",
+        help="""Specifies the location in Google Cloud Storage where
+        temporary files will be stored during the dataflow execution.""",
     )
-
     parser.add_argument(
         "--staging_location",
         type=str,
         required=True,
-        help="The location of the engine'.",
+        help="""Specifies the location in Google Cloud Storage where files
+        will be staged during the dataflow execution.""",
     )
-
     parser.add_argument(
         "--template_location",
         type=str,
         required=True,
-        help="The location of the engine'.",
+        help="""Specifies the location in Google Cloud Storage where the
+        dataflow template will be stored.""",
     )
-
     parser.add_argument(
         "--output_txt_location",
         type=str,
         required=True,
-        help="The location of the engine'.",
+        help="Specifies the location where the output text will be stored.",
     )
 
     return parser.parse_args()
@@ -204,37 +202,76 @@ def run(args: Type[argparse.Namespace]):
         # Handle unsupported source
         raise ValueError("Unsupported source: " + source)
 
-    # Create preprocessing and DLP inspection objects
-    def process_table(table_tuple):
-        table_name, start_index = table_tuple
-        preprocess = Preprocessing(
-            source=source, project=project,zone=zone, **preprocess_args)
+    def get_tables_info() -> List[Tuple]:
+        """Retrieve information about tables
+        and their corresponding start indexes.
 
-        dlp_table = preprocess.get_dlp_table_per_block(50000, table_name, start_index)
-        return table_name,dlp_table
-
-    def inspect_table(table_tuple):
-        table_name,dlp_table = table_tuple
-        dlpinspection = DlpInspection(project_id=project,
-                    location_category=location_category)
-
-        finding_results_per_block = dlpinspection.get_finding_results(dlp_table)
-        return table_name,finding_results_per_block
-
-    def get_tables_info():
+        Returns:
+            List[Tuple]: A list of tuples containing
+            the table name and start index.
+        """
         preprocess = Preprocessing(
                 source=source, project=project, zone=zone, **preprocess_args)
         tables_info = preprocess.get_tables_info()
 
-        combined_list = []
+        tables_start_index_list = []
 
         for table_name,total_cells in tables_info:
             range_list = list(range(0,total_cells,50000))
             for num in range_list:
-                combined_list.append((table_name,num))
-        return combined_list
+                tables_start_index_list.append((table_name,num))
+        return tables_start_index_list
 
-    def merge_and_top_finding(finding_tuple):
+    def process_table(tables_start_index_list: List[Tuple]) -> List[Tuple]:
+        """Process tables based on their start indexes and retrieve DLP tables.
+
+        Args:
+            tables_start_index_list (List[Tuple]): A list of tuples containing
+            the table name and start index.
+
+        Returns:
+            List[Tuple]: A list of tuples containing the table
+            name and DLP table objects.
+
+        """
+        table_name, start_index = tables_start_index_list
+        preprocess = Preprocessing(
+            source=source, project=project,zone=zone, **preprocess_args)
+
+        dlp_table = preprocess.get_dlp_table_per_block(
+            50000, table_name, start_index)
+        return table_name,dlp_table
+
+    def inspect_table(table_dlp_table_list: List[Tuple]) -> List[Tuple]:
+        """Inspect tables and retrieve finding results for each block.
+
+        Args:
+            table_dlp_table_list (List[Tuple]): A list of tuples containing
+            the table name and DLP table objects.
+
+        Returns:
+            List[Tuple]: A list of tuples containing the
+            table name and finding results.
+        """
+        table_name,dlp_table = table_dlp_table_list
+        dlpinspection = DlpInspection(project_id=project,
+                    location_category=location_category)
+
+        finding_results_per_block = dlpinspection.get_finding_results(
+            dlp_table)
+        return table_name,finding_results_per_block
+
+    def merge_and_top_finding(finding_tuple: List[Tuple]) -> List[Tuple]:
+        """Merge and extract the top finding result for each table.
+
+        Args:
+            finding_tuple (List[Tuple]): List of tuples containing the table
+            name and its corresponding finding_results.
+
+        Returns:
+            List[Tuple]: A list of tuples containing the table name and
+            the top finding result.
+        """
         table_name,finding_results = finding_tuple
 
         dlpinspection = DlpInspection(project_id=project,
@@ -243,7 +280,14 @@ def run(args: Type[argparse.Namespace]):
         print(top_finding)
         return table_name,top_finding
 
-    def process_catalog(top_finding_tuple):
+    def process_catalog(top_finding_tuple: List[Tuple]) -> None:
+        """Process the top finding_result for a table and create a tag template
+        for BigQuery tables and custom entries for Cloud SQL.
+
+        Args:
+            top_finding_tuple (List[Tuple]): A list of tuples containing the
+            table name and the top finding result.
+        """
         table_name,top_finding = top_finding_tuple
 
         catalog = Catalog(

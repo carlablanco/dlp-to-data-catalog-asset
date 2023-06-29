@@ -540,7 +540,6 @@ class Preprocessing:
                 num_rows = connection.execute(count_query).scalar()
                 tables.append((self.cloudsql.table,num_rows*num_columns))
 
-        print(tables)
         return tables
 
     def get_dlp_table_per_block(
