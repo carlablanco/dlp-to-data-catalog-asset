@@ -209,7 +209,9 @@ def run(args: Type[argparse.Namespace]):
 
         # Add the table and its top_finding to the list.
         top_finding_tables.append(top_finding_per_table)
-
+        # Checks if there where findings in the inspection.
+        if not top_finding_tables[index]:
+            continue
         # Create Catalog instance for each table.
         catalog = Catalog(
             data=top_finding_tables[index],
