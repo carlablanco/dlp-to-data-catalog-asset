@@ -175,7 +175,7 @@ def run(args: Type[argparse.Namespace]):
         temp_location=temp_location,
         template_location=template_location,
         setup_file='./setup.py',
-        save_main_session=True
+        save_main_session=True,
     )
 
     if source == "bigquery":
@@ -211,15 +211,15 @@ def run(args: Type[argparse.Namespace]):
             the table name and start index.
         """
         preprocess = Preprocessing(
-                source=source, project=project, zone=zone, **preprocess_args)
+            source=source, project=project, zone=zone, **preprocess_args)
         tables_info = preprocess.get_tables_info()
 
         tables_start_index_list = []
 
-        for table_name,total_cells in tables_info:
-            range_list = list(range(0,total_cells,50000))
+        for table_name, total_cells in tables_info:
+            range_list = list(range(0, total_cells, 50000))
             for num in range_list:
-                tables_start_index_list.append((table_name,num))
+                tables_start_index_list.append((table_name, num))
         return tables_start_index_list
 
     def preprocess_table(table_start_index_tuple: Tuple) -> Tuple:
@@ -235,11 +235,11 @@ def run(args: Type[argparse.Namespace]):
         """
         table_name, start_index = table_start_index_tuple
         preprocess = Preprocessing(
-            source=source, project=project,zone=zone, **preprocess_args)
+            source=source, project=project, zone=zone, **preprocess_args)
 
         dlp_table = preprocess.get_dlp_table_per_block(
             50000, table_name, start_index)
-        return table_name,dlp_table
+        return table_name, dlp_table
 
     def inspect_table(table_dlp_table_tuple: Tuple) -> Tuple[str, Dict]:
         """Inspect table and retrieve finding results for each block.
@@ -251,13 +251,13 @@ def run(args: Type[argparse.Namespace]):
         Returns:
             Tuple: A tuple containing the table name and finding results.
         """
-        table_name,dlp_table = table_dlp_table_tuple
+        table_name, dlp_table = table_dlp_table_tuple
         dlpinspection = DlpInspection(project_id=project,
-                    location_category=location_category)
+                                      location_category=location_category)
 
         finding_results_per_block = dlpinspection.get_finding_results(
             dlp_table)
-        return table_name,finding_results_per_block
+        return table_name, finding_results_per_block
 
     def merge_and_top_finding(finding_tuple: Tuple) -> Tuple:
         """Merge and extract the top finding result for each table.
@@ -270,12 +270,12 @@ def run(args: Type[argparse.Namespace]):
             Tuple: A tuple containing the table name
             and the top finding result.
         """
-        table_name,finding_results = finding_tuple
+        table_name, finding_results = finding_tuple
 
         dlpinspection = DlpInspection(project_id=project,
-                location_category=location_category)
+                                      location_category=location_category,)
         top_finding = dlpinspection.merge_finding_results(finding_results)
-        return table_name,top_finding
+        return table_name, top_finding
 
     def process_catalog(top_finding_tuple: Tuple) -> None:
         """Process the top finding_result for a table and create a tag template
@@ -285,7 +285,7 @@ def run(args: Type[argparse.Namespace]):
             top_finding_tuple (Tuple): A tuple containing the table name
             and the top finding result.
         """
-        table_name,top_finding = top_finding_tuple
+        table_name, top_finding = top_finding_tuple
 
         catalog = Catalog(
             data=top_finding,
@@ -297,15 +297,14 @@ def run(args: Type[argparse.Namespace]):
         )
         catalog.main()
 
-
     with beam.Pipeline(options=pipeline_options) as pipeline:
         # pylint: disable=expression-not-assigned
         top_finding = (pipeline | 'Get_tables_info' >> beam.Create(get_tables_info())
-                         | 'PreProcessTable' >> beam.Map(preprocess_table)
-                         | 'Inspect' >> beam.Map(inspect_table)
-                         | 'GroupByKey' >> beam.GroupByKey()
-                         | 'ProcessTopFinding' >> beam.Map(merge_and_top_finding)
-                         )
+                       | 'PreProcessTable' >> beam.Map(preprocess_table)
+                       | 'Inspect' >> beam.Map(inspect_table)
+                       | 'GroupByKey' >> beam.GroupByKey()
+                       | 'ProcessTopFinding' >> beam.Map(merge_and_top_finding)
+                       )
         top_finding | 'WriteOutput' >> beam.io.WriteToText(
             output_txt_location)
         top_finding | 'ProcessCatalog' >> beam.Map(process_catalog)
