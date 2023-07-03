@@ -159,7 +159,7 @@ def run(args: Type[argparse.Namespace]):
         catalog = Catalog(
             data=None,
             project_id=project,
-            location=location,
+            zone=zone,
             instance_id=instance_id,
             entry_group_name=None,
         )
