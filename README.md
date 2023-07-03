@@ -184,7 +184,7 @@ sudo apt install python3-pip
 pip install requirements.txt
 ```
 
-4. Create the template by running the program with the appropriate parameters. In this case, use the run_dataflow file and use the parameters as [running the program locally](#run-the-program-locally). The new parameters include temp_location, staging_location, template_location, and output_txt_location. Here's an example command:
+4. Create the template by running the program with the appropriate parameters. In this case, use the run_dataflow file and use the parameters as [running the program locally](#run-the-program-locally). The new parameters include `temp_location`, `staging_location`, `template_location`, and `output_txt_location`. Here's an example command:
 
 
 ```
