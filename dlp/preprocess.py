@@ -112,6 +112,26 @@ class Preprocessing:
         )
         return connector
 
+    def get_cloudsql_tables(self):
+        """Returns a list of all tables in the CloudSQL database.
+
+        Returns:
+            A list of table names.
+        """
+        # Create a connection to the database.
+        connection = self.get_connection()
+
+        # Get all table names.
+        query = "SHOW TABLES"
+        with connection.cursor() as cursor:
+            cursor.execute(query)
+            tables = cursor.fetchall()
+
+        # Extract table names from the result.
+        table_names = [table[0] for table in tables]
+
+        return table_names
+
     def get_cloudsql_data(
             self,
             table: str,
@@ -478,11 +498,11 @@ class Preprocessing:
         """
 
         if self.source == Database.BIGQUERY:
-            tables = [self.bigquery.table] \
-                if self.bigquery.table \
+            tables = [self.bigquery.table] if self.bigquery.table \
                 else self.get_bigquery_tables(self.bigquery.dataset)
         elif self.source == Database.CLOUDSQL:
-            tables = [self.cloudsql.table]
+            tables = [self.cloudsql.table] if self.cloudsql.table \
+                else self.get_cloudsql_tables()
 
         return tables
 
@@ -560,11 +580,15 @@ class Preprocessing:
         if self.source == Database.BIGQUERY:
             schema, content = self.get_bigquery_data(
                 f"{self.bigquery.dataset}.{table_name}",
-                start_index, batch_size)
+                start_index,
+                batch_size
+            )
 
         elif self.source == Database.CLOUDSQL:
-            schema, content = self.get_cloudsql_data(self.cloudsql.table,
-                                                     batch_size,
-                                                     start_index)
+            schema, content = self.get_cloudsql_data(
+                table_name,
+                batch_size,
+                start_index
+            )
 
         return self.convert_to_dlp_table(schema, content)

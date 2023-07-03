@@ -61,9 +61,8 @@ def parse_arguments() -> Type[argparse.Namespace]:
     )
     cloudsql_parser.add_argument(
         "--table",
-        required=True,
         type=str,
-        help="The CloudSQL table to be scanned.",
+        help="The CloudSQL table to be scanned. Optional.",
     )
     cloudsql_parser.add_argument(
         "--instance",
@@ -138,6 +137,7 @@ def run(args: Type[argparse.Namespace]):
     if source == "bigquery":
         dataset = args.dataset
         table = args.table
+        entry_group_name = None
         preprocess_args = {
             "bigquery_args": {"dataset": dataset, "table": table}
         }
@@ -155,6 +155,14 @@ def run(args: Type[argparse.Namespace]):
                 "db_type": args.db_type,
             }
         }
+        catalog = Catalog(
+            data=None,
+            project_id=project,
+            location=location,
+            instance_id=instance_id,
+            entry_group_name=None,
+        )
+        entry_group_name = catalog.create_custom_entry_group()
     else:
         # Handle unsupported source
         raise ValueError("Unsupported source: " + source)
@@ -179,7 +187,7 @@ def run(args: Type[argparse.Namespace]):
     top_finding_tables = []
 
     # Iterate through each table to obtain the finding_result_per_table.
-    for table_name in table_names:
+    for index, table_name in enumerate(table_names):
         finding_results_per_table = []
         empty_search = False
         start_index = 0
@@ -202,28 +210,15 @@ def run(args: Type[argparse.Namespace]):
         # Add the table and its top_finding to the list.
         top_finding_tables.append(top_finding_per_table)
 
-    if source == "bigquery" and table is None:
-        # If scanning entire dataset.
-        bigquery_tables = preprocess.get_bigquery_tables(dataset)
-        for i, table in enumerate(bigquery_tables):
-            catalog = Catalog(
-                data=top_finding_tables[i],
-                project_id=project,
-                zone=zone,
-                dataset=dataset,
-                table=table,
-                instance_id=instance_id,
-            )
-            catalog.main()
-    else:
-        # If scanning a specific table.
+        # Create Catalog instance for each table.
         catalog = Catalog(
-            data=top_finding_tables[0],
+            data=top_finding_tables[index],
             project_id=project,
             zone=zone,
             dataset=dataset,
-            table=table,
+            table=table_name,
             instance_id=instance_id,
+            entry_group_name=entry_group_name,
         )
         catalog.main()
 

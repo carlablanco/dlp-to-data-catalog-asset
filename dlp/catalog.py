@@ -20,6 +20,7 @@ class Catalog:
         dataset: Optional[str] = None,
         table: Optional[str] = None,
         instance_id: Optional[str] = None,
+        entry_group_name: Optional[str] = None,
     ):
         """Initializes the class with the required data.
 
@@ -42,6 +43,7 @@ class Catalog:
         self.dataset = dataset
         self.table = table
         self.instance_id = instance_id
+        self.entry_group_name = entry_group_name
 
         timestamp = str(int(datetime.datetime.now().timestamp()))
         timestamp = timestamp[:8]
@@ -51,7 +53,7 @@ class Catalog:
             # Limits the instance_id to 50 characters.
             instance_id = instance_id[:50]
             self.entry_group_id = f"dlp_{instance_id}_{timestamp}"
-            self.entry_id = f"dlp_{timestamp}"
+            self.entry_id = f"dlp_{instance_id}_{self.table}_{timestamp}"
         else:
             self.tag_template_id = (
                 f"dlp_{dataset.lower()}_{table.lower()}_{timestamp}"
@@ -155,7 +157,7 @@ class Catalog:
         entry = datacatalog_v1.types.Entry()
         entry.user_specified_system = "Cloud_SQL"
         entry.user_specified_type = "SQL"
-        entry.display_name = f"DLP_inspection_{self.instance_id}"
+        entry.display_name = f"DLP_inspection_{self.instance_id}_{self.table}"
         entry.description = ""
         entry.linked_resource = (
             f"//sqladmin.googleapis.com/projects/{self.project_id}"
@@ -216,5 +218,4 @@ class Catalog:
             self.attach_tag_to_table(table_entry)
 
         else:
-            entry_group_name = self.create_custom_entry_group()
-            self.create_entry(entry_group_name)
+            self.create_entry(self.entry_group_name)
