@@ -186,11 +186,6 @@ pip install requirements.txt
 
 4. Create the template by running the program with the appropriate parameters. In this case, use the run_dataflow file and use the parameters as [running the program locally](#run-the-program-locally). The new parameters include `temp_location`, `staging_location`, `template_location`, and `output_txt_location`. Here's an example command:
 
-
-```
-python dataflow.run.py --temp_location TEMP_LOCATION --staging_location STAGING_LOCATION --template_location TEMPLATE_LOCATION --output_txt_location OUTPUT_TXT_LOCATION --REST OF PARAMETERS
-```
-
 Replace TEMP_LOCATION, STAGING_LOCATION, TEMPLATE_LOCATION, and OUTPUT_TXT_LOCATION with the actual values appropriate for your setup.
 
 - TEMP_LOCATION: The temporary location where DataFlow will store intermediate data during the job execution. It should be a Google Cloud Storage (GCS) path, such as "gs://your-bucket/temporary_location".
@@ -200,6 +195,10 @@ Replace TEMP_LOCATION, STAGING_LOCATION, TEMPLATE_LOCATION, and OUTPUT_TXT_LOCAT
 - TEMPLATE_LOCATION: The GCS path where the DataFlow template file will be stored. It should be a GCS path, such as "gs://your-bucket/template_location".
 
 - OUTPUT_TXT_LOCATION: The desired location where the output of the DataFlow job will be saved. It should be a GCS path, such as "gs://your-bucket/output_location"
+
+```
+python dataflow.run.py --temp_location TEMP_LOCATION --staging_location STAGING_LOCATION --template_location TEMPLATE_LOCATION --output_txt_location OUTPUT_TXT_LOCATION --REST OF PARAMETERS
+```
 
 5. Create the DataFlow Job from your template saved in Google Cloud Storage.
 
