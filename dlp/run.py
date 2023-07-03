@@ -6,6 +6,7 @@
 import argparse
 import re
 from typing import Type
+import warnings
 
 from dlp.preprocess import Preprocessing
 from dlp.inspection import DlpInspection
@@ -158,7 +159,7 @@ def run(args: Type[argparse.Namespace]):
         catalog = Catalog(
             data=None,
             project_id=project,
-            location=location,
+            zone=zone,
             instance_id=instance_id,
             entry_group_name=None,
         )
@@ -209,7 +210,10 @@ def run(args: Type[argparse.Namespace]):
 
         # Add the table and its top_finding to the list.
         top_finding_tables.append(top_finding_per_table)
-
+        # Checks if there where findings in the inspection.
+        if not top_finding_tables[index]:
+            warnings.warn(f"No findings found on {table_name}")
+            continue
         # Create Catalog instance for each table.
         catalog = Catalog(
             data=top_finding_tables[index],
