@@ -4,7 +4,6 @@
 """Runs DLP inspection on a dataset and tags the results in Data Catalog."""
 
 import argparse
-import re
 from typing import Type, List, Tuple, Dict
 
 import apache_beam as beam
@@ -12,101 +11,16 @@ from apache_beam.options.pipeline_options import PipelineOptions
 from dlp.preprocess import Preprocessing
 from dlp.inspection import DlpInspection
 from dlp.catalog import Catalog
-
-EMAIL_REGEX = re.compile(r"^[\w\.-]+@[\w\.-]+\.\w+$")
-
-
-def is_valid_email(email: str) -> bool:
-    """Checks if a string is a valid email."""
-    return bool(EMAIL_REGEX.match(email))
+import dlp.run
 
 
-def email_type(value) -> str:
-    """Validates and returns a valid email."""
-    if not is_valid_email(value):
-        raise argparse.ArgumentTypeError(f"Invalid IAM user: {value}")
-    return value
 
-
-def parse_arguments() -> Type[argparse.Namespace]:
+def parse_arguments() -> Type[argparse.ArgumentParser]:
     """Parses command line arguments."""
-    parser = argparse.ArgumentParser()
-    subparsers = parser.add_subparsers(dest="source")
 
-    bigquery_parser = subparsers.add_parser(
-        "bigquery",
-        help="Use BigQuery as the data source."
-    )
-    bigquery_parser.add_argument(
-        "--table",
-        type=str,
-        help="The BigQuery table to be scanned. Optional.",
-    )
-    bigquery_parser.add_argument(
-        "--dataset",
-        required=True,
-        type=str,
-        help="The BigQuery dataset to be scanned.",
-    )
-
-    cloudsql_parser = subparsers.add_parser(
-        "cloudsql",
-        help="Use CloudSQL as the data source.",
-    )
-    cloudsql_parser.add_argument(
-        "--db_type",
-        required=True,
-        type=str,
-        choices=["postgres", "mysql"],
-        help="The CloudSQL type to be scanned. e.g. postgres, mysql.",
-    )
-    cloudsql_parser.add_argument(
-        "--table",
-        required=True,
-        type=str,
-        help="The CloudSQL table to be scanned.",
-    )
-    cloudsql_parser.add_argument(
-        "--instance",
-        required=True,
-        type=str,
-        help="The name of the database instance used.",
-    )
-    cloudsql_parser.add_argument(
-        "--service_account",
-        required=True,
-        type=email_type,
-        metavar="service_account",
-        help="Email address of the service account to be used.",
-    )
-    cloudsql_parser.add_argument(
-        "--db_name",
-        required=True,
-        type=str,
-        help="The database to use. e.g. Bigquery, CloudSQL.",
-    )
-
-    # Common arguments.
+    parser = dlp.run.parse_arguments()
     parser.add_argument(
-        "--project",
-        type=str,
-        required=True,
-        help="The Google Cloud project to be used.",
-    )
-    parser.add_argument(
-        "--location_category",
-        type=str,
-        required=True,
-        help="The location to be inspected. Ex. 'CANADA'",
-    )
-    parser.add_argument(
-        "--zone",
-        type=str,
-        required=True,
-        help="The location of the engine.",
-    )
-    parser.add_argument(
-        "--temp_location",
+        "--temp_file_location",
         type=str,
         required=True,
         help="""Specifies the location in Google Cloud Storage where
@@ -133,7 +47,7 @@ def parse_arguments() -> Type[argparse.Namespace]:
         help="Specifies the location where the output text will be stored.",
     )
 
-    return parser.parse_args()
+    return parser
 
 
 def run(args: Type[argparse.Namespace]):
@@ -162,7 +76,7 @@ def run(args: Type[argparse.Namespace]):
     project = args.project
     location_category = args.location_category
     zone = args.zone
-    temp_location = args.temp_location
+    temp_file_location = args.temp_file_location
     staging_location = args.staging_location
     template_location = args.template_location
     output_txt_location = args.output_txt_location
@@ -172,7 +86,7 @@ def run(args: Type[argparse.Namespace]):
         project=project,
         region=zone,
         staging_location=staging_location,
-        temp_location=temp_location,
+        temp_file_location=temp_file_location,
         template_location=template_location,
         setup_file='./setup.py',
         save_main_session=True,
@@ -181,6 +95,7 @@ def run(args: Type[argparse.Namespace]):
     if source == "bigquery":
         dataset = args.dataset
         table = args.table
+        entry_group_name = None
         preprocess_args = {
             "bigquery_args": {"dataset": dataset, "table": table}
         }
@@ -198,6 +113,14 @@ def run(args: Type[argparse.Namespace]):
                 "db_type": args.db_type,
             }
         }
+        catalog = Catalog(
+            data=None,
+            project_id=project,
+            zone=zone,
+            instance_id=instance_id,
+            entry_group_name=None,
+        )
+        entry_group_name = catalog.create_custom_entry_group()
     else:
         # Handle unsupported source
         raise ValueError("Unsupported source: " + source)
@@ -213,7 +136,6 @@ def run(args: Type[argparse.Namespace]):
         preprocess = Preprocessing(
             source=source, project=project, zone=zone, **preprocess_args)
         tables_info = preprocess.get_tables_info()
-
         tables_start_index_list = []
 
         for table_name, total_cells in tables_info:
@@ -294,6 +216,7 @@ def run(args: Type[argparse.Namespace]):
             dataset=dataset,
             table=table_name,
             instance_id=instance_id,
+            entry_group_name=entry_group_name
         )
         catalog.main()
 
@@ -311,5 +234,6 @@ def run(args: Type[argparse.Namespace]):
 
 
 if __name__ == "__main__":
-    arguments = parse_arguments()
+    parse_dataflow = parse_arguments()
+    arguments = parse_dataflow.parse_args()
     run(arguments)

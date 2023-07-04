@@ -10,7 +10,7 @@ from typing import List, Tuple, Dict
 from google.api_core.exceptions import NotFound
 from google.cloud import bigquery, dlp_v2
 from google.cloud.sql.connector import Connector
-from sqlalchemy import create_engine, MetaData, Table, func, select
+from sqlalchemy import create_engine, MetaData, Table, func, select, inspect
 
 
 @dataclasses.dataclass
@@ -42,7 +42,13 @@ class Database(Enum):
 class Preprocessing:
     """Converts input data into Data Loss Prevention tables."""
 
-    def __init__(self, source: str, project: str, zone: str, **preprocess_args):
+    def __init__(
+            self,
+            source: str,
+            project: str,
+            zone: str,
+            **preprocess_args
+    ):
         """Initializes `Preprocessing` class with arguments.
 
         Args:
@@ -118,17 +124,14 @@ class Preprocessing:
         Returns:
             A list of table names.
         """
-        # Create a connection to the database.
-        connection = self.get_connection()
+        # Create a database engine instance.
 
-        # Get all table names.
-        query = "SHOW TABLES"
-        with connection.cursor() as cursor:
-            cursor.execute(query)
-            tables = cursor.fetchall()
+        engine = create_engine(
+            f'{self.cloudsql.connection_type}://', creator=self.get_connection)
 
-        # Extract table names from the result.
-        table_names = [table[0] for table in tables]
+        inspector = inspect(engine)
+
+        table_names = inspector.get_table_names()
 
         return table_names
 
@@ -165,10 +168,10 @@ class Preprocessing:
 
         # Get table contents.
         with engine.connect() as connection:
-            select = table.select().with_only_columns(table.columns) \
+            query = table.select().with_only_columns(table.columns) \
                 .limit(int(batch_size/num_columns)) \
                     .offset(int(start_index/num_columns))
-            content = list(connection.execute(select).fetchall())
+            content = list(connection.execute(query).fetchall())
 
         return schema, content
 
@@ -515,18 +518,19 @@ class Preprocessing:
             and the total number of cells.
         """
         tables = []
+
+        # Retrieve table names from either a specific table
+        # or all tables in a dataset.
+        table_names = self.get_table_names()
+
         if self.source == Database.BIGQUERY:
-            # Retrieve table names from either a specific table
-            # or all tables in a dataset
-            tables_name = [self.bigquery.table] \
-                if self.bigquery.table \
-                else self.get_bigquery_tables(self.bigquery.dataset)
-            for table_name in tables_name:
-                # Get the table object from BigQuery
+
+            for table_name in table_names:
+                # Get the table object from BigQuery.
                 table_bq = self.bigquery.bq_client.get_table(
                     f"{self.bigquery.dataset}.{table_name}")
 
-                # Calculate the total number of rows and columns in the table
+                # Calculate the total number of rows and columns in the table.
                 num_rows = table_bq.num_rows
 
                 dtypes = self.get_data_types(table_bq)
@@ -539,7 +543,8 @@ class Preprocessing:
                 else:
                     num_columns = len(table_bq.schema)
 
-                # Append a tuple with the table name and the total number of cells to the list
+                # Append a tuple with the table name and the total number
+                # of cells to the list.
                 tables.append((table_name,num_rows*num_columns))
 
         elif self.source == Database.CLOUDSQL:
@@ -547,18 +552,20 @@ class Preprocessing:
             engine = create_engine(
                 f'{self.cloudsql.connection_type}://', creator=self.get_connection)
 
-            # Create a Metadata and Table instance.
-            metadata = MetaData()
-            table = Table(self.cloudsql.table, metadata, extend_existing=True,
-                        autoload_with=engine)
+            for table_name in table_names:
+                # Create a Metadata and Table instance.
+                metadata = MetaData()
+                table = Table(table_name, metadata, extend_existing=True,
+                            autoload_with=engine)
 
-            num_columns = len(table.columns.keys())
+                num_columns = len(table.columns.keys())
 
-            # Get table contents.
-            with engine.connect() as connection:
-                count_query = select(func.count("*")).select_from(table)
-                num_rows = connection.execute(count_query).scalar()
-                tables.append((self.cloudsql.table,num_rows*num_columns))
+                # Get table contents.
+                with engine.connect() as connection:
+                    count_query = select(
+                        func.count("*")).select_from(table) # pylint: disable=E1102
+                    num_rows = connection.execute(count_query).scalar()
+                    tables.append((table_name,num_rows*num_columns))
 
         return tables
 

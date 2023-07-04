@@ -27,7 +27,7 @@ def email_type(value) -> str:
     return value
 
 
-def parse_arguments() -> Type[argparse.Namespace]:
+def parse_arguments() -> Type[argparse.ArgumentParser]:
     """Parses command line arguments."""
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(dest="source")
@@ -104,7 +104,7 @@ def parse_arguments() -> Type[argparse.Namespace]:
         help="The zone to use, e.g. us-central1-b.",
     )
 
-    return parser.parse_args()
+    return parser
 
 
 def run(args: Type[argparse.Namespace]):
@@ -158,7 +158,7 @@ def run(args: Type[argparse.Namespace]):
         catalog = Catalog(
             data=None,
             project_id=project,
-            location=location,
+            zone=zone,
             instance_id=instance_id,
             entry_group_name=None,
         )
@@ -209,6 +209,7 @@ def run(args: Type[argparse.Namespace]):
 
         # Add the table and its top_finding to the list.
         top_finding_tables.append(top_finding_per_table)
+        print(top_finding_tables)
 
         # Create Catalog instance for each table.
         catalog = Catalog(
@@ -224,5 +225,6 @@ def run(args: Type[argparse.Namespace]):
 
 
 if __name__ == "__main__":
-    arguments = parse_arguments()
+    parser_run = parse_arguments()
+    arguments = parser_run.parse_args()
     run(arguments)
