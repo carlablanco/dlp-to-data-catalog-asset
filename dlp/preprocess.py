@@ -10,7 +10,7 @@ from typing import List, Tuple, Dict
 from google.api_core.exceptions import NotFound
 from google.cloud import bigquery, dlp_v2
 from google.cloud.sql.connector import Connector
-from sqlalchemy import create_engine, MetaData, Table
+from sqlalchemy import create_engine, MetaData, Table, inspect
 
 
 @dataclasses.dataclass
@@ -42,7 +42,13 @@ class Database(Enum):
 class Preprocessing:
     """Converts input data into Data Loss Prevention tables."""
 
-    def __init__(self, source: str, project: str, zone: str, **preprocess_args):
+    def __init__(
+            self,
+            source: str,
+            project: str,
+            zone: str,
+            **preprocess_args
+    ):
         """Initializes `Preprocessing` class with arguments.
 
         Args:
@@ -118,17 +124,13 @@ class Preprocessing:
         Returns:
             A list of table names.
         """
-        # Create a connection to the database.
-        connection = self.get_connection()
+        # Create a database engine instance.
+        engine = create_engine(
+            f'{self.cloudsql.connection_type}://', creator=self.get_connection)
 
-        # Get all table names.
-        query = "SHOW TABLES"
-        with connection.cursor() as cursor:
-            cursor.execute(query)
-            tables = cursor.fetchall()
+        inspector = inspect(engine)
 
-        # Extract table names from the result.
-        table_names = [table[0] for table in tables]
+        table_names = inspector.get_table_names()
 
         return table_names
 
@@ -165,10 +167,10 @@ class Preprocessing:
 
         # Get table contents.
         with engine.connect() as connection:
-            select = table.select().with_only_columns(table.columns) \
+            query = table.select().with_only_columns(table.columns) \
                 .limit(int(batch_size/num_columns)) \
                     .offset(int(start_index/num_columns))
-            content = list(connection.execute(select).fetchall())
+            content = list(connection.execute(query).fetchall())
 
         return schema, content
 

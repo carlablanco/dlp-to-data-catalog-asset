@@ -184,6 +184,7 @@ def run(args: Type[argparse.Namespace]):
 
     # Get a list of table names.
     table_names = preprocess.get_table_names()
+    print(table_names)
     # Store the top finding for each table.
     top_finding_tables = []
 
@@ -210,6 +211,7 @@ def run(args: Type[argparse.Namespace]):
 
         # Add the table and its top_finding to the list.
         top_finding_tables.append(top_finding_per_table)
+        print(top_finding_tables)
         # Checks if there where findings in the inspection.
         if not top_finding_tables[index]:
             warnings.warn(f"No findings found on {table_name}")
