@@ -498,7 +498,6 @@ class Preprocessing:
         Returns:
             A list of table names.
         """
-
         if self.source == Database.BIGQUERY:
             tables = [self.bigquery.table] if self.bigquery.table \
                 else self.get_bigquery_tables(self.bigquery.dataset)
