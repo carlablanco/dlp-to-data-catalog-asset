@@ -92,6 +92,7 @@ To use the program locally, you need to provide the following parameters:
 
 project: The name of the Google Cloud Platform project.
 location_category: The location specifying the localization of the inspection results.
+zone: The name of the zone.
 
 These parameters are common to both the BigQuery and CloudSQL execution methods.
 
@@ -105,6 +106,7 @@ You can choose one of the following options for the source:
 python3 -m dlp.run \
 --project PROJECT \
 --location_category LOCATION_CATEGORY \
+--zone ZONE \
 bigquery \
 --dataset DATASET \
 --table TABLE
@@ -120,11 +122,10 @@ CloudSQL Parameters:
 The following additional parameters are required for running the project with CloudSQL as the data source:
 
 - instance: The name of the CloudSQL instance.
-- zone: The zone where the CloudSQL instance is located.
 - service_account: Email address of the service account to be used.
 - db_name: The name of the database within the CloudSQL instance.
 - db_type: The type of the database (only accepts `mysql` or `postgres`).
-- table: The name of the table to inspect within the CloudSQL database.
+- table: The name of the table to inspect within the CloudSQL database. If None, the entire dataset will be scanned. Optional.
 
 #### For CLoudSQL (MySQL):
 
@@ -132,9 +133,9 @@ The following additional parameters are required for running the project with Cl
 python3 -m dlp.run \
 --project PROJECT \
 --location_category LOCATION_CATEGORY \
+--zone ZONE \
 cloudsql \
 --instance INSTANCE \
---zone ZONE \
 --service_account SERVICE_ACCOUNT \
 --db_name DB_NAME \
 --db_type mysql \
@@ -147,16 +148,16 @@ cloudsql \
 python3 -m dlp.run \
 --project PROJECT \
 --location_category LOCATION_CATEGORY \
+--zone ZONE \
 cloudsql \
 --instance INSTANCE \ 
---zone ZONE \
 --service_account SERVICE_ACCOUNT \
 --db_name DB_NAME \
 --db_type postgres \
 --table TABLE
 ```
 
-Make sure to replace the placeholder values (PROJECT, LOCATION_CATEGORY, DATASET, INSTANCE, ZONE, DB_NAME, and TABLE) with the appropriate values for your specific setup.
+Make sure to replace the placeholder values (PROJECT, LOCATION_CATEGORY, ZONE, DATASET, INSTANCE, DB_NAME, and TABLE) with the appropriate values for your specific setup.
 
 ## Run the program on DataFlow.
 
@@ -172,23 +173,13 @@ To use the program on DataFlow, you will need to create a template and the DataF
 
 1. Move to the program directory. 
 
-2. Install pip.
+2. Create a [virtual enviroment](#Environment-Setup-and-Package-Installation) and install packages.
 
-```
-sudo apt install python3-pip
-```
-
-3. Install requirements.
-
-```
-pip install requirements.txt
-```
-
-4. Create the template by running the program with the appropriate parameters. In this case, use the run_dataflow file and use the parameters as [running the program locally](#run-the-program-locally). The new parameters include `temp_location`, `staging_location`, `template_location`, and `output_txt_location`. Here's an example command:
+3. Create the template by running the program with the appropriate parameters. In this case, use the run_dataflow file and use the parameters as [running the program locally](#run-the-program-locally). The new parameters include `temp_location`, `staging_location`, `template_location`, and `output_txt_location`. Here's an example command:
 
 Replace TEMP_LOCATION, STAGING_LOCATION, TEMPLATE_LOCATION, and OUTPUT_TXT_LOCATION with the actual values appropriate for your setup.
 
-- TEMP_LOCATION: The temporary location where DataFlow will store intermediate data during the job execution. It should be a Google Cloud Storage (GCS) path, such as "gs://your-bucket/temporary_location".
+- TEMP_FILE_LOCATION: The temporary location where DataFlow will store intermediate data during the job execution. It should be a Google Cloud Storage (GCS) path, such as "gs://your-bucket/temporary_location".
 
 - STAGING_LOCATION: The staging location for DataFlow job resources. It should be a GCS path, such as "gs://your-bucket/staging_location".
 
@@ -197,10 +188,15 @@ Replace TEMP_LOCATION, STAGING_LOCATION, TEMPLATE_LOCATION, and OUTPUT_TXT_LOCAT
 - OUTPUT_TXT_LOCATION: The desired location where the output of the DataFlow job will be saved. It should be a GCS path, such as "gs://your-bucket/output_location"
 
 ```
-python dataflow.run.py --temp_location TEMP_LOCATION --staging_location STAGING_LOCATION --template_location TEMPLATE_LOCATION --output_txt_location OUTPUT_TXT_LOCATION --REST OF PARAMETERS
+python dataflow.run.py \
+--temp_file_location TEMP_FILE_LOCATION \
+--staging_location STAGING_LOCATION \
+--template_location TEMPLATE_LOCATION \
+--output_txt_location OUTPUT_TXT_LOCATION \
+--REST OF PARAMETERS
 ```
 
-5. Create the DataFlow Job from your template saved in Google Cloud Storage.
+4. Create the DataFlow Job from your template saved in Google Cloud Storage.
 
 ```
 gcloud dataflow jobs run NAME --gcs-location=TEMPLATE_LOCATION
