@@ -125,7 +125,6 @@ class Preprocessing:
             A list of table names.
         """
         # Create a database engine instance.
-
         engine = create_engine(
             f'{self.cloudsql.connection_type}://', creator=self.get_connection)
 
@@ -499,7 +498,6 @@ class Preprocessing:
         Returns:
             A list of table names.
         """
-
         if self.source == Database.BIGQUERY:
             tables = [self.bigquery.table] if self.bigquery.table \
                 else self.get_bigquery_tables(self.bigquery.dataset)
