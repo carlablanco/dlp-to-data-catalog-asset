@@ -205,7 +205,7 @@ python dataflow.run.py \
 4. Create the DataFlow Job from your template saved in Google Cloud Storage.
 
 ```
-gcloud dataflow jobs run NAME --gcs-location=TEMPLATE_LOCATION
+gcloud dataflow jobs run NAME --gcs-location=TEMPLATE_LOCATION --service-account-email=SERVICE_ACCOUNT
 ```
 
 Replace JOB_NAME with a name for your DataFlow job, and TEMPLATE_LOCATION with the correct format of the template file's Google Cloud Storage path, for example, "gs://your-gcs-path-to-template".
