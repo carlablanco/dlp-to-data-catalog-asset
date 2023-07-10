@@ -128,9 +128,7 @@ class Preprocessing:
         engine = create_engine(
             f'{self.cloudsql.connection_type}://', creator=self.get_connection)
 
-        inspector = inspect(engine)
-
-        table_names = inspector.get_table_names()
+        table_names = inspect(engine).get_table_names()
 
         return table_names
 
@@ -508,8 +506,11 @@ class Preprocessing:
         return tables
 
     def get_tables_info(self) -> List[Tuple]:
-        """Retrieves information about tables
-        in a dataset from BigQuery or CloudSQL.
+        """Retrieves information about tables in a dataset from
+        BigQuery or CloudSQL.
+        This function is used to retrieve information necessary
+        for running the program with dataflow, as it enables subsequent
+        table fragmentation for parallelization.
 
         Returns:
             List[Tuple]: A list of tuples containing the table name

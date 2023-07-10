@@ -14,10 +14,10 @@ from dlp.catalog import Catalog
 import dlp.run
 
 
-
 def parse_arguments() -> Type[argparse.ArgumentParser]:
     """Parses command line arguments."""
 
+    # Parse command line arguments for the Dataflow pipeline
     parser = dlp.run.parse_arguments()
     parser.add_argument(
         "--temp_file_location",
@@ -49,12 +49,10 @@ def parse_arguments() -> Type[argparse.ArgumentParser]:
 
     return parser
 
-
 def run(args: Type[argparse.Namespace]):
     """Runs DLP inspection scan and tags the results to Data Catalog.
 
     Args:
-
         source (str): The name of the source of data used.
         project (str): The name of the Google Cloud Platform project.
         location_category (str): The location to be inspected. Ex. "CANADA".
@@ -71,7 +69,7 @@ def run(args: Type[argparse.Namespace]):
             table (str): The name of the table.
             db_type(str): The type of the database. e.g. postgres, mysql.
     """
-
+    # Extract command line arguments
     source = args.source
     project = args.project
     location_category = args.location_category
@@ -81,65 +79,40 @@ def run(args: Type[argparse.Namespace]):
     template_location = args.template_location
     output_txt_location = args.output_txt_location
 
-    pipeline_options = PipelineOptions(
-        runner='DataflowRunner',
-        project=project,
-        region=zone,
-        staging_location=staging_location,
-        temp_file_location=temp_file_location,
-        template_location=template_location,
-        setup_file='./setup.py',
-        save_main_session=True,
-    )
+    db_args = dlp.run.get_db_args(args)
 
-    if source == "bigquery":
-        dataset = args.dataset
-        table = args.table
-        entry_group_name = None
-        preprocess_args = {
-            "bigquery_args": {"dataset": dataset, "table": table}
-        }
-        instance_id = None
-    elif source == "cloudsql":
-        instance_id = args.instance
-        dataset = args.db_name
-        table = args.table
-        preprocess_args = {
-            "cloudsql_args": {
-                "instance": instance_id,
-                "service_account": args.service_account,
-                "db_name": dataset,
-                "table": table,
-                "db_type": args.db_type,
-            }
-        }
+    entry_group_name = None
+    if source == 'cloudsql':
+        # Create a custom entry group for Cloud SQL
         catalog = Catalog(
-            data=None,
-            project_id=project,
-            zone=zone,
-            instance_id=instance_id,
-            entry_group_name=None,
+        data=None,
+        project_id=project,
+        zone=zone,
+        instance_id=db_args.instance_id,
+        entry_group_name=entry_group_name,
         )
         entry_group_name = catalog.create_custom_entry_group()
-    else:
-        # Handle unsupported source
-        raise ValueError("Unsupported source: " + source)
 
-    def get_tables_info() -> List[Tuple]:
-        """Retrieve information about tables
-        and their corresponding start indexes.
+
+    # Specify the number of cells to analyze per batch.
+    batch_size = 50000
+
+    def get_tables_indexes(_) -> List[Tuple]:
+        """Returns a list of tuples representing the table name and the
+        start index of each cell block, taken in chunks of 50,000.
+        This allows for parallel processing of the blocks.
 
         Returns:
-            List[Tuple]: A list of tuples containing
-            the table name and start index.
+            List[Tuple]: A list of tuples containing the table name and
+            the start index of each cell block.
         """
         preprocess = Preprocessing(
-            source=source, project=project, zone=zone, **preprocess_args)
+            source=source, project=project, zone=zone, **db_args.preprocess_args)
         tables_info = preprocess.get_tables_info()
         tables_start_index_list = []
 
         for table_name, total_cells in tables_info:
-            range_list = list(range(0, total_cells, 50000))
+            range_list = list(range(0, total_cells, batch_size))
             for num in range_list:
                 tables_start_index_list.append((table_name, num))
         return tables_start_index_list
@@ -157,7 +130,7 @@ def run(args: Type[argparse.Namespace]):
         """
         table_name, start_index = table_start_index_tuple
         preprocess = Preprocessing(
-            source=source, project=project, zone=zone, **preprocess_args)
+            source=source, project=project, zone=zone, **db_args.preprocess_args)
 
         dlp_table = preprocess.get_dlp_table_per_block(
             50000, table_name, start_index)
@@ -213,27 +186,63 @@ def run(args: Type[argparse.Namespace]):
             data=top_finding,
             project_id=project,
             zone=zone,
-            dataset=dataset,
+            dataset=db_args.dataset,
             table=table_name,
-            instance_id=instance_id,
+            instance_id=db_args.instance_id,
             entry_group_name=entry_group_name
         )
         catalog.main()
 
+    # Set up pipeline options
+    pipeline_options = PipelineOptions(
+        runner='DataflowRunner',
+        project=project,
+        region=zone,
+        staging_location=staging_location,
+        temp_file_location=temp_file_location,
+        template_location=template_location,
+        setup_file='./setup.py',
+        save_main_session=True,
+    )
+
     with beam.Pipeline(options=pipeline_options) as pipeline:
+
         # pylint: disable=expression-not-assigned
-        top_finding = (pipeline | 'Get_tables_info' >> beam.Create(get_tables_info())
+        top_finding = (pipeline | 'InitialPcollection' >> beam.Create([None])
+                       # Generate a list of tuples representing the table name
+                       # and start index of each cell block.
+                      | 'TablesIndexes' >> beam.FlatMap(get_tables_indexes)
+
+                      # Reshuffle the data to allow parallel processing.
+                      | 'ReshuffledData' >> beam.Reshuffle()
+
+                       # Preprocess each table based on their start indexes
+                       # and retrieve DLP tables.
                        | 'PreProcessTable' >> beam.Map(preprocess_table)
+
+                       # Inspect each DLP table and retrieve finding results
+                       # for each block.
                        | 'Inspect' >> beam.Map(inspect_table)
+
+                       # Group finding results by table name.
                        | 'GroupByKey' >> beam.GroupByKey()
+
+                       # Merge and extract the top finding result
+                       # for each table.
                        | 'ProcessTopFinding' >> beam.Map(merge_and_top_finding)
                        )
+        # Write the top finding results to a text file.
         top_finding | 'WriteOutput' >> beam.io.WriteToText(
             output_txt_location)
+
+        # Process the top finding results and create tags in Data Catalog.
         top_finding | 'ProcessCatalog' >> beam.Map(process_catalog)
 
 
 if __name__ == "__main__":
+    # Parse command line arguments.
     parse_dataflow = parse_arguments()
     arguments = parse_dataflow.parse_args()
+
+    # Run the DLP inspection and tagging pipeline
     run(arguments)

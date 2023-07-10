@@ -3,15 +3,25 @@
 # agreement with Google.
 """Runs DLP inspection on a dataset and tags the results in Data Catalog."""
 
+import dataclasses
 import argparse
 import re
-from typing import Type
+from typing import Type, Dict
 import warnings
 
 from dlp.preprocess import Preprocessing
 from dlp.inspection import DlpInspection
 from dlp.catalog import Catalog
 
+
+@dataclasses.dataclass
+class DbArgs:
+    """Stores the arguments related to the database source.
+    """
+    instance_id:str
+    dataset:str
+    table:str
+    preprocess_args: Dict
 
 EMAIL_REGEX = re.compile(r"^[\w\.-]+@[\w\.-]+\.\w+$")
 
@@ -26,6 +36,46 @@ def email_type(value) -> str:
     if not is_valid_email(value):
         raise argparse.ArgumentTypeError(f"Invalid IAM user: {value}")
     return value
+
+
+def get_db_args(args: Type[argparse.Namespace]) -> DbArgs:
+    """Returns the database arguments based on the command line arguments.
+
+    Args:
+        args (argparse.Namespace): The parsed command line arguments.
+
+    Returns:
+        DbArgs: An object containing the database arguments.
+    """
+    if args.source == "bigquery":
+        dataset = args.dataset
+        table = args.table
+        preprocess_args = {
+            "bigquery_args": {"dataset": dataset, "table": table}
+        }
+        instance_id = None
+    elif args.source == "cloudsql":
+        instance_id = args.instance
+        dataset = args.db_name
+        table = args.table
+        preprocess_args = {
+            "cloudsql_args": {
+                "instance": instance_id,
+                "service_account": args.service_account,
+                "db_name": dataset,
+                "table": table,
+                "db_type": args.db_type,
+            }
+        }
+    else:
+        # Handle unsupported source
+        raise ValueError("Unsupported source: " + args.source)
+
+    return DbArgs(instance_id=instance_id,
+                          dataset=dataset,
+                          table=table,
+                          preprocess_args=preprocess_args
+                          )
 
 
 def parse_arguments() -> Type[argparse.ArgumentParser]:
@@ -112,7 +162,6 @@ def run(args: Type[argparse.Namespace]):
     """Runs DLP inspection scan and tags the results to Data Catalog.
 
     Args:
-
         source (str): The name of the source of data used.
         project (str): The name of the Google Cloud Platform project.
         location_category (str): The location to be inspected. Ex. "CANADA".
@@ -135,38 +184,18 @@ def run(args: Type[argparse.Namespace]):
     location_category = args.location_category
     zone = args.zone
 
-    if source == "bigquery":
-        dataset = args.dataset
-        table = args.table
-        entry_group_name = None
-        preprocess_args = {
-            "bigquery_args": {"dataset": dataset, "table": table}
-        }
-        instance_id = None
-    elif source == "cloudsql":
-        instance_id = args.instance
-        dataset = args.db_name
-        table = args.table
-        preprocess_args = {
-            "cloudsql_args": {
-                "instance": instance_id,
-                "service_account": args.service_account,
-                "db_name": dataset,
-                "table": table,
-                "db_type": args.db_type,
-            }
-        }
+    db_args = get_db_args(args)
+
+    entry_group_name = None
+    if source == 'cloudsql':
         catalog = Catalog(
-            data=None,
-            project_id=project,
-            zone=zone,
-            instance_id=instance_id,
-            entry_group_name=None,
+        data=None,
+        project_id=project,
+        zone=zone,
+        instance_id=db_args.instance_id,
+        entry_group_name=None,
         )
         entry_group_name = catalog.create_custom_entry_group()
-    else:
-        # Handle unsupported source
-        raise ValueError("Unsupported source: " + source)
 
     # Specify the number of cells to analyze per batch.
     batch_size = 50000
@@ -176,7 +205,7 @@ def run(args: Type[argparse.Namespace]):
         source=source,
         project=project,
         zone = zone,
-        **preprocess_args,
+        **db_args.preprocess_args,
     )
 
     dlpinspection = DlpInspection(project_id=project,
@@ -216,16 +245,16 @@ def run(args: Type[argparse.Namespace]):
         if not top_finding_tables[index]:
             warnings.warn(f"No findings found on {table_name}")
             continue
+
         # Create Catalog instance for each table.
         catalog = Catalog(
             data=top_finding_tables[index],
             project_id=project,
             zone=zone,
-            dataset=dataset,
+            dataset=db_args.dataset,
             table=table_name,
-            instance_id=instance_id,
-            entry_group_name=entry_group_name,
-        )
+            instance_id=db_args.instance_id,
+            entry_group_name=entry_group_name )
         catalog.main()
 
 
