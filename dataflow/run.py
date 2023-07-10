@@ -107,7 +107,11 @@ def run(args: Type[argparse.Namespace]):
             the start index of each cell block.
         """
         preprocess = Preprocessing(
-            source=source, project=project, zone=zone, **db_args.preprocess_args)
+            source=source,
+            project=project,
+            zone=zone,
+            **db_args.preprocess_args
+            )
         tables_info = preprocess.get_tables_info()
         tables_start_index_list = []
 
@@ -130,7 +134,11 @@ def run(args: Type[argparse.Namespace]):
         """
         table_name, start_index = table_start_index_tuple
         preprocess = Preprocessing(
-            source=source, project=project, zone=zone, **db_args.preprocess_args)
+            source=source,
+            project=project,
+            zone=zone,
+            **db_args.preprocess_args
+            )
 
         dlp_table = preprocess.get_dlp_table_per_block(
             50000, table_name, start_index)
