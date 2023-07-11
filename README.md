@@ -98,7 +98,7 @@ To use the program locally, you need to provide the following parameters:
 
 project: The name of the Google Cloud Platform project.
 location_category: The location specifying the localization of the inspection results.
-zone: The name of the zone.
+zone: The name of the zone. Ex. "us-central1"
 
 These parameters are common to both the BigQuery and CloudSQL execution methods.
 
