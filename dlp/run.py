@@ -212,13 +212,13 @@ def run(args: Type[argparse.Namespace]):
                                   location_category=location_category)
 
     # Get a list of table names.
-    table_names = preprocess.get_table_names()
+    tables_info = preprocess.get_tables_info()
 
     # Store the top finding for each table.
     top_finding_tables = []
 
     # Iterate through each table to obtain the finding_result_per_table.
-    for index, table_name in enumerate(table_names):
+    for index, (table_name, _) in enumerate(tables_info):
         finding_results_per_table = []
         empty_search = False
         start_index = 0

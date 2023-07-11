@@ -486,25 +486,6 @@ class Preprocessing:
 
         return table_dlp
 
-    def get_table_names(self) -> List:
-        """Returns a list of table names.
-
-        If the source is BigQuery, it returns the table name if specified,
-        otherwise it retrieves all table names within the dataset.
-        If the source is Cloud SQL, it returns the table name.
-
-        Returns:
-            A list of table names.
-        """
-        if self.source == Database.BIGQUERY:
-            tables = [self.bigquery.table] if self.bigquery.table \
-                else self.get_bigquery_tables(self.bigquery.dataset)
-        elif self.source == Database.CLOUDSQL:
-            tables = [self.cloudsql.table] if self.cloudsql.table \
-                else self.get_cloudsql_tables()
-
-        return tables
-
     def get_tables_info(self) -> List[Tuple]:
         """Retrieves information about tables in a dataset from
         BigQuery or CloudSQL.
@@ -516,11 +497,17 @@ class Preprocessing:
             List[Tuple]: A list of tuples containing the table name
             and the total number of cells.
         """
-        tables = []
 
         # Retrieve table names from either a specific table
         # or all tables in a dataset.
-        table_names = self.get_table_names()
+        if self.source == Database.BIGQUERY:
+            table_names = [self.bigquery.table] if self.bigquery.table \
+                else self.get_bigquery_tables(self.bigquery.dataset)
+        elif self.source == Database.CLOUDSQL:
+            table_names = [self.cloudsql.table] if self.cloudsql.table \
+                else self.get_cloudsql_tables()
+
+        tables = []
 
         if self.source == Database.BIGQUERY:
 
@@ -549,7 +536,9 @@ class Preprocessing:
         elif self.source == Database.CLOUDSQL:
              # Create a database engine instance.
             engine = create_engine(
-                f'{self.cloudsql.connection_type}://', creator=self.get_connection)
+                f'{self.cloudsql.connection_type}://',
+                creator=self.get_connection
+                )
 
             for table_name in table_names:
                 # Create a Metadata and Table instance.
@@ -562,7 +551,8 @@ class Preprocessing:
                 # Get table contents.
                 with engine.connect() as connection:
                     count_query = select(
-                        func.count("*")).select_from(table) # pylint: disable=E1102
+                        # pylint: disable=E1102
+                        func.count("*")).select_from(table)
                     num_rows = connection.execute(count_query).scalar()
                     tables.append((table_name,num_rows*num_columns))
 

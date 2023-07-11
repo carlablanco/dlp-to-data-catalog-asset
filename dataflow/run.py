@@ -162,7 +162,7 @@ def run(args: Type[argparse.Namespace]):
             dlp_table)
         return table_name, finding_results_per_block
 
-    def merge_and_top_finding(finding_tuple: Tuple) -> Tuple:
+    def merge_top_findings(finding_tuple: Tuple) -> Tuple:
         """Merge and extract the top finding result for each table.
 
         Args:
@@ -237,7 +237,7 @@ def run(args: Type[argparse.Namespace]):
 
                        # Merge and extract the top finding result
                        # for each table.
-                       | 'ProcessTopFinding' >> beam.Map(merge_and_top_finding)
+                       | 'ProcessTopFinding' >> beam.Map(merge_top_findings)
                        )
         # Write the top finding results to a text file.
         top_finding | 'WriteOutput' >> beam.io.WriteToText(
