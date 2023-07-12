@@ -10,7 +10,7 @@ from typing import List, Tuple, Dict
 from google.api_core.exceptions import NotFound
 from google.cloud import bigquery, dlp_v2
 from google.cloud.sql.connector import Connector
-from sqlalchemy import create_engine, MetaData, Table, inspect
+from sqlalchemy import create_engine, MetaData, Table, func, select, inspect
 
 
 @dataclasses.dataclass
@@ -128,9 +128,7 @@ class Preprocessing:
         engine = create_engine(
             f'{self.cloudsql.connection_type}://', creator=self.get_connection)
 
-        inspector = inspect(engine)
-
-        table_names = inspector.get_table_names()
+        table_names = inspect(engine).get_table_names()
 
         return table_names
 
@@ -488,22 +486,75 @@ class Preprocessing:
 
         return table_dlp
 
-    def get_table_names(self) -> List:
-        """Returns a list of table names.
-
-        If the source is BigQuery, it returns the table name if specified,
-        otherwise it retrieves all table names within the dataset.
-        If the source is Cloud SQL, it returns the table name.
+    def get_tables_info(self) -> List[Tuple]:
+        """Retrieves information about tables in a dataset from
+        BigQuery or CloudSQL.
+        This function is used to retrieve information necessary
+        for running the program with dataflow, as it enables subsequent
+        table fragmentation for parallelization.
 
         Returns:
-            A list of table names.
+            List[Tuple]: A list of tuples containing the table name
+            and the total number of cells.
         """
+
+        # Retrieve table names from either a specific table
+        # or all tables in a dataset.
         if self.source == Database.BIGQUERY:
-            tables = [self.bigquery.table] if self.bigquery.table \
+            table_names = [self.bigquery.table] if self.bigquery.table \
                 else self.get_bigquery_tables(self.bigquery.dataset)
         elif self.source == Database.CLOUDSQL:
-            tables = [self.cloudsql.table] if self.cloudsql.table \
+            table_names = [self.cloudsql.table] if self.cloudsql.table \
                 else self.get_cloudsql_tables()
+
+        tables = []
+
+        if self.source == Database.BIGQUERY:
+
+            for table_name in table_names:
+                # Get the table object from BigQuery.
+                table_bq = self.bigquery.bq_client.get_table(
+                    f"{self.bigquery.dataset}.{table_name}")
+
+                # Calculate the total number of rows and columns in the table.
+                num_rows = table_bq.num_rows
+
+                dtypes = self.get_data_types(table_bq)
+
+                # Checks if there are nested fields in the schema.
+                if "RECORD" in dtypes:
+                    table_schema, _, record_columns = (
+                        self.get_table_schema(table_bq))
+                    num_columns = len(table_schema + record_columns)
+                else:
+                    num_columns = len(table_bq.schema)
+
+                # Append a tuple with the table name and the total number
+                # of cells to the list.
+                tables.append((table_name,num_rows*num_columns))
+
+        elif self.source == Database.CLOUDSQL:
+             # Create a database engine instance.
+            engine = create_engine(
+                f'{self.cloudsql.connection_type}://',
+                creator=self.get_connection
+                )
+
+            for table_name in table_names:
+                # Create a Metadata and Table instance.
+                metadata = MetaData()
+                table = Table(table_name, metadata, extend_existing=True,
+                            autoload_with=engine)
+
+                num_columns = len(table.columns.keys())
+
+                # Get table contents.
+                with engine.connect() as connection:
+                    count_query = select(
+                        # pylint: disable=E1102
+                        func.count("*")).select_from(table)
+                    num_rows = connection.execute(count_query).scalar()
+                    tables.append((table_name,num_rows*num_columns))
 
         return tables
 
