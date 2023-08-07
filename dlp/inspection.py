@@ -6,7 +6,7 @@
 from typing import List, Dict
 import warnings
 from google.cloud import dlp_v2
-from google.api_core.exceptions import BadRequest
+from google.api_core.exceptions import BadRequest, Unknown
 
 
 class DlpInspection:
@@ -17,6 +17,8 @@ class DlpInspection:
         self,
         project_id: str,
         location_category: str,
+        dlp_template_location: str,
+        dlp_template_id: str,
         tables: List[dlp_v2.Table] = None,
     ):
         """Initializes the class with the required data.
@@ -29,6 +31,8 @@ class DlpInspection:
         self.dlp_client = dlp_v2.DlpServiceClient()
         self.project_id = project_id
         self.location_category = location_category
+        self.dlp_template_location = dlp_template_location
+        self.dlp_template_id = dlp_template_id
         self.tables = tables
 
     def get_inspection_parameters(self):
@@ -38,18 +42,38 @@ class DlpInspection:
             parent (str): The project route in GCP.
             inspect_config (Dict): The configuration for the inspection.
         """
-        infotypes = self.dlp_client.list_info_types()
-        with warnings.catch_warnings(record = True):
-            warnings.filterwarnings("always", category=UserWarning)
 
-            filtered_infotypes = [
-                info_type.name
-                for info_type in infotypes.info_types
-                if (str(info_type.categories[0].location_category) ==
-                    f"LocationCategory.{self.location_category}") or
-                (str(info_type.categories[0].location_category) ==
-                    "LocationCategory.GLOBAL")
-            ]
+        if self.dlp_template_id and self.dlp_template_location:
+
+            template_name = f"projects/{self.project_id}/locations/"
+            template_name += f"{self.dlp_template_location}/inspectTemplates/"
+            template_name += f"{self.dlp_template_id}"
+
+            template_dlp = self.dlp_client.get_inspect_template(name=template_name)
+
+            infotypes = template_dlp.inspect_config.info_types
+
+            filtered_infotypes = [infotype.name for infotype in infotypes]
+
+
+        elif self.location_category:
+
+            infotypes = self.dlp_client.list_info_types()
+
+            with warnings.catch_warnings(record = True):
+                warnings.filterwarnings("always", category=UserWarning)
+
+                filtered_infotypes = [
+                    info_type.name
+                    for info_type in infotypes.info_types
+                    if (str(info_type.categories[0].location_category) ==
+                        f"LocationCategory.{self.location_category}") or
+                    (str(info_type.categories[0].location_category) ==
+                        "LocationCategory.GLOBAL")
+                ]
+
+        else:
+            raise ValueError("falta argumentos para el template DLP")
 
         inspect_config = {
             "info_types": [
@@ -173,18 +197,18 @@ class DlpInspection:
 
         results_list = []
 
-        for col_index, _ in enumerate(table.headers):
-            dlp_table = dlp_v2.Table()
-            dlp_table.headers = [{"name": table.headers[col_index].name}]
+        def inspect_content(dlp_table,results_list,inspect_config,error_counter=0):
+            """_summary_
 
-            rows = []
-            for row in table.rows:
-                cell_value = row.values[col_index].string_value
-                rows.append(dlp_v2.Table.Row(
-                    values=[dlp_v2.Value(string_value=cell_value)]))
+            Args:
+                dlp_table (_type_): _description_
+                inspect_config (_type_): _description_
+                error_counter (int, optional): _description_. Defaults to 0.
 
-            dlp_table.rows = rows
-
+            Raises:
+                BadRequest: _description_
+                Exception: _description_
+            """
             try:
                 # Make the API request for the chunk of data.
                 response = self.dlp_client.inspect_content(
@@ -199,6 +223,25 @@ class DlpInspection:
             except BadRequest as error:
                 # Handle the BadRequest exception here.
                 raise BadRequest(error) from error
+            except Unknown as error:
+                if error_counter < 2:
+                    inspect_content(dlp_table,results_list,inspect_config,error_counter + 1)
+                else:
+                    raise Unknown(error) from error
+
+        for col_index, _ in enumerate(table.headers):
+            dlp_table = dlp_v2.Table()
+            dlp_table.headers = [{"name": table.headers[col_index].name}]
+
+            rows = []
+            for row in table.rows:
+                cell_value = row.values[col_index].string_value
+                rows.append(dlp_v2.Table.Row(
+                    values=[dlp_v2.Value(string_value=cell_value)]))
+
+            dlp_table.rows = rows
+
+            inspect_content(dlp_table,results_list,inspect_config)
 
         return results_list
 

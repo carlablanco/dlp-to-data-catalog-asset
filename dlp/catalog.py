@@ -91,8 +91,9 @@ class Catalog:
                 description=value,
             )
             fields[new_source_field.name] = new_source_field
-        self.tag_template.fields.update(fields)
 
+
+        self.tag_template.fields.update(fields)
         # Makes the request for the Tag Template creation.
         request = datacatalog_v1.CreateTagTemplateRequest(
             parent=parent,
@@ -192,30 +193,31 @@ class Catalog:
             nested_type = True
 
         # Checks if it's BigQuery or CloudSQL.
-        if self.instance_id is None:
-            if nested_type is False:
-                # Create the tag template.
-                self.create_tag_template(parent)
-            else:
-                nested_data = (
-                    [{key.replace(".", "_"): value for key,
-                      value in self.data.items()}]
+        if self.data:
+            if self.instance_id is None:
+                if nested_type is False:
+                    # Create the tag template.
+                    self.create_tag_template(parent)
+                else:
+                    nested_data = (
+                        [{key.replace(".", "_"): value for key,
+                        value in self.data.items()}]
+                    )
+                    self.data = nested_data
+                    self.create_tag_template(parent)
+
+                resource_name = (
+                    f"//bigquery.googleapis.com/projects/{self.project_id}"
+                    f"/datasets/{self.dataset}/tables/{self.table}"
                 )
-                self.data = nested_data
-                self.create_tag_template(parent)
 
-            resource_name = (
-                f"//bigquery.googleapis.com/projects/{self.project_id}"
-                f"/datasets/{self.dataset}/tables/{self.table}"
-            )
+                # Creates the BigQuery table entry.
+                table_entry = self.client.lookup_entry(
+                    request={"linked_resource": resource_name}
+                )
+                table_entry = table_entry.name
+                # Attach the tag template to the BigQuery table.
+                self.attach_tag_to_table(table_entry)
 
-            # Creates the BigQuery table entry.
-            table_entry = self.client.lookup_entry(
-                request={"linked_resource": resource_name}
-            )
-            table_entry = table_entry.name
-            # Attach the tag template to the BigQuery table.
-            self.attach_tag_to_table(table_entry)
-
-        else:
-            self.create_entry(self.entry_group_name)
+            else:
+                self.create_entry(self.entry_group_name)

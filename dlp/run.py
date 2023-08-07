@@ -145,8 +145,17 @@ def parse_arguments() -> Type[argparse.ArgumentParser]:
     parser.add_argument(
         "--location_category",
         type=str,
-        required=True,
         help="The location to be inspected. Ex. 'CANADA'",
+    )
+    parser.add_argument(
+        "--dlp_template_id",
+        type=str,
+        help="",
+    )
+    parser.add_argument(
+        "--dlp_template_location",
+        type=str,
+        help="",
     )
     parser.add_argument(
         "--zone",
@@ -182,6 +191,8 @@ def run(args: Type[argparse.Namespace]):
     source = args.source
     project = args.project
     location_category = args.location_category
+    dlp_template_id = args.dlp_template_id
+    dlp_template_location = args.dlp_template_location
     zone = args.zone
 
     db_args = get_db_args(args)
@@ -209,7 +220,9 @@ def run(args: Type[argparse.Namespace]):
     )
 
     dlpinspection = DlpInspection(project_id=project,
-                                  location_category=location_category)
+                                  location_category=location_category,
+                                  dlp_template_id=dlp_template_id,
+                                  dlp_template_location=dlp_template_location)
 
     # Get a list of table names.
     tables_info = preprocess.get_tables_info()

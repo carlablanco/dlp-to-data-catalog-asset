@@ -20,27 +20,6 @@ def parse_arguments() -> Type[argparse.ArgumentParser]:
     # Parse command line arguments for the Dataflow pipeline
     parser = dlp.run.parse_arguments()
     parser.add_argument(
-        "--temp_file_location",
-        type=str,
-        required=True,
-        help="""Specifies the location in Google Cloud Storage where
-        temporary files will be stored during the dataflow execution.""",
-    )
-    parser.add_argument(
-        "--staging_location",
-        type=str,
-        required=True,
-        help="""Specifies the location in Google Cloud Storage where files
-        will be staged during the dataflow execution.""",
-    )
-    parser.add_argument(
-        "--template_location",
-        type=str,
-        required=True,
-        help="""Specifies the location in Google Cloud Storage where the
-        dataflow template will be stored.""",
-    )
-    parser.add_argument(
         "--output_txt_location",
         type=str,
         required=True,
@@ -76,9 +55,6 @@ def run(args: Type[argparse.Namespace]):
     dlp_template_id = args.dlp_template_id
     dlp_template_location = args.dlp_template_location
     zone = args.zone
-    temp_file_location = args.temp_file_location
-    staging_location = args.staging_location
-    template_location = args.template_location
     output_txt_location = args.output_txt_location
 
     db_args = dlp.run.get_db_args(args)
@@ -209,14 +185,12 @@ def run(args: Type[argparse.Namespace]):
 
     # Set up pipeline options
     pipeline_options = PipelineOptions(
-        runner='DataflowRunner',
+        runner='DirectRunner',
         project=project,
         region=zone,
-        staging_location=staging_location,
-        temp_file_location=temp_file_location,
-        template_location=template_location,
         setup_file='./setup.py',
         save_main_session=True,
+        direct_num_workers=15
     )
 
     with beam.Pipeline(options=pipeline_options) as pipeline:
