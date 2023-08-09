@@ -197,17 +197,23 @@ class DlpInspection:
 
         results_list = []
 
-        def inspect_content(dlp_table,results_list,inspect_config,error_counter=0):
-            """_summary_
+        def inspect_content(dlp_table: dlp_v2.Table,
+                            results_list: List,
+                            inspect_config: Dict,
+                            error_counter: int=0):
+            """Recursively inspects the content of DLP table cells.
+            This function makes an API request to inspect the content of a 
+            chunk of data from the DLP table.
+            If the inspection results in an inactive error, the function
+            retries the inspection up to two more times to prevent the code
+            execution from being interrupted.
 
             Args:
-                dlp_table (_type_): _description_
-                inspect_config (_type_): _description_
-                error_counter (int, optional): _description_. Defaults to 0.
-
-            Raises:
-                BadRequest: _description_
-                Exception: _description_
+                dlp_table (dlp_v2.Table): Table containing data.
+                result_list (List): Storage for inspection results.
+                inspect_config (Dict): Parameters for the inspection. InfoTypes
+                and the minimum likelihood.
+                error_counter (int, optional): Inactive error counter.
             """
             try:
                 # Make the API request for the chunk of data.
