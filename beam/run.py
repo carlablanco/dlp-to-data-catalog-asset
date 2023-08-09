@@ -136,7 +136,8 @@ def run(args: Type[argparse.Namespace]):
         dlpinspection = DlpInspection(project_id=project,
                                       location_category=location_category,
                                       dlp_template_id=dlp_template_id,
-                                      dlp_template_location=dlp_template_location)
+                                      dlp_template_location= \
+                                        dlp_template_location)
 
         finding_results_per_block = dlpinspection.get_finding_results(
             dlp_table)
@@ -158,7 +159,8 @@ def run(args: Type[argparse.Namespace]):
         dlpinspection = DlpInspection(project_id=project,
                                       location_category=location_category,
                                       dlp_template_id=dlp_template_id,
-                                      dlp_template_location=dlp_template_location)
+                                      dlp_template_location= \
+                                        dlp_template_location)
         top_finding = dlpinspection.merge_finding_results(finding_results)
         return table_name, top_finding
 

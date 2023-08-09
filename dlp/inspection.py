@@ -49,7 +49,8 @@ class DlpInspection:
             template_name += f"{self.dlp_template_location}/inspectTemplates/"
             template_name += f"{self.dlp_template_id}"
 
-            template_dlp = self.dlp_client.get_inspect_template(name=template_name)
+            template_dlp = self.dlp_client.get_inspect_template(
+                name=template_name)
 
             infotypes = template_dlp.inspect_config.info_types
 
@@ -231,7 +232,10 @@ class DlpInspection:
                 raise BadRequest(error) from error
             except Unknown as error:
                 if error_counter < 2:
-                    inspect_content(dlp_table,results_list,inspect_config,error_counter + 1)
+                    inspect_content(dlp_table,
+                                    results_list,
+                                    inspect_config,
+                                    error_counter + 1)
                 else:
                     raise Unknown(error) from error
 
@@ -247,7 +251,9 @@ class DlpInspection:
 
             dlp_table.rows = rows
 
-            inspect_content(dlp_table,results_list,inspect_config)
+            inspect_content(dlp_table,
+                            results_list,
+                            inspect_config)
 
         return results_list
 
