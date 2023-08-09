@@ -44,7 +44,7 @@ class DlpInspection:
         """
 
         if self.dlp_template_id and self.dlp_template_location:
-
+            # If DLP template ID and location are provided, use the template.
             template_name = f"projects/{self.project_id}/locations/"
             template_name += f"{self.dlp_template_location}/inspectTemplates/"
             template_name += f"{self.dlp_template_id}"
@@ -54,11 +54,12 @@ class DlpInspection:
 
             infotypes = template_dlp.inspect_config.info_types
 
+            # Extract filtered info types from the template.
             filtered_infotypes = [infotype.name for infotype in infotypes]
 
 
         elif self.location_category:
-
+            # If location category is provided, list relevant info types.
             infotypes = self.dlp_client.list_info_types()
 
             with warnings.catch_warnings(record = True):
