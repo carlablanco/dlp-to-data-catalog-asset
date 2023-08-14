@@ -20,32 +20,52 @@ def parse_arguments() -> Type[argparse.ArgumentParser]:
     # Parse command line arguments for the Dataflow pipeline
     parser = dlp.run.parse_arguments()
     parser.add_argument(
-        "--temp_file_location",
+        "--runner",
+        choices=["DataflowRunner","DirectRunner"],
         type=str,
-        required=True,
-        help="""Specifies the location in Google Cloud Storage where
-        temporary files will be stored during the dataflow execution.""",
+        help="""""",
     )
-    parser.add_argument(
-        "--staging_location",
-        type=str,
-        required=True,
-        help="""Specifies the location in Google Cloud Storage where files
-        will be staged during the dataflow execution.""",
-    )
-    parser.add_argument(
-        "--template_location",
-        type=str,
-        required=True,
-        help="""Specifies the location in Google Cloud Storage where the
-        dataflow template will be stored.""",
-    )
+
     parser.add_argument(
         "--output_txt_location",
         type=str,
         required=True,
         help="Specifies the location where the output text will be stored.",
     )
+    main_args, _ = parser.parse_known_args()
+
+    if main_args.runner == 'DataflowRunner':
+        dataflow_group = parser.add_argument_group("Dataflow Group")
+        dataflow_group.add_argument(
+            "--temp_file_location",
+            type=str,
+            required=True,
+            help="""Specifies the location in Google Cloud Storage where
+            temporary files will be stored during the dataflow execution.""",
+        )
+        dataflow_group.add_argument(
+            "--staging_location",
+            type=str,
+            required=True,
+            help="""Specifies the location in Google Cloud Storage where files
+            will be staged during the dataflow execution.""",
+        )
+        dataflow_group.add_argument(
+            "--template_location",
+            type=str,
+            required=True,
+            help="""Specifies the location in Google Cloud Storage where the
+            dataflow template will be stored.""",
+        )
+    elif main_args.runner == 'DirectRunner':
+        print("entro por aca")
+        direct_group = parser.add_argument_group("Direct Group")
+        direct_group.add_argument(
+            "--direct_num_workers",
+            type=int,
+            default=10,
+            help="""""",
+        )
 
     return parser
 
@@ -74,10 +94,31 @@ def run(args: Type[argparse.Namespace]):
     project = args.project
     location_category = args.location_category
     zone = args.zone
-    temp_file_location = args.temp_file_location
-    staging_location = args.staging_location
-    template_location = args.template_location
     output_txt_location = args.output_txt_location
+
+    runner = args.runner
+
+    if runner == 'DataflowRunner':
+        # Set up pipeline options
+        pipeline_options = PipelineOptions(
+            runner=runner,
+            project=project,
+            region=zone,
+            staging_location=args.staging_location,
+            temp_file_location=args.temp_file_location,
+            template_location=args.template_location,
+            setup_file='../setup.py',
+            save_main_session=True,
+        )
+    elif runner == 'DirectRunner':
+         # Set up pipeline options
+        pipeline_options = PipelineOptions(
+            runner=runner,
+            project=project,
+            region=zone,
+            save_main_session=True,
+            direct_num_workers = args.direct_num_workers
+        )
 
     db_args = dlp.run.get_db_args(args)
 
@@ -202,16 +243,7 @@ def run(args: Type[argparse.Namespace]):
         catalog.main()
 
     # Set up pipeline options
-    pipeline_options = PipelineOptions(
-        runner='DataflowRunner',
-        project=project,
-        region=zone,
-        staging_location=staging_location,
-        temp_file_location=temp_file_location,
-        template_location=template_location,
-        setup_file='./setup.py',
-        save_main_session=True,
-    )
+    pipeline_options = PipelineOptions(options=pipeline_options)
 
     with beam.Pipeline(options=pipeline_options) as pipeline:
 
