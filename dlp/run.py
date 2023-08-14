@@ -145,8 +145,12 @@ def parse_arguments() -> Type[argparse.ArgumentParser]:
     parser.add_argument(
         "--location_category",
         type=str,
-        required=True,
         help="The location to be inspected. Ex. 'CANADA'",
+    )
+    parser.add_argument(
+        "--dlp_template",
+        type=str,
+        help="",
     )
     parser.add_argument(
         "--zone",

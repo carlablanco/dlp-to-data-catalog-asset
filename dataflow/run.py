@@ -58,7 +58,6 @@ def parse_arguments() -> Type[argparse.ArgumentParser]:
             dataflow template will be stored.""",
         )
     elif main_args.runner == 'DirectRunner':
-        print("entro por aca")
         direct_group = parser.add_argument_group("Direct Group")
         direct_group.add_argument(
             "--direct_num_workers",
@@ -66,6 +65,9 @@ def parse_arguments() -> Type[argparse.ArgumentParser]:
             default=10,
             help="""""",
         )
+
+    if not main_args.location_category and not main_args.dlp_template:
+        parser.error("location_category or dlp_template are required.")
 
     return parser
 
@@ -93,6 +95,7 @@ def run(args: Type[argparse.Namespace]):
     source = args.source
     project = args.project
     location_category = args.location_category
+    dlp_template = args.dlp_template
     zone = args.zone
     output_txt_location = args.output_txt_location
 
@@ -197,7 +200,8 @@ def run(args: Type[argparse.Namespace]):
         """
         table_name, dlp_table = table_dlp_table_tuple
         dlpinspection = DlpInspection(project_id=project,
-                                      location_category=location_category)
+                                      location_category=location_category,
+                                      dlp_template=dlp_template)
 
         finding_results_per_block = dlpinspection.get_finding_results(
             dlp_table)
@@ -217,7 +221,8 @@ def run(args: Type[argparse.Namespace]):
         table_name, finding_results = finding_tuple
 
         dlpinspection = DlpInspection(project_id=project,
-                                      location_category=location_category,)
+                                      location_category=location_category,
+                                      dlp_template=dlp_template)
         top_finding = dlpinspection.merge_finding_results(finding_results)
         return table_name, top_finding
 

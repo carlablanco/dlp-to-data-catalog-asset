@@ -16,7 +16,8 @@ class DlpInspection:
     def __init__(
         self,
         project_id: str,
-        location_category: str,
+        location_category: str = None,
+        dlp_template: str = None,
         tables: List[dlp_v2.Table] = None,
     ):
         """Initializes the class with the required data.
@@ -29,6 +30,7 @@ class DlpInspection:
         self.dlp_client = dlp_v2.DlpServiceClient()
         self.project_id = project_id
         self.location_category = location_category
+        self.dlp_template = dlp_template
         self.tables = tables
 
     def get_inspection_parameters(self):
@@ -38,18 +40,38 @@ class DlpInspection:
             parent (str): The project route in GCP.
             inspect_config (Dict): The configuration for the inspection.
         """
-        infotypes = self.dlp_client.list_info_types()
-        with warnings.catch_warnings(record = True):
-            warnings.filterwarnings("always", category=UserWarning)
+        if self.dlp_template:
+            # If DLP template ID and location are provided, use the template.
+            template_name = f"projects/{self.project_id}/locations/"
+            template_name += f"{self.dlp_template}"
 
-            filtered_infotypes = [
-                info_type.name
-                for info_type in infotypes.info_types
-                if (str(info_type.categories[0].location_category) ==
-                    f"LocationCategory.{self.location_category}") or
-                (str(info_type.categories[0].location_category) ==
-                    "LocationCategory.GLOBAL")
-            ]
+            template_dlp = self.dlp_client.get_inspect_template(
+                name=template_name)
+
+            infotypes = template_dlp.inspect_config.info_types
+
+            # Extract filtered info types from the template.
+            filtered_infotypes = [infotype.name for infotype in infotypes]
+
+
+        elif self.location_category:
+            # If location category is provided, list relevant info types.
+            infotypes = self.dlp_client.list_info_types()
+
+            with warnings.catch_warnings(record = True):
+                warnings.filterwarnings("always", category=UserWarning)
+
+                filtered_infotypes = [
+                    info_type.name
+                    for info_type in infotypes.info_types
+                    if (str(info_type.categories[0].location_category) ==
+                        f"LocationCategory.{self.location_category}") or
+                    (str(info_type.categories[0].location_category) ==
+                        "LocationCategory.GLOBAL")
+                ]
+
+        else:
+            raise ValueError("falta argumentos para el template DLP")
 
         inspect_config = {
             "info_types": [
