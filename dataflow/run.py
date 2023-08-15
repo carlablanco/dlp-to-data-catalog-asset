@@ -15,27 +15,36 @@ import dlp.run
 
 
 def parse_arguments() -> Type[argparse.ArgumentParser]:
-    """Parses command line arguments."""
+    """Parses command line common arguments for Apache Beam and Dataflow.
+
+    Returns:
+        argparse.ArgumentParser: The argument parser configured
+        with necessary arguments.
+    """
 
     # Parse command line arguments for the Dataflow pipeline
-    parser = dlp.run.parse_arguments()
-    parser.add_argument(
+    parser_common = dlp.run.parse_arguments()
+
+    # Common arguments
+    parser_common.add_argument(
         "--runner",
         choices=["DataflowRunner","DirectRunner"],
         type=str,
-        help="""""",
+        help="""Specify the runner to use: DataflowRunner or DirectRunner.""",
     )
 
-    parser.add_argument(
+    parser_common.add_argument(
         "--output_txt_location",
         type=str,
         required=True,
         help="Specifies the location where the output text will be stored.",
     )
-    main_args, _ = parser.parse_known_args()
+
+    main_args, _ = parser_common.parse_known_args()
 
     if main_args.runner == 'DataflowRunner':
-        dataflow_group = parser.add_argument_group("Dataflow Group")
+        dataflow_group = parser_common.add_argument_group("Dataflow Group")
+        # Dataflow-specific arguments
         dataflow_group.add_argument(
             "--temp_file_location",
             type=str,
@@ -58,13 +67,18 @@ def parse_arguments() -> Type[argparse.ArgumentParser]:
             dataflow template will be stored.""",
         )
     elif main_args.runner == 'DirectRunner':
-        direct_group = parser.add_argument_group("Direct Group")
+        direct_group = parser_common.add_argument_group("Direct Group")
+        # DirectRunner-specific arguments
         direct_group.add_argument(
             "--direct_num_workers",
             type=int,
             default=10,
-            help="""""",
+            help="""Specify the number of workers for parallel execution
+            with DirectRunner.""",
         )
+
+    parser = dlp.run.subparse_arguments(parser_common)
+
 
     if not main_args.location_category and not main_args.dlp_template:
         parser.error("location_category or dlp_template are required.")
@@ -111,7 +125,7 @@ def run(args: Type[argparse.Namespace]):
             temp_file_location=args.temp_file_location,
             template_location=args.template_location,
             setup_file='../setup.py',
-            save_main_session=True,
+            save_main_session=True
         )
     elif runner == 'DirectRunner':
          # Set up pipeline options
@@ -248,7 +262,6 @@ def run(args: Type[argparse.Namespace]):
         catalog.main()
 
     # Set up pipeline options
-    pipeline_options = PipelineOptions(options=pipeline_options)
 
     with beam.Pipeline(options=pipeline_options) as pipeline:
 
