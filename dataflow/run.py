@@ -209,7 +209,7 @@ def run(args: Type[argparse.Namespace]):
         staging_location=staging_location,
         temp_file_location=temp_file_location,
         template_location=template_location,
-        setup_file='./setup.py',
+        setup_file='../setup.py',
         save_main_session=True,
     )
 
