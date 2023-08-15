@@ -15,15 +15,22 @@ import dlp.run
 
 
 def parse_arguments() -> Type[argparse.ArgumentParser]:
-    """Parses command line arguments."""
+    """Parses command line arguments.
+
+    Returns:
+        argparse.ArgumentParser: The argument parser configured
+        with necessary arguments.
+    """
 
     # Parse command line arguments for the Dataflow pipeline
     parser = dlp.run.parse_arguments()
+
+    # Common arguments
     parser.add_argument(
         "--runner",
         choices=["DataflowRunner","DirectRunner"],
         type=str,
-        help="""""",
+        help="""Specify the runner to use: DataflowRunner or DirectRunner.""",
     )
 
     parser.add_argument(
@@ -32,10 +39,12 @@ def parse_arguments() -> Type[argparse.ArgumentParser]:
         required=True,
         help="Specifies the location where the output text will be stored.",
     )
+
     main_args, _ = parser.parse_known_args()
 
     if main_args.runner == 'DataflowRunner':
         dataflow_group = parser.add_argument_group("Dataflow Group")
+        # Dataflow-specific arguments
         dataflow_group.add_argument(
             "--temp_file_location",
             type=str,
@@ -58,13 +67,14 @@ def parse_arguments() -> Type[argparse.ArgumentParser]:
             dataflow template will be stored.""",
         )
     elif main_args.runner == 'DirectRunner':
-        print("entro por aca")
         direct_group = parser.add_argument_group("Direct Group")
+        # DirectRunner-specific arguments
         direct_group.add_argument(
             "--direct_num_workers",
             type=int,
             default=10,
-            help="""""",
+            help="""Specify the number of workers for parallel execution
+            with DirectRunner.""",
         )
 
     return parser
@@ -111,7 +121,7 @@ def run(args: Type[argparse.Namespace]):
             save_main_session=True,
         )
     elif runner == 'DirectRunner':
-         # Set up pipeline options
+        # Set up pipeline options
         pipeline_options = PipelineOptions(
             runner=runner,
             project=project,
