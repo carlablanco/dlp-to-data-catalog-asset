@@ -61,6 +61,7 @@ class DlpInspection:
             with warnings.catch_warnings(record = True):
                 warnings.filterwarnings("always", category=UserWarning)
 
+                # Filter info types based on location category.
                 filtered_infotypes = [
                     info_type.name
                     for info_type in infotypes.info_types
@@ -71,7 +72,10 @@ class DlpInspection:
                 ]
 
         else:
-            raise ValueError("falta argumentos para el template DLP")
+            # Raise an exception if neither template nor
+            # location category is provided.
+            raise ValueError("""Either 'dlp_template' or
+                             'location_category' must be provided.""")
 
         inspect_config = {
             "info_types": [

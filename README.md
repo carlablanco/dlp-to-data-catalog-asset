@@ -97,7 +97,6 @@ Consult the official Python documentation on <a href= "https://docs.python.org/3
 To use the program locally, you need to provide the following parameters:
 
 project: The name of the Google Cloud Platform project.
-location_category: The location specifying the localization of the inspection results.
 zone: The name of the zone. Ex. "us-central1"
 
 These parameters are common to both the BigQuery and CloudSQL execution methods.
@@ -106,6 +105,17 @@ Source:
 You can choose one of the following options for the source:
 - BigQuery
 - CloudSQL
+
+You must include one of the following options to define what data to inspect:
+
+1. Using all available info types with `--location_category LOCATION_CATEGORY`
+location_category: The location specifying the localization of the inspection results.
+Replace `LOCATION_CATEGORY` with an appropriate value.
+
+2. Using a specific DLP template with `--dlp_template RESOURCE_LOCATION/inspectTemplates/TEMPLATE_ID`
+template_id: Identifier for a predefined DLP inspection configuration.
+resource_location: Location storing DLP template for inspection configuration. Ex: global
+Replace `RESOURCE_LOCATION` and `TEMPLATE_ID` with appropriate values.
 
 ### BigQuery:
 ```
