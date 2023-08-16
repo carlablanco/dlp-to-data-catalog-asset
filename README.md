@@ -107,12 +107,16 @@ You can choose one of the following options for the source:
 - BigQuery
 - CloudSQL
 
+When running the program locally, ensure you pass the `--runner DirectRunner` parameter to enable local parallel execution.
+
+
 ### BigQuery:
 ```
 python3 -m dlp.run \
 --project PROJECT \
 --location_category LOCATION_CATEGORY \
 --zone ZONE \
+--runner RUNNER \
 bigquery \
 --dataset DATASET \
 --table TABLE
@@ -140,6 +144,7 @@ python3 -m dlp.run \
 --project PROJECT \
 --location_category LOCATION_CATEGORY \
 --zone ZONE \
+--runner RUNNER \
 cloudsql \
 --instance INSTANCE \
 --service_account SERVICE_ACCOUNT \
@@ -155,6 +160,7 @@ python3 -m dlp.run \
 --project PROJECT \
 --location_category LOCATION_CATEGORY \
 --zone ZONE \
+--runner RUNNER \
 cloudsql \
 --instance INSTANCE \ 
 --service_account SERVICE_ACCOUNT \
@@ -199,8 +205,11 @@ python dataflow.run.py \
 --staging_location STAGING_LOCATION \
 --template_location TEMPLATE_LOCATION \
 --output_txt_location OUTPUT_TXT_LOCATION \
+--runner RUNNER \
 --REST OF PARAMETERS
 ```
+
+Make sure to include --runner DataflowRunner to specify the execution mode.
 
 4. Create the DataFlow Job from your template saved in Google Cloud Storage.
 
