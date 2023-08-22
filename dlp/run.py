@@ -173,6 +173,7 @@ def subparse_arguments(parser: Type[argparse.ArgumentParser]
 
     return parser
 
+
 def run(args: Type[argparse.Namespace]):
     """Runs DLP inspection scan and tags the results to Data Catalog.
 

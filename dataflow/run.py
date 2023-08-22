@@ -28,7 +28,7 @@ def parse_arguments() -> Type[argparse.ArgumentParser]:
     # Common arguments
     parser_common.add_argument(
         "--runner",
-        choices=["DataflowRunner","DirectRunner"],
+        choices=["DataflowRunner", "DirectRunner"],
         type=str,
         help="""Specify the runner to use: DataflowRunner or DirectRunner.""",
     )
@@ -76,7 +76,6 @@ def parse_arguments() -> Type[argparse.ArgumentParser]:
             help="""Specify the number of workers for parallel execution
             with DirectRunner.""",
         )
-
 
     if not main_args.location_category and not main_args.dlp_template:
         parser_common.error("location_category or dlp_template are required.")
@@ -145,7 +144,7 @@ def run(args: Type[argparse.Namespace]):
         pipeline_options = PipelineOptions([
             f'--runner={runner}',
             f'--project={project}',
-            f'--region={zone}', 
+            f'--region={zone}',
             f'--direct_num_workers={args.direct_num_workers}'
         ],
             save_main_session=True

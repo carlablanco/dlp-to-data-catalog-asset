@@ -53,12 +53,11 @@ class DlpInspection:
             # Extract filtered info types from the template.
             filtered_infotypes = [infotype.name for infotype in infotypes]
 
-
         elif self.location_category:
             # If location category is provided, list relevant info types.
             infotypes = self.dlp_client.list_info_types()
 
-            with warnings.catch_warnings(record = True):
+            with warnings.catch_warnings(record=True):
                 warnings.filterwarnings("always", category=UserWarning)
 
                 # Filter info types based on location category.
@@ -206,7 +205,7 @@ class DlpInspection:
         def inspect_content(dlp_table: dlp_v2.Table,
                             results_list: List,
                             inspect_config: Dict,
-                            error_counter: int=0):
+                            error_counter: int = 0):
             """Recursively inspects the content of DLP table cells.
             This function makes an API request to inspect the content of a 
             chunk of data from the DLP table.
