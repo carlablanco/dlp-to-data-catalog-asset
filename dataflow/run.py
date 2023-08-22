@@ -105,7 +105,6 @@ def run(args: Type[argparse.Namespace]):
     location_category = args.location_category
     zone = args.zone
     output_txt_location = args.output_txt_location
-
     runner = args.runner
 
     db_args = dlp.run.get_db_args(args)
