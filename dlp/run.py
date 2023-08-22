@@ -81,7 +81,6 @@ def get_db_args(args: Type[argparse.Namespace]) -> DbArgs:
 
 def parse_arguments() -> Type[argparse.ArgumentParser]:
     """Parses command line common arguments."""
-
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
@@ -93,8 +92,16 @@ def parse_arguments() -> Type[argparse.ArgumentParser]:
     parser.add_argument(
         "--location_category",
         type=str,
-        required=True,
         help="The location to be inspected. Ex. 'CANADA'",
+    )
+    parser.add_argument(
+        "--dlp_template",
+        type=str,
+        help="""Specify the DLP template using the format:
+        RESOURCE_LOCATION/inspectTemplates/TEMPLATE_ID.
+        TEMPLATE_ID is the identifier for a predefined DLP inspection configuration,
+        and RESOURCE_LOCATION is the location storing the DLP template.
+        Ex: --dlp_template global/inspectTemplates/my-template-id""",
     )
     parser.add_argument(
         "--zone",

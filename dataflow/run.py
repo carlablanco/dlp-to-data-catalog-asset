@@ -23,27 +23,27 @@ def parse_arguments() -> Type[argparse.ArgumentParser]:
     """
 
     # Parse command line arguments for the Dataflow pipeline
-    parser = dlp.run.parse_arguments()
+    parser_common = dlp.run.parse_arguments()
 
     # Common arguments
-    parser.add_argument(
+    parser_common.add_argument(
         "--runner",
         choices=["DataflowRunner", "DirectRunner"],
         type=str,
         help="""Specify the runner to use: DataflowRunner or DirectRunner.""",
     )
 
-    parser.add_argument(
+    parser_common.add_argument(
         "--output_txt_location",
         type=str,
         required=True,
         help="Specifies the location where the output text will be stored.",
     )
 
-    main_args, _ = parser.parse_known_args()
+    main_args, _ = parser_common.parse_known_args()
 
     if main_args.runner == 'DataflowRunner':
-        dataflow_group = parser.add_argument_group("Dataflow Group")
+        dataflow_group = parser_common.add_argument_group("Dataflow Group")
         # Dataflow-specific arguments
         dataflow_group.add_argument(
             "--temp_file_location",
@@ -67,7 +67,7 @@ def parse_arguments() -> Type[argparse.ArgumentParser]:
             dataflow template will be stored.""",
         )
     elif main_args.runner == 'DirectRunner':
-        direct_group = parser.add_argument_group("Direct Group")
+        direct_group = parser_common.add_argument_group("Direct Group")
         # DirectRunner-specific arguments
         direct_group.add_argument(
             "--direct_num_workers",
@@ -77,7 +77,10 @@ def parse_arguments() -> Type[argparse.ArgumentParser]:
             with DirectRunner.""",
         )
 
-    return parser
+    if not main_args.location_category and not main_args.dlp_template:
+        parser_common.error("location_category or dlp_template are required.")
+
+    return parser_common
 
 
 def run(args: Type[argparse.Namespace]):
@@ -104,6 +107,7 @@ def run(args: Type[argparse.Namespace]):
     source = args.source
     project = args.project
     location_category = args.location_category
+    dlp_template = args.dlp_template
     zone = args.zone
     output_txt_location = args.output_txt_location
     runner = args.runner
@@ -208,7 +212,8 @@ def run(args: Type[argparse.Namespace]):
         """
         table_name, dlp_table = table_dlp_table_tuple
         dlpinspection = DlpInspection(project_id=project,
-                                      location_category=location_category)
+                                      location_category=location_category,
+                                      dlp_template=dlp_template)
 
         finding_results_per_block = dlpinspection.get_finding_results(
             dlp_table)
@@ -228,7 +233,8 @@ def run(args: Type[argparse.Namespace]):
         table_name, finding_results = finding_tuple
 
         dlpinspection = DlpInspection(project_id=project,
-                                      location_category=location_category,)
+                                      location_category=location_category,
+                                      dlp_template=dlp_template)
         top_finding = dlpinspection.merge_finding_results(finding_results)
         return table_name, top_finding
 
