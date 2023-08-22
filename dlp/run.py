@@ -107,7 +107,7 @@ def parse_arguments() -> Type[argparse.ArgumentParser]:
 
 def subparse_arguments(parser: Type[argparse.ArgumentParser]) -> Type[argparse.ArgumentParser]:
     """Parses command line subparsers arguments."""
-    
+
     subparsers = parser.add_subparsers(dest="source")
 
     bigquery_parser = subparsers.add_parser(
