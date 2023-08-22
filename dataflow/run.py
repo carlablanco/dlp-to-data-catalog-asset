@@ -15,31 +15,24 @@ import dlp.run
 
 
 def parse_arguments() -> Type[argparse.ArgumentParser]:
-    """Parses command line arguments."""
+    """Parses command line arguments.
+
+    Returns:
+        argparse.ArgumentParser: The argument parser configured
+        with necessary arguments.
+    """
 
     # Parse command line arguments for the Dataflow pipeline
     parser = dlp.run.parse_arguments()
+
+    # Common arguments
     parser.add_argument(
-        "--temp_file_location",
+        "--runner",
+        choices=["DataflowRunner", "DirectRunner"],
         type=str,
-        required=True,
-        help="""Specifies the location in Google Cloud Storage where
-        temporary files will be stored during the dataflow execution.""",
+        help="""Specify the runner to use: DataflowRunner or DirectRunner.""",
     )
-    parser.add_argument(
-        "--staging_location",
-        type=str,
-        required=True,
-        help="""Specifies the location in Google Cloud Storage where files
-        will be staged during the dataflow execution.""",
-    )
-    parser.add_argument(
-        "--template_location",
-        type=str,
-        required=True,
-        help="""Specifies the location in Google Cloud Storage where the
-        dataflow template will be stored.""",
-    )
+
     parser.add_argument(
         "--output_txt_location",
         type=str,
@@ -47,7 +40,45 @@ def parse_arguments() -> Type[argparse.ArgumentParser]:
         help="Specifies the location where the output text will be stored.",
     )
 
+    main_args, _ = parser.parse_known_args()
+
+    if main_args.runner == 'DataflowRunner':
+        dataflow_group = parser.add_argument_group("Dataflow Group")
+        # Dataflow-specific arguments
+        dataflow_group.add_argument(
+            "--temp_file_location",
+            type=str,
+            required=True,
+            help="""Specifies the location in Google Cloud Storage where
+            temporary files will be stored during the dataflow execution.""",
+        )
+        dataflow_group.add_argument(
+            "--staging_location",
+            type=str,
+            required=True,
+            help="""Specifies the location in Google Cloud Storage where files
+            will be staged during the dataflow execution.""",
+        )
+        dataflow_group.add_argument(
+            "--template_location",
+            type=str,
+            required=True,
+            help="""Specifies the location in Google Cloud Storage where the
+            dataflow template will be stored.""",
+        )
+    elif main_args.runner == 'DirectRunner':
+        direct_group = parser.add_argument_group("Direct Group")
+        # DirectRunner-specific arguments
+        direct_group.add_argument(
+            "--direct_num_workers",
+            type=int,
+            default=10,
+            help="""Specify the number of workers for parallel execution
+            with DirectRunner.""",
+        )
+
     return parser
+
 
 def run(args: Type[argparse.Namespace]):
     """Runs DLP inspection scan and tags the results to Data Catalog.
@@ -74,10 +105,8 @@ def run(args: Type[argparse.Namespace]):
     project = args.project
     location_category = args.location_category
     zone = args.zone
-    temp_file_location = args.temp_file_location
-    staging_location = args.staging_location
-    template_location = args.template_location
     output_txt_location = args.output_txt_location
+    runner = args.runner
 
     db_args = dlp.run.get_db_args(args)
 
@@ -85,14 +114,37 @@ def run(args: Type[argparse.Namespace]):
     if source == 'cloudsql':
         # Create a custom entry group for Cloud SQL
         catalog = Catalog(
-        data=None,
-        project_id=project,
-        zone=zone,
-        instance_id=db_args.instance_id,
-        entry_group_name=entry_group_name,
+            data=None,
+            project_id=project,
+            zone=zone,
+            instance_id=db_args.instance_id,
+            entry_group_name=entry_group_name,
         )
         entry_group_name = catalog.create_custom_entry_group()
 
+    if runner == 'DataflowRunner':
+        # Set up pipeline options
+        pipeline_options = PipelineOptions([
+            f'--runner={runner}',
+            f'--project={project}',
+            f'--region={zone}',
+            f'--staging_location={args.staging_location}',
+            f'--temp_file_location={args.temp_file_location}',
+            f'--template_location={args.template_location}'
+        ],
+            setup_file='../setup.py',
+            save_main_session=True
+        )
+    elif runner == 'DirectRunner':
+        # Set up pipeline options
+        pipeline_options = PipelineOptions([
+            f'--runner={runner}',
+            f'--project={project}',
+            f'--region={zone}',
+            f'--direct_num_workers={args.direct_num_workers}'
+        ],
+            save_main_session=True
+        )
 
     # Specify the number of cells to analyze per batch.
     batch_size = 50000
@@ -111,7 +163,7 @@ def run(args: Type[argparse.Namespace]):
             project=project,
             zone=zone,
             **db_args.preprocess_args
-            )
+        )
         tables_info = preprocess.get_tables_info()
         tables_start_index_list = []
 
@@ -138,7 +190,7 @@ def run(args: Type[argparse.Namespace]):
             project=project,
             zone=zone,
             **db_args.preprocess_args
-            )
+        )
 
         dlp_table = preprocess.get_dlp_table_per_block(
             50000, table_name, start_index)
@@ -201,28 +253,16 @@ def run(args: Type[argparse.Namespace]):
         )
         catalog.main()
 
-    # Set up pipeline options
-    pipeline_options = PipelineOptions(
-        runner='DataflowRunner',
-        project=project,
-        region=zone,
-        staging_location=staging_location,
-        temp_file_location=temp_file_location,
-        template_location=template_location,
-        setup_file='../setup.py',
-        save_main_session=True,
-    )
-
     with beam.Pipeline(options=pipeline_options) as pipeline:
 
         # pylint: disable=expression-not-assigned
         top_finding = (pipeline | 'InitialPcollection' >> beam.Create([None])
                        # Generate a list of tuples representing the table name
                        # and start index of each cell block.
-                      | 'TablesIndexes' >> beam.FlatMap(get_tables_indexes)
+                       | 'TablesIndexes' >> beam.FlatMap(get_tables_indexes)
 
-                      # Reshuffle the data to allow parallel processing.
-                      | 'ReshuffledData' >> beam.Reshuffle()
+                       # Reshuffle the data to allow parallel processing.
+                       | 'ReshuffledData' >> beam.Reshuffle()
 
                        # Preprocess each table based on their start indexes
                        # and retrieve DLP tables.
@@ -249,7 +289,8 @@ def run(args: Type[argparse.Namespace]):
 
 if __name__ == "__main__":
     # Parse command line arguments.
-    parse_dataflow = parse_arguments()
+    parse_common = parse_arguments()
+    parse_dataflow = dlp.run.subparse_arguments(parse_common)
     arguments = parse_dataflow.parse_args()
 
     # Run the DLP inspection and tagging pipeline

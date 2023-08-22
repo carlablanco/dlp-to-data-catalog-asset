@@ -99,6 +99,7 @@ To use the program locally, you need to provide the following parameters:
 project: The name of the Google Cloud Platform project.
 location_category: The location specifying the localization of the inspection results.
 zone: The name of the zone. Ex. "us-central1"
+runner: The execution environment for the program. Use `DirectRunner` for local execution.
 
 These parameters are common to both the BigQuery and CloudSQL execution methods.
 
@@ -107,12 +108,14 @@ You can choose one of the following options for the source:
 - BigQuery
 - CloudSQL
 
+
 ### BigQuery:
 ```
 python3 -m dlp.run \
 --project PROJECT \
 --location_category LOCATION_CATEGORY \
 --zone ZONE \
+--runner RUNNER \
 bigquery \
 --dataset DATASET \
 --table TABLE
@@ -140,6 +143,7 @@ python3 -m dlp.run \
 --project PROJECT \
 --location_category LOCATION_CATEGORY \
 --zone ZONE \
+--runner RUNNER \
 cloudsql \
 --instance INSTANCE \
 --service_account SERVICE_ACCOUNT \
@@ -155,6 +159,7 @@ python3 -m dlp.run \
 --project PROJECT \
 --location_category LOCATION_CATEGORY \
 --zone ZONE \
+--runner RUNNER \
 cloudsql \
 --instance INSTANCE \ 
 --service_account SERVICE_ACCOUNT \
@@ -199,10 +204,13 @@ python dataflow.run.py \
 --staging_location STAGING_LOCATION \
 --template_location TEMPLATE_LOCATION \
 --output_txt_location OUTPUT_TXT_LOCATION \
+--runner DataflowRunner \
 --REST OF PARAMETERS
 ```
+Make sure to include --runner DataflowRunner to specify the execution mode. The runner parameter determines the execution environment for the program.
 
-4. Create the DataFlow Job from your template saved in Google Cloud Storage.
+
+1. Create the DataFlow Job from your template saved in Google Cloud Storage.
 
 ```
 gcloud dataflow jobs run NAME --gcs-location=TEMPLATE_LOCATION --service-account-email=SERVICE_ACCOUNT

@@ -18,10 +18,11 @@ from dlp.catalog import Catalog
 class DbArgs:
     """Stores the arguments related to the database source.
     """
-    instance_id:str
-    dataset:str
-    table:str
+    instance_id: str
+    dataset: str
+    table: str
     preprocess_args: Dict
+
 
 EMAIL_REGEX = re.compile(r"^[\w\.-]+@[\w\.-]+\.\w+$")
 
@@ -72,15 +73,43 @@ def get_db_args(args: Type[argparse.Namespace]) -> DbArgs:
         raise ValueError("Unsupported source: " + args.source)
 
     return DbArgs(instance_id=instance_id,
-                          dataset=dataset,
-                          table=table,
-                          preprocess_args=preprocess_args
-                          )
+                  dataset=dataset,
+                  table=table,
+                  preprocess_args=preprocess_args
+                  )
 
 
 def parse_arguments() -> Type[argparse.ArgumentParser]:
-    """Parses command line arguments."""
+    """Parses command line common arguments."""
+
     parser = argparse.ArgumentParser()
+
+    parser.add_argument(
+        "--project",
+        type=str,
+        required=True,
+        help="The Google Cloud project to be used.",
+    )
+    parser.add_argument(
+        "--location_category",
+        type=str,
+        required=True,
+        help="The location to be inspected. Ex. 'CANADA'",
+    )
+    parser.add_argument(
+        "--zone",
+        required=True,
+        type=str,
+        help="The zone to use, e.g. us-central1-b.",
+    )
+
+    return parser
+
+
+def subparse_arguments(parser: Type[argparse.ArgumentParser]
+                       ) -> Type[argparse.ArgumentParser]:
+    """Parses command line subparsers arguments."""
+
     subparsers = parser.add_subparsers(dest="source")
 
     bigquery_parser = subparsers.add_parser(
@@ -135,26 +164,6 @@ def parse_arguments() -> Type[argparse.ArgumentParser]:
         help="The database to use. e.g. Bigquery, CloudSQL.",
     )
 
-    # Common arguments.
-    parser.add_argument(
-        "--project",
-        type=str,
-        required=True,
-        help="The Google Cloud project to be used.",
-    )
-    parser.add_argument(
-        "--location_category",
-        type=str,
-        required=True,
-        help="The location to be inspected. Ex. 'CANADA'",
-    )
-    parser.add_argument(
-        "--zone",
-        required=True,
-        type=str,
-        help="The zone to use, e.g. us-central1-b.",
-    )
-
     return parser
 
 
@@ -189,11 +198,11 @@ def run(args: Type[argparse.Namespace]):
     entry_group_name = None
     if source == 'cloudsql':
         catalog = Catalog(
-        data=None,
-        project_id=project,
-        zone=zone,
-        instance_id=db_args.instance_id,
-        entry_group_name=None,
+            data=None,
+            project_id=project,
+            zone=zone,
+            instance_id=db_args.instance_id,
+            entry_group_name=None,
         )
         entry_group_name = catalog.create_custom_entry_group()
 
@@ -204,7 +213,7 @@ def run(args: Type[argparse.Namespace]):
     preprocess = Preprocessing(
         source=source,
         project=project,
-        zone = zone,
+        zone=zone,
         **db_args.preprocess_args,
     )
 
@@ -254,11 +263,13 @@ def run(args: Type[argparse.Namespace]):
             dataset=db_args.dataset,
             table=table_name,
             instance_id=db_args.instance_id,
-            entry_group_name=entry_group_name )
+            entry_group_name=entry_group_name)
         catalog.main()
 
 
 if __name__ == "__main__":
-    parser_run = parse_arguments()
+    parser_common = parse_arguments()
+    parser_run = subparse_arguments(parser_common)
+
     arguments = parser_run.parse_args()
     run(arguments)
