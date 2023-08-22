@@ -18,10 +18,11 @@ from dlp.catalog import Catalog
 class DbArgs:
     """Stores the arguments related to the database source.
     """
-    instance_id:str
-    dataset:str
-    table:str
+    instance_id: str
+    dataset: str
+    table: str
     preprocess_args: Dict
+
 
 EMAIL_REGEX = re.compile(r"^[\w\.-]+@[\w\.-]+\.\w+$")
 
@@ -72,10 +73,10 @@ def get_db_args(args: Type[argparse.Namespace]) -> DbArgs:
         raise ValueError("Unsupported source: " + args.source)
 
     return DbArgs(instance_id=instance_id,
-                          dataset=dataset,
-                          table=table,
-                          preprocess_args=preprocess_args
-                          )
+                  dataset=dataset,
+                  table=table,
+                  preprocess_args=preprocess_args
+                  )
 
 
 def parse_arguments() -> Type[argparse.ArgumentParser]:
@@ -165,6 +166,7 @@ def subparse_arguments(parser: Type[argparse.ArgumentParser]
 
     return parser
 
+
 def run(args: Type[argparse.Namespace]):
     """Runs DLP inspection scan and tags the results to Data Catalog.
 
@@ -196,11 +198,11 @@ def run(args: Type[argparse.Namespace]):
     entry_group_name = None
     if source == 'cloudsql':
         catalog = Catalog(
-        data=None,
-        project_id=project,
-        zone=zone,
-        instance_id=db_args.instance_id,
-        entry_group_name=None,
+            data=None,
+            project_id=project,
+            zone=zone,
+            instance_id=db_args.instance_id,
+            entry_group_name=None,
         )
         entry_group_name = catalog.create_custom_entry_group()
 
@@ -211,7 +213,7 @@ def run(args: Type[argparse.Namespace]):
     preprocess = Preprocessing(
         source=source,
         project=project,
-        zone = zone,
+        zone=zone,
         **db_args.preprocess_args,
     )
 
@@ -261,7 +263,7 @@ def run(args: Type[argparse.Namespace]):
             dataset=db_args.dataset,
             table=table_name,
             instance_id=db_args.instance_id,
-            entry_group_name=entry_group_name )
+            entry_group_name=entry_group_name)
         catalog.main()
 
 
