@@ -15,7 +15,7 @@ import dlp.run
 
 
 def parse_arguments() -> Type[argparse.ArgumentParser]:
-    """Parses command line common arguments for Apache Beam and Dataflow.
+    """Parses command line arguments.
 
     Returns:
         argparse.ArgumentParser: The argument parser configured
@@ -83,6 +83,7 @@ def parse_arguments() -> Type[argparse.ArgumentParser]:
 
     return parser_common
 
+
 def run(args: Type[argparse.Namespace]):
     """Runs DLP inspection scan and tags the results to Data Catalog.
 
@@ -118,11 +119,11 @@ def run(args: Type[argparse.Namespace]):
     if source == 'cloudsql':
         # Create a custom entry group for Cloud SQL
         catalog = Catalog(
-        data=None,
-        project_id=project,
-        zone=zone,
-        instance_id=db_args.instance_id,
-        entry_group_name=entry_group_name,
+            data=None,
+            project_id=project,
+            zone=zone,
+            instance_id=db_args.instance_id,
+            entry_group_name=entry_group_name,
         )
         entry_group_name = catalog.create_custom_entry_group()
 
@@ -136,8 +137,8 @@ def run(args: Type[argparse.Namespace]):
             f'--temp_file_location={args.temp_file_location}',
             f'--template_location={args.template_location}'
         ],
-        setup_file='../setup.py',
-        save_main_session=True
+            setup_file='../setup.py',
+            save_main_session=True
         )
     elif runner == 'DirectRunner':
         # Set up pipeline options
@@ -147,7 +148,7 @@ def run(args: Type[argparse.Namespace]):
             f'--region={zone}', 
             f'--direct_num_workers={args.direct_num_workers}'
         ],
-        save_main_session=True
+            save_main_session=True
         )
 
     # Specify the number of cells to analyze per batch.
@@ -167,7 +168,7 @@ def run(args: Type[argparse.Namespace]):
             project=project,
             zone=zone,
             **db_args.preprocess_args
-            )
+        )
         tables_info = preprocess.get_tables_info()
         tables_start_index_list = []
 
@@ -194,7 +195,7 @@ def run(args: Type[argparse.Namespace]):
             project=project,
             zone=zone,
             **db_args.preprocess_args
-            )
+        )
 
         dlp_table = preprocess.get_dlp_table_per_block(
             50000, table_name, start_index)
@@ -259,17 +260,16 @@ def run(args: Type[argparse.Namespace]):
         )
         catalog.main()
 
-
     with beam.Pipeline(options=pipeline_options) as pipeline:
 
         # pylint: disable=expression-not-assigned
         top_finding = (pipeline | 'InitialPcollection' >> beam.Create([None])
                        # Generate a list of tuples representing the table name
                        # and start index of each cell block.
-                      | 'TablesIndexes' >> beam.FlatMap(get_tables_indexes)
+                       | 'TablesIndexes' >> beam.FlatMap(get_tables_indexes)
 
-                      # Reshuffle the data to allow parallel processing.
-                      | 'ReshuffledData' >> beam.Reshuffle()
+                       # Reshuffle the data to allow parallel processing.
+                       | 'ReshuffledData' >> beam.Reshuffle()
 
                        # Preprocess each table based on their start indexes
                        # and retrieve DLP tables.
