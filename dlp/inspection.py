@@ -6,7 +6,7 @@
 from typing import List, Dict
 import warnings
 from google.cloud import dlp_v2
-from google.api_core.exceptions import BadRequest
+from google.api_core.exceptions import BadRequest, Unknown
 
 
 class DlpInspection:
@@ -199,18 +199,24 @@ class DlpInspection:
 
         results_list = []
 
-        for col_index, _ in enumerate(table.headers):
-            dlp_table = dlp_v2.Table()
-            dlp_table.headers = [{"name": table.headers[col_index].name}]
+        def inspect_content(dlp_table: dlp_v2.Table,
+                            results_list: List,
+                            inspect_config: Dict,
+                            error_counter: int=0):
+            """Recursively inspects the content of DLP table cells.
+            This function makes an API request to inspect the content of a 
+            chunk of data from the DLP table.
+            If the inspection results in an inactive error, the function
+            retries the inspection up to two more times to prevent the code
+            execution from being interrupted.
 
-            rows = []
-            for row in table.rows:
-                cell_value = row.values[col_index].string_value
-                rows.append(dlp_v2.Table.Row(
-                    values=[dlp_v2.Value(string_value=cell_value)]))
-
-            dlp_table.rows = rows
-
+            Args:
+                dlp_table (dlp_v2.Table): Table containing data.
+                result_list (List): Storage for inspection results.
+                inspect_config (Dict): Parameters for the inspection. InfoTypes
+                and the minimum likelihood.
+                error_counter (int, optional): Inactive error counter.
+            """
             try:
                 # Make the API request for the chunk of data.
                 response = self.dlp_client.inspect_content(
@@ -225,6 +231,30 @@ class DlpInspection:
             except BadRequest as error:
                 # Handle the BadRequest exception here.
                 raise BadRequest(error) from error
+            except Unknown as error:
+                if error_counter < 2:
+                    inspect_content(dlp_table,
+                                    results_list,
+                                    inspect_config,
+                                    error_counter + 1)
+                else:
+                    raise Unknown(error) from error
+
+        for col_index, _ in enumerate(table.headers):
+            dlp_table = dlp_v2.Table()
+            dlp_table.headers = [{"name": table.headers[col_index].name}]
+
+            rows = []
+            for row in table.rows:
+                cell_value = row.values[col_index].string_value
+                rows.append(dlp_v2.Table.Row(
+                    values=[dlp_v2.Value(string_value=cell_value)]))
+
+            dlp_table.rows = rows
+
+            inspect_content(dlp_table,
+                            results_list,
+                            inspect_config)
 
         return results_list
 

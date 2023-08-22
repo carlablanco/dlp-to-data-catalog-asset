@@ -107,15 +107,10 @@ def parse_arguments() -> Type[argparse.ArgumentParser]:
 
     return parser
 
+
 def subparse_arguments(parser: Type[argparse.ArgumentParser]) -> Type[argparse.ArgumentParser]:
-    """_summary_
+    """Parses command line subparsers arguments."""
 
-    Args:
-        parser (Type[argparse.ArgumentParser]): _description_
-
-    Returns:
-        Type[argparse.ArgumentParser]: _description_
-    """
     subparsers = parser.add_subparsers(dest="source")
 
     bigquery_parser = subparsers.add_parser(
@@ -171,7 +166,6 @@ def subparse_arguments(parser: Type[argparse.ArgumentParser]) -> Type[argparse.A
     )
 
     return parser
-
 
 def run(args: Type[argparse.Namespace]):
     """Runs DLP inspection scan and tags the results to Data Catalog.
