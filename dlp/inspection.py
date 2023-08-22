@@ -65,10 +65,14 @@ class DlpInspection:
                 filtered_infotypes = [
                     info_type.name
                     for info_type in infotypes.info_types
-                    if (str(info_type.categories[0].location_category) ==
-                        f"LocationCategory.{self.location_category}") or
-                    (str(info_type.categories[0].location_category) ==
-                        "LocationCategory.GLOBAL")
+                    if (
+                        str(info_type.categories[0].location_category)
+                        == f"LocationCategory.{self.location_category}"
+                    )
+                    or (
+                        str(info_type.categories[0].location_category)
+                        == "LocationCategory.GLOBAL"
+                    )
                 ]
 
         else:
