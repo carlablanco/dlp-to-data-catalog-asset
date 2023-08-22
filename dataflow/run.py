@@ -108,28 +108,6 @@ def run(args: Type[argparse.Namespace]):
 
     runner = args.runner
 
-    if runner == 'DataflowRunner':
-        # Set up pipeline options
-        pipeline_options = PipelineOptions(
-            runner=runner,
-            project=project,
-            region=zone,
-            staging_location=args.staging_location,
-            temp_file_location=args.temp_file_location,
-            template_location=args.template_location,
-            setup_file='../setup.py',
-            save_main_session=True,
-        )
-    elif runner == 'DirectRunner':
-        # Set up pipeline options
-        pipeline_options = PipelineOptions(
-            runner=runner,
-            project=project,
-            region=zone,
-            save_main_session=True,
-            direct_num_workers = args.direct_num_workers
-        )
-
     db_args = dlp.run.get_db_args(args)
 
     entry_group_name = None
@@ -144,6 +122,29 @@ def run(args: Type[argparse.Namespace]):
         )
         entry_group_name = catalog.create_custom_entry_group()
 
+    if runner == 'DataflowRunner':
+        # Set up pipeline options
+        pipeline_options = PipelineOptions([
+            f'--runner={runner}',
+            f'--project={project}',
+            f'--region={zone}',
+            f'--staging_location={args.staging_location}',
+            f'--temp_file_location={args.temp_file_location}',
+            f'--template_location={args.template_location}'
+        ],
+        setup_file='../setup.py',
+        save_main_session=True
+        )
+    elif runner == 'DirectRunner':
+        # Set up pipeline options
+        pipeline_options = PipelineOptions([
+            f'--runner={runner}',
+            f'--project={project}',
+            f'--region={zone}', 
+            f'--direct_num_workers={args.direct_num_workers}'
+        ],
+        save_main_session=True
+        )
 
     # Specify the number of cells to analyze per batch.
     batch_size = 50000
@@ -252,8 +253,6 @@ def run(args: Type[argparse.Namespace]):
         )
         catalog.main()
 
-    # Set up pipeline options
-    pipeline_options = PipelineOptions(options=pipeline_options)
 
     with beam.Pipeline(options=pipeline_options) as pipeline:
 
@@ -291,7 +290,8 @@ def run(args: Type[argparse.Namespace]):
 
 if __name__ == "__main__":
     # Parse command line arguments.
-    parse_dataflow = parse_arguments()
+    parse_common = parse_arguments()
+    parse_dataflow = dlp.run.subparse_arguments(parse_common)
     arguments = parse_dataflow.parse_args()
 
     # Run the DLP inspection and tagging pipeline
