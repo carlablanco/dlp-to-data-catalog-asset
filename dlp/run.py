@@ -105,7 +105,8 @@ def parse_arguments() -> Type[argparse.ArgumentParser]:
     return parser
 
 
-def subparse_arguments(parser: Type[argparse.ArgumentParser]) -> Type[argparse.ArgumentParser]:
+def subparse_arguments(parser: Type[argparse.ArgumentParser]
+                       ) -> Type[argparse.ArgumentParser]:
     """Parses command line subparsers arguments."""
 
     subparsers = parser.add_subparsers(dest="source")
