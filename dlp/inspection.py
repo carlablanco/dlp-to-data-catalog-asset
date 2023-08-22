@@ -42,8 +42,8 @@ class DlpInspection:
         """
         if self.dlp_template:
             # If DLP template ID and location are provided, use the template.
-            template_name = f"projects/{self.project_id}/locations/"
-            template_name += f"{self.dlp_template}"
+            template_name = f"projects/{self.project_id}/locations/" + \
+                f"{self.dlp_template}"
 
             template_dlp = self.dlp_client.get_inspect_template(
                 name=template_name)
